@@ -85,3 +85,11 @@ curl -s -X POST http://localhost:8787/mcp \
 - 別の AI(サブエージェントなど)が行ったステップには、その AI の名前とアイコンが付く
 - タスク一覧、「最新を追う」、ログのコピー(Markdown)、通知音(初期はオフ)
 - 幅 60rem 未満ではタスク一覧がドロワーになり、スワイプで閉じられる
+## AI用司令文
+次のMCPサーバー(Streamable HTTP)に接続してください(カスタム連携が必要なら作ってください)。
+URL: https://workline.zixiang0623.workers.dev/mcp
+認証: トークンを設定している場合は Authorization: Bearer <トークン> ヘッダーで送ります(トークンは安全な認証情報ストアに保存してください)。
+接続できたら、これ以降の作業は、このサーバーのツール(startTask / addStep / updateStep / setStatus / finishTask)に細かく送信しながら進めてください。
+- startTask の agent に、あなた自身を申告する。例: { "name": "Muse", "model": "Muse Spark 1.3", "domain": "muse.ai" }(domain は公式サイト。画面のアイコンに使います)
+- 小さな行動のたびに addStep を呼び、作業が終わったら finishTask を呼ぶ。
+- パスワードやAPIキーなどの秘密情報は送らない。
