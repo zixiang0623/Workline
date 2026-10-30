@@ -3,7 +3,7 @@
 import { DurableObject } from "cloudflare:workers";
 import { findIcon, parseAgent } from "./agents.js";
 
-const VERSION = "1.1.0";
+const VERSION = "1.2.0";
 const PROTOCOLS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 
 const KINDS = ["plan", "think", "search", "read", "write", "run", "web", "check", "fix", "wait", "note"];
@@ -310,6 +310,86 @@ async function handleWs(request, env, url) {
   return board(env).fetch(request);
 }
 
+/* ---------- すべてのログを消す(人間だけが、何段階もの確認を通ったときだけ) ---------- */
+
+const enc = new TextEncoder();
+const b64u = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function sign(env, data) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    enc.encode("workline-purge|" + (env.MCP_TOKEN || env.VIEW_TOKEN || "")),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  return b64u(await crypto.subtle.sign("HMAC", key, enc.encode(data)));
+}
+
+// 簡易的な「人間確認」: 署名つきの足し算(10分で失効)。状態をサーバーに持たない
+async function makeChallenge(env) {
+  const a = 10 + Math.floor(Math.random() * 80);
+  const b = 10 + Math.floor(Math.random() * 80);
+  const body = `${a},${b},${Date.now() + 10 * 60000}`;
+  return { question: `${a} + ${b}`, challenge: `${body}.${await sign(env, body)}` };
+}
+
+async function humanOk(env, challenge, answer) {
+  const [body, sig] = String(challenge || "").split(".");
+  if (!body || !sig || !safeEqual(sig, await sign(env, body))) return false;
+  const [a, b, exp] = body.split(",").map(Number);
+  return Date.now() < exp && Number(String(answer ?? "").trim()) === a + b;
+}
+
+// 閲覧用パスワード(VIEW_TOKEN)。VIEW_TOKEN が無い構成では、書き込みトークンでも通る
+function passwordOk(env, pw) {
+  const p = String(pw ?? "");
+  if (!p) return false;
+  return (!!env.VIEW_TOKEN && safeEqual(p, env.VIEW_TOKEN)) || (!!env.MCP_TOKEN && safeEqual(p, env.MCP_TOKEN));
+}
+
+async function handlePurge(request, env, url) {
+  if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: { allow: "POST" } });
+  if (!canRead(request, url, env)) return json({ error: "unauthorized" }, 401);
+  let b;
+  try {
+    b = await request.json();
+  } catch {
+    return json({ error: "bad request" }, 400);
+  }
+  // どちらのトークンも未設定だと、誰でも消せてしまうので、消去そのものを無効にする
+  const enabled = !!(env.VIEW_TOKEN || env.MCP_TOKEN);
+  const bd = board(env);
+
+  switch (b.action) {
+    case "info":
+      return json({ enabled, ...(await bd.purgeInfo()) });
+    case "challenge":
+      return json(await makeChallenge(env));
+    case "check-human":
+      return json({ ok: await humanOk(env, b.challenge, b.answer) });
+    case "check-password":
+      if (!enabled) return json({ ok: false, error: "disabled" }, 403);
+      if (passwordOk(env, b.password)) return json({ ok: true });
+      await sleep(800); // 総当たりを遅くする
+      return json({ ok: false });
+    case "purge": {
+      if (!enabled) return json({ ok: false, error: "disabled" }, 403);
+      // 画面で通った順番どおり、サーバー側でも全部やり直して確かめる
+      if (!(await humanOk(env, b.challenge, b.answer))) return json({ ok: false, step: "human" });
+      if (!passwordOk(env, b.password)) {
+        await sleep(800);
+        return json({ ok: false, step: "password" });
+      }
+      if (b.word !== "delete") return json({ ok: false, step: "word" });
+      return json(await bd.purgeAll(b.names));
+    }
+    default:
+      return json({ error: "unknown action" }, 400);
+  }
+}
+
 const ICON_TTL = 7 * 86400000; // 取得成功したアイコンは7日使い回す
 const ICON_RETRY = 10 * 60000; // 取得に失敗したら10分は再取得しない
 
@@ -354,6 +434,7 @@ export default {
       if (path === "/ws") return await handleWs(request, env, url);
       if (path === "/api/snapshot") return await handleSnapshot(request, env, url);
       if (path === "/api/icon") return await handleIcon(request, env, url);
+      if (path === "/api/purge") return await handlePurge(request, env, url);
       if (path === "/api/health") return json({ ok: true, name: "workline", version: VERSION });
     } catch (e) {
       return json({ error: String(e?.message || e) }, 500);
@@ -786,6 +867,29 @@ export class Board extends DurableObject {
         updatedAt: new Date(r.updated_at).toISOString(),
       })),
     };
+  }
+
+  // 消去の前に見せる件数と、「いま残っているAI」の一覧
+  purgeInfo() {
+    const n = (t) => this.sql.exec(`SELECT COUNT(*) AS n FROM ${t}`).one().n;
+    return {
+      tasks: n("tasks"),
+      steps: n("steps"),
+      agents: this.sql.exec("SELECT id, name FROM agents ORDER BY name").toArray(),
+    };
+  }
+
+  // names は、画面でなぞったAIの id 一覧。いま残っているAIと完全に一致しなければ消さない
+  purgeAll(names) {
+    const now = this.sql.exec("SELECT id FROM agents").toArray().map((r) => r.id).sort();
+    const given = [...new Set((Array.isArray(names) ? names : []).map(String))].sort();
+    if (JSON.stringify(now) !== JSON.stringify(given)) return { ok: false, step: "names" };
+    const info = this.purgeInfo();
+    this.sql.exec("DELETE FROM steps");
+    this.sql.exec("DELETE FROM tasks");
+    this.sql.exec("DELETE FROM agents"); // 保存済みのアイコン画像も一緒に消える
+    this.broadcast({ t: "purged" });
+    return { ok: true, tasks: info.tasks, steps: info.steps, agents: info.agents.length };
   }
 
   prune() {

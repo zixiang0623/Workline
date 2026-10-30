@@ -165,7 +165,7 @@ button, input { font: inherit; color: inherit; }
 .cols { display: grid; grid-template-columns: minmax(0, 1fr); }
 .col-main, .col-side { min-width: 0; }
 .col-side:has(.plan[hidden]) { display: none; }
-.runs { display: inline-flex; align-items: center; gap: var(--space-xs); padding-inline: var(--space-sm); min-height: 32px; border-radius: var(--radius-pill); background: var(--color-accent-soft); color: var(--color-accent); font-size: var(--text-sm); font-weight: 500; }
+.runs { display: inline-flex; align-items: center; gap: var(--space-xs); padding-inline: var(--space-sm); min-height: 32px; border-radius: var(--radius-ctl); background: var(--color-accent-soft); color: var(--color-accent); font-size: var(--text-sm); font-weight: 500; }
 .runs .num { font-family: var(--font-data); }
 @media (min-width: 75rem) {
   .cols { grid-template-columns: minmax(0, 1fr) 19rem; column-gap: var(--space-xl); align-items: start; }
@@ -277,6 +277,37 @@ button, input { font: inherit; color: inherit; }
 .howto code { font-family: var(--font-data); font-size: var(--text-xs); }
 .sk { border-radius: var(--radius-ctl); background: var(--color-paper-3); animation: pulse 1.4s ease-in-out infinite; }
 
+/* ---- purge wizard ---- */
+.btn.danger { border-color: var(--color-error); color: var(--color-error); }
+.btn.danger:hover { background: var(--color-error-soft); }
+.btn.danger:disabled { border-color: var(--color-rule); color: var(--color-muted); background: transparent; }
+.wiz { width: min(34rem, calc(100% - 2rem)); max-height: calc(100dvh - 2rem); padding: 0; border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); background: var(--color-paper); color: var(--color-ink); box-shadow: var(--shadow-sheet); overflow: auto; }
+.wiz::backdrop { background: var(--color-scrim); }
+.wiz-in { display: flex; flex-direction: column; gap: var(--space-md); padding: var(--space-lg); }
+.wiz-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); }
+.wiz-head h2 { display: flex; align-items: center; gap: var(--space-xs); font-size: var(--text-lg); color: var(--color-error); }
+.wiz-steps { list-style: none; display: flex; gap: var(--space-2xs); }
+.wiz-steps li { flex: 1; height: 4px; border-radius: var(--radius-ctl); background: var(--color-paper-3); }
+.wiz-steps li[data-state="done"] { background: var(--color-ink-2); }
+.wiz-steps li[data-state="current"] { background: var(--color-error); }
+.wiz-body { display: flex; flex-direction: column; gap: var(--space-sm); }
+.wiz-body p { color: var(--color-ink-2); }
+.wiz-body .field-error { color: var(--color-error); }
+.wiz-warn { display: flex; gap: var(--space-xs); align-items: flex-start; padding: var(--space-sm); border: var(--rule-hair) solid var(--color-error); border-radius: var(--radius-ctl); background: var(--color-error-soft); color: var(--color-error); font-weight: 500; }
+.wiz-warn .ic { margin-top: var(--space-2xs); }
+.wiz-count { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-md); }
+.wiz-count dt { font-size: var(--text-xs); color: var(--color-muted); }
+.wiz-count dd { font-family: var(--font-data); font-size: var(--text-xl); }
+.wiz-q { font-family: var(--font-data); font-size: var(--text-2xl); color: var(--color-ink) !important; }
+.wiz-actions { display: flex; justify-content: space-between; align-items: center; gap: var(--space-sm); margin-top: var(--space-xs); }
+.wiz-actions .wiz-actions { margin-top: 0; }
+.trace { position: relative; width: 100%; aspect-ratio: 14 / 5; border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-ctl); background: var(--color-paper); touch-action: none; cursor: crosshair; overflow: hidden; }
+.trace canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.trace-meter { display: flex; justify-content: space-between; align-items: center; gap: var(--space-sm); font-size: var(--text-xs); color: var(--color-muted); }
+.trace-meter .num { font-family: var(--font-data); }
+.trace-meter[data-pass="true"] { color: var(--color-success); }
+.trace-meter[data-pass="true"] span:first-child::before { content: ""; }
+
 /* ---- narrow ---- */
 @media (max-width: 60rem) {
   .menu-btn { display: inline-grid; }
@@ -340,6 +371,10 @@ button, input { font: inherit; color: inherit; }
 <symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="M4.929 4.929 19.07 19.071" /></symbol>
 <symbol id="i-activity" viewBox="0 0 24 24"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2" /></symbol>
 <symbol id="i-panel-left-open" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" /> <path d="M9 3v18" /> <path d="m14 9 3 3-3 3" /></symbol>
+<symbol id="i-trash-2" viewBox="0 0 24 24"><path d="M10 11v6" /> <path d="M14 11v6" /> <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /> <path d="M3 6h18" /> <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></symbol>
+<symbol id="i-eraser" viewBox="0 0 24 24"><path d="M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21" /> <path d="m5.082 11.09 8.828 8.828" /></symbol>
+<symbol id="i-shield-check" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /> <path d="m9 12 2 2 4-4" /></symbol>
+<symbol id="i-undo-2" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5" /> <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11" /></symbol>
 </defs></svg>
 <a class="skip" href="#main">本文へ移動</a>
 
@@ -364,6 +399,7 @@ button, input { font: inherit; color: inherit; }
     <div class="rail-foot">
       <p class="rail-note" id="railNote" hidden><svg class="ic" aria-hidden="true"><use href="#i-triangle-alert"/></svg><span>書き込みトークンが未設定です。URLを知っている人は誰でも送信できます。</span></p>
       <button class="btn small" id="copyEndpoint" type="button" data-copy-endpoint><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg><span>MCPのURLをコピー</span></button>
+      <button class="btn small danger" id="openPurge" type="button"><svg class="ic" aria-hidden="true"><use href="#i-trash-2"/></svg><span>ログをすべて消去…</span></button>
     </div>
   </aside>
 
@@ -386,6 +422,13 @@ button, input { font: inherit; color: inherit; }
     </article>
   </main>
 </div>
+<dialog class="wiz" id="purge" aria-labelledby="wizTitle">
+  <div class="wiz-in">
+    <header class="wiz-head"><h2 id="wizTitle"><svg class="ic" aria-hidden="true"><use href="#i-trash-2"/></svg><span>すべてのログを消去</span></h2><button class="icon-btn" id="wizClose" type="button" aria-label="閉じる"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></header>
+    <ol class="wiz-steps" id="wizSteps"></ol>
+    <div class="wiz-body" id="wizBody"></div>
+  </div>
+</dialog>
 <div class="scrim" id="scrim" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
@@ -569,6 +612,7 @@ function upsertStep(s) {
 }
 
 function handle(msg, quiet = false) {
+  if (msg.t === 'purged') { clearAll(); return; }
   if (msg.t === 'snapshot') {
     S.offset = msg.serverTime - Date.now();
     S.auth = msg.auth;
@@ -962,6 +1006,170 @@ const endDrag = (e) => {
 };
 el.rail.addEventListener('pointerup', endDrag);
 el.rail.addEventListener('pointercancel', endDrag);
+
+/* ================= purge: delete every log (deliberately hard, human only) ================= */
+const W = { dlg: $('#purge'), body: $('#wizBody'), bar: $('#wizSteps'), step: 0, info: null, ch: null, ans: '', pw: '', ids: [], ni: 0, err: '', busy: false, result: null };
+const ORDER = ['confirm', 'human', 'password', 'names', 'word', 'done'];
+const wpost = async (action, extra = {}) => {
+  const r = await fetch('/api/purge', { method: 'POST', headers: { 'content-type': 'application/json', ...authHeaders() }, body: JSON.stringify({ action, ...extra }) });
+  if (r.status === 401) throw new Error('unauthorized');
+  return r.json();
+};
+
+function clearAll() {
+  S.tasks.clear(); S.agents.clear(); S.rows.clear(); S.stepEls.clear(); S.expanded.clear();
+  el.list.innerHTML = ''; el.steps.innerHTML = '';
+  S.sel = null; S.maxId = 0; S.filter = ''; S.fsig = ''; S.sig = '';
+  history.replaceState(null, '', location.pathname + location.search);
+  renderFilter(); updateRuns(); showState('empty');
+}
+
+async function openPurge() {
+  closeDrawer();
+  Object.assign(W, { step: 0, info: null, ch: null, ans: '', pw: '', ids: [], ni: 0, err: '', busy: false, result: null });
+  W.dlg.showModal(); renderWiz();
+  try { W.info = await wpost('info'); } catch { W.err = '情報を取得できませんでした。'; }
+  renderWiz();
+}
+const wizGo = async (step) => {
+  W.step = step; W.err = '';
+  if (ORDER[step] === 'human') { W.ch = null; renderWiz(); try { W.ch = await wpost('challenge'); } catch { W.err = '問題を取得できませんでした。'; } }
+  if (ORDER[step] === 'names') { W.ni = 0; W.ids = []; if (!W.info.agents.length) return wizGo(step + 1); }
+  renderWiz();
+};
+
+function renderWiz() {
+  const st = ORDER[W.step], n = W.info ? W.info.agents.length : 0;
+  W.bar.innerHTML = ORDER.slice(0, 5).map((k, i) => `<li data-state="${i < W.step ? 'done' : i === W.step ? 'current' : 'todo'}"></li>`).join('');
+  const err = `<p class="field-error" role="alert">${esc(W.err)}</p>`;
+  const act = (back, next, nextHtml, cls = '') => `<div class="wiz-actions">${back}<button class="btn ${cls}" type="button" id="wNext" ${next ? '' : 'disabled'}>${nextHtml}</button></div>`;
+  const cancel = `<button class="btn" type="button" data-wiz="cancel">やめる</button>`;
+  const back = `<button class="btn" type="button" data-wiz="back">${icon('undo-2')}<span>戻る</span></button>`;
+  let html = '', after = null;
+
+  if (st === 'confirm') {
+    html = !W.info ? `<p>読み込み中…</p>${err}${act(cancel, false, '続ける')}`
+      : `<div class="wiz-warn">${icon('triangle-alert')}<span>保存されているログを、すべて消します。元に戻せません。</span></div>
+         <dl class="wiz-count"><div><dt>タスク</dt><dd>${W.info.tasks}</dd></div><div><dt>ステップ</dt><dd>${W.info.steps}</dd></div><div><dt>AI</dt><dd>${W.info.agents.length}</dd></div></dl>
+         ${W.info.enabled ? '<p>このあと、4つの確認があります。途中でやめても、何も消えません。</p>' : '<p class="field-error">閲覧用パスワード(VIEW_TOKEN か MCP_TOKEN)が未設定のため、消去できません。Cloudflareのシークレットに設定してください。</p>'}
+         ${err}${act(cancel, W.info.enabled, '続ける')}`;
+  } else if (st === 'human') {
+    html = `<p>人間であることを確認します。次の計算の答えを入力してください。</p>
+      <p class="wiz-q num">${W.ch ? esc(W.ch.question) + ' = ?' : '…'}</p>
+      <input class="field" id="wIn" inputmode="numeric" autocomplete="off" aria-label="答え" ${W.ch ? '' : 'disabled'}>
+      ${err}${act(back, !!W.ch, '確認する')}`;
+  } else if (st === 'password') {
+    html = `<p>閲覧用パスワードを入力してください。<br>(VIEW_TOKEN。設定していない場合は MCP_TOKEN)</p>
+      <input class="field" id="wIn" type="password" autocomplete="off" aria-label="閲覧用パスワード">
+      ${err}${act(back, true, '確認する')}`;
+  } else if (st === 'names') {
+    const a = W.info.agents[W.ni];
+    html = `<p><b class="num">${W.ni + 1} / ${n}</b> 薄く出ている AI の名前を、指やマウスでなぞって描いてください。</p>
+      <div class="trace" id="trace"><canvas class="tr-guide" role="img" aria-label="${esc(a.name)}"></canvas><canvas class="tr-ink"></canvas></div>
+      <div class="trace-meter" id="meter" data-pass="false"><span>なぞれた割合 <b class="num">0%</b>(75%以上)</span><span>はみ出し <b class="num">0%</b>(20%以下)</span></div>
+      ${err}<div class="wiz-actions"><span>${back}</span><span class="wiz-actions"><button class="btn" type="button" id="wReset">${icon('eraser')}<span>消してやり直す</span></button><button class="btn" type="button" id="wNext" disabled>${W.ni + 1 < n ? '次のAIへ' : '進む'}</button></span></div>`;
+    after = () => {
+      const tr = mountTrace($('#trace'), a.name, (m) => {
+        const meter = $('#meter'), nums = meter.querySelectorAll('b');
+        nums[0].textContent = Math.round(m.coverage * 100) + '%'; nums[1].textContent = Math.round(m.stray * 100) + '%';
+        meter.dataset.pass = String(m.pass); $('#wNext').disabled = !m.pass;
+      });
+      $('#wReset').addEventListener('click', () => tr.reset());
+    };
+  } else if (st === 'word') {
+    html = `<p>最後です。確認のため、半角の小文字で <b>delete</b> と入力してください。貼り付けはできません。</p>
+      <input class="field" id="wIn" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="delete と入力">
+      ${err}${act(back, false, `${icon('trash-2')}<span>すべて消去する</span>`, 'danger')}`;
+    after = () => {
+      const i = $('#wIn');
+      for (const t of ['paste', 'drop']) i.addEventListener(t, (e) => e.preventDefault());
+      i.addEventListener('input', () => { $('#wNext').disabled = i.value !== 'delete'; });
+    };
+  } else {
+    const r = W.result || {};
+    html = `<div class="wiz-warn" style="color:var(--color-success);border-color:var(--color-success);background:var(--color-paper-2)">${icon('shield-check')}<span>すべてのログを消去しました。</span></div>
+      <dl class="wiz-count"><div><dt>タスク</dt><dd>${r.tasks ?? 0}</dd></div><div><dt>ステップ</dt><dd>${r.steps ?? 0}</dd></div><div><dt>AI</dt><dd>${r.agents ?? 0}</dd></div></dl>
+      <div class="wiz-actions"><span></span><button class="btn" type="button" data-wiz="cancel">閉じる</button></div>`;
+  }
+  W.body.innerHTML = html;
+  after && after();
+  $('#wIn')?.focus({ preventScroll: true });
+}
+
+async function wizNext() {
+  if (W.busy) return; W.busy = true;
+  const st = ORDER[W.step], val = $('#wIn')?.value ?? '';
+  try {
+    if (st === 'confirm') await wizGo(1);
+    else if (st === 'human') {
+      const r = await wpost('check-human', { challenge: W.ch.challenge, answer: val });
+      if (r.ok) { W.ans = val; await wizGo(2); } else { await wizGo(1); W.err = '答えが違います。新しい問題です。'; renderWiz(); }
+    } else if (st === 'password') {
+      const r = await wpost('check-password', { password: val });
+      if (r.ok) { W.pw = val; await wizGo(3); } else { W.err = 'パスワードが違います。'; renderWiz(); }
+    } else if (st === 'names') {
+      W.ids.push(W.info.agents[W.ni].id); W.ni++;
+      if (W.ni >= W.info.agents.length) await wizGo(4); else renderWiz();
+    } else if (st === 'word') {
+      const r = await wpost('purge', { challenge: W.ch.challenge, answer: W.ans, password: W.pw, word: val, names: W.ids });
+      if (r.ok) { W.result = r; W.step = 5; W.err = ''; clearAll(); renderWiz(); }
+      else if (r.step === 'names') { W.info = await wpost('info'); await wizGo(3); W.err = 'AIの一覧が変わりました。最初のAIからやり直してください。'; renderWiz(); }
+      else if (r.step === 'human') { await wizGo(1); W.err = '時間切れです。もう一度、最初の確認からお願いします。'; renderWiz(); }
+      else if (r.step === 'password') { await wizGo(2); W.err = 'パスワードが違います。'; renderWiz(); }
+      else { W.err = '消去できませんでした。'; renderWiz(); }
+    }
+  } catch { W.err = '通信に失敗しました。もう一度お試しください。'; renderWiz(); }
+  W.busy = false;
+}
+
+W.dlg.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-wiz], #wNext, #wizClose'); if (!b) return;
+  if (b.id === 'wNext') wizNext();
+  else if (b.id === 'wizClose' || b.dataset.wiz === 'cancel') W.dlg.close();
+  else if (b.dataset.wiz === 'back') wizGo(Math.max(0, W.step - (ORDER[W.step] === 'word' && !W.info.agents.length ? 2 : 1)));
+});
+W.dlg.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.matches('#wIn') && !$('#wNext').disabled) { e.preventDefault(); wizNext(); } });
+$('#openPurge').addEventListener('click', openPurge);
+
+// trace the AI's name: the guide is drawn faintly, the ink layer is checked against it
+function mountTrace(wrap, name, onState) {
+  const [guide, ink] = wrap.querySelectorAll('canvas');
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const cw = wrap.clientWidth, chh = wrap.clientHeight, pw = Math.round(cw * dpr), ph = Math.round(chh * dpr);
+  guide.width = ink.width = pw; guide.height = ink.height = ph;
+  const css = getComputedStyle(document.documentElement), tok = (n) => css.getPropertyValue(n).trim();
+  const family = getComputedStyle(document.body).fontFamily;
+  const probe = document.createElement('canvas').getContext('2d');
+  probe.font = `700 100px ${family}`;
+  const size = Math.max(24, Math.min(140, (cw - 48) / (probe.measureText(name).width / 100), chh * 0.62));
+  const font = `700 ${size * dpr}px ${family}`;
+  const setup = (c) => { c.font = font; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round'; };
+  const maskOf = (grow) => {
+    const c = document.createElement('canvas'); c.width = pw; c.height = ph;
+    const x = c.getContext('2d'); setup(x); x.fillStyle = tok('--color-ink'); x.strokeStyle = tok('--color-ink');
+    if (grow) { x.lineWidth = grow * dpr; x.strokeText(name, pw / 2, ph / 2); }
+    x.fillText(name, pw / 2, ph / 2);
+    const d = x.getImageData(0, 0, pw, ph).data, m = new Uint8Array(pw * ph);
+    for (let i = 0; i < m.length; i++) m[i] = d[i * 4 + 3] > 100 ? 1 : 0;
+    return m;
+  };
+  const glyph = maskOf(0), near = maskOf(32), total = glyph.reduce((a, v) => a + v, 0);
+  const g = guide.getContext('2d'); setup(g); g.globalAlpha = 0.3; g.fillStyle = tok('--color-ink'); g.fillText(name, pw / 2, ph / 2);
+  const x = ink.getContext('2d'); x.lineCap = 'round'; x.lineJoin = 'round'; x.lineWidth = 20 * dpr; x.strokeStyle = tok('--color-error');
+  let down = false, last = null;
+  const pos = (e) => { const r = ink.getBoundingClientRect(); return [((e.clientX - r.left) * pw) / r.width, ((e.clientY - r.top) * ph) / r.height]; };
+  const measure = () => {
+    const d = x.getImageData(0, 0, pw, ph).data; let covered = 0, drawn = 0, inside = 0;
+    for (let i = 0; i < glyph.length; i++) if (d[i * 4 + 3] > 60) { drawn++; if (near[i]) inside++; if (glyph[i]) covered++; }
+    const coverage = total ? covered / total : 0, stray = drawn ? 1 - inside / drawn : 0;
+    onState({ coverage, stray, pass: coverage >= 0.75 && stray <= 0.2 });
+  };
+  ink.addEventListener('pointerdown', (e) => { down = true; ink.setPointerCapture(e.pointerId); last = pos(e); x.beginPath(); x.moveTo(...last); x.lineTo(last[0] + 0.01, last[1]); x.stroke(); });
+  ink.addEventListener('pointermove', (e) => { if (!down) return; const p = pos(e); x.beginPath(); x.moveTo(...last); x.lineTo(...p); x.stroke(); last = p; });
+  const end = () => { if (down) { down = false; measure(); } };
+  ink.addEventListener('pointerup', end); ink.addEventListener('pointercancel', end);
+  return { reset() { x.clearRect(0, 0, pw, ph); onState({ coverage: 0, stray: 0, pass: false }); } };
+}
 
 /* ---- how many tasks are running right now (all AIs) ---- */
 function updateRuns() {
