@@ -3,6 +3,9 @@
 Workline は、Muse が「いま何をしているか」を別画面でリアルタイムに眺めるためのビューアーです。
 Muse は作業のたびに、この MCP サーバーへ小さく送信します。ブラウザには WebSocket で即時に届きます(定期取得ではありません)。
 
+複数の AI に対応しています。送信するときに、AI 自身が「自分は何の AI か」を申告し、画面に名前とアイコンが出ます。
+Muse 以外の AI(Claude、ChatGPT など)も、同じ URL・同じ依頼文で接続できます。
+
 ```
 Muse ──(MCP / Streamable HTTP)──▶ Workline(Cloudflare) ──(WebSocket)──▶ あなたのブラウザ
 ```
@@ -32,6 +35,7 @@ URL を入れたら、この表と、下の「3. Muse に渡す依頼文」の `
 Muse には「MCP サーバーを追加する」専用の設定画面がありません。
 チャットで「このサーバーへのカスタム連携を作って」と頼むと、Muse が自分で連携を作ります。
 次の文章をそのまま Muse に送ってください(`URL:` の行は上で決めた値に置き換えます)。
+ビューアーの空の画面にある「AIへの依頼文をコピー」でも、同じ文章を取り出せます。
 
 ```
 次の MCP サーバー(Streamable HTTP)に接続するカスタム連携を作ってください。
@@ -45,9 +49,51 @@ URL: ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿/mcp
 このあとの作業はすべて、次のルールで送信しながら進めてください。
 ```
 
+Muse 以外の AI に接続するときは、同じ文章の中の「Muse」を、その AI の名前に読み替えてください(次の節の `agent` に入れる名前も同じです)。
+
 トークンを設定していない場合は「認証」の 3 行を消してください。
 
-## 4. Muse に守らせる作業ルール
+## 4. 自分が何の AI かを申告する(agent)
+
+`startTask` を呼ぶときに、AI 自身が `agent` を必ず渡します。省略するとエラーになります。
+
+```json
+{ "name": "Muse", "model": "Muse Spark 1.3", "domain": "muse.ai" }
+```
+
+| 項目 | 必須 | 内容 |
+| --- | --- | --- |
+| `name` | はい | AI の名前。同じ名前なら同じ AI として扱われ、画面でまとめて絞り込めます |
+| `model` | いいえ | モデル名。タスクごとに記録され、画面のタスク名の横に出ます |
+| `domain` | いいえ | 公式サイトのドメイン。アイコンの取得に使います |
+| `iconUrl` | いいえ | アイコン画像の `https` URL。あれば最優先で使います |
+
+名前だけ渡して、`"agent": "Muse"` のように文字列で送ることもできます。
+
+### アイコンの取得
+
+サーバーが、申告された `domain`(または `iconUrl`)から画像を取得して保存し、画面に表示します。次の順に試します。
+
+1. `iconUrl`
+2. サイトのトップページに書かれたアイコン(`apple-touch-icon`、`icon`)
+3. `https://<domain>/favicon.ico`
+4. favicon 取得サービス(Google)
+
+- 名前が `Muse` `Claude` `ChatGPT` `Gemini` などの有名な AI なら、`domain` を省略しても自動で補います。`Muse` は `muse.ai` です。
+- 取得できたアイコンは 7 日間、サーバーに保存します。失敗したときは 10 分あけて再取得し、その間は名前の頭文字を色つきで表示します。
+- 取得先は、公開された `https` のドメインだけです。IP アドレスや `localhost` などは拒否します。
+
+### 複数の AI が同時に動くとき
+
+- AI ごとに別々の `startTask` を呼びます。画面の左に、AI ごとの絞り込みボタンと、実行中のタスク数が出ます。
+- 同じタスクの中で別の AI(サブエージェントなど)が作業したときは、そのステップの `addStep` に `agent` を付けます。画面では、そのステップに AI の名前とアイコンが付きます。
+
+```json
+{ "title": "境界値テストを作成", "kind": "write", "status": "running",
+  "agent": { "name": "Reviewer Bot", "domain": "example.dev" } }
+```
+
+## 5. Muse に守らせる作業ルール
 
 接続できたら、次の文章も Muse に送ります。
 「記憶しておいて」と添えると、次回以降も続きます。
@@ -56,6 +102,7 @@ URL: ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿/mcp
 今後、作業するときは Workline に送信してください。
 
 - 作業を始めたら、最初に startTask を呼ぶ。手順の見通しがあれば plan に入れる。
+  agent には自分自身を入れる(例: { "name": "Muse", "model": "<あなたのモデル名>", "domain": "muse.ai" })。
 - 小さな行動ひとつごとに addStep を呼ぶ(ファイルを読む、検索する、コマンドを実行する、
   編集する、確認する、方針を考える、待つ)。あとでまとめて送らない。
 - 時間がかかる行動は、始める時に status="running" で送り、終わったら updateStep で
@@ -66,15 +113,15 @@ URL: ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿/mcp
 - パスワード・トークン・API キーは title にも detail にも書かない。
 ```
 
-## 5. ツール一覧
+## 6. ツール一覧
 
 引数は `taskId` を省略すると「最新の実行中タスク」が対象になります。`stepId` と `taskId` は戻り値で返ります。
 忘れたときは `listTasks` で確認できます。
 
 | ツール | 使うタイミング | 主な引数 |
 | --- | --- | --- |
-| `startTask` | 作業の最初に 1 回 | `title`(必須), `summary`, `plan`(文字列の配列) |
-| `addStep` | 小さな行動のたび | `title`(必須), `kind`, `detail`, `status`, `now`, `next`, `progress`, `planIndex` |
+| `startTask` | 作業の最初に 1 回 | `agent`(必須), `title`(必須), `summary`, `plan`(文字列の配列) |
+| `addStep` | 小さな行動のたび | `title`(必須), `kind`, `detail`, `status`, `now`, `next`, `progress`, `planIndex`, `agent`(別の AI のときだけ) |
 | `updateStep` | running のステップを完了・失敗にする / 結果を追記する | `stepId`(必須), `status`, `appendDetail`, `detail`, `title` |
 | `setStatus` | ステップを増やさず「いま」と「次」だけ更新する(生存報告) | `now`, `next`, `progress` |
 | `finishTask` | 作業の最後に必ず 1 回 | `status`(`done` / `failed` / `cancelled`), `summary` |
@@ -105,11 +152,12 @@ URL: ＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿＿/mcp
 `startTask` の `plan` に 4 項目を渡すと、画面に予定のチェックリストが出ます。
 `addStep` に `planIndex: 2` を渡すと、2 番目の予定がそのステップの状態(実行中・完了・失敗)に連動します。
 
-## 6. 送信の流れ(例)
+## 7. 送信の流れ(例)
 
 ```
-startTask   { title: "noVNCをChromeで試す", plan: ["cloudflaredを用意", "トンネルを開く", "URLを確認", "閉じる"] }
-            → { taskId: 12, plan: [...] }
+startTask   { agent: { name: "Muse", model: "Muse Spark 1.3", domain: "muse.ai" },
+              title: "noVNCをChromeで試す", plan: ["cloudflaredを用意", "トンネルを開く", "URLを確認", "閉じる"] }
+            → { taskId: 12, agent: "muse", plan: [...] }
 addStep     { title: "cloudflaredを取得中", kind: "run", status: "running", planIndex: 1,
               detail: "curl -L -o cloudflared ...", next: "トンネルを開く" }
             → { stepId: 31 }
@@ -125,12 +173,12 @@ finishTask  { status: "done", summary: "新しいURLで開けることを確認�
 画面の「いまやっていること」は、`addStep` の `now`(省略時は `title`)と `next` で更新されます。
 `next` は毎回置き換わるので、古い「次」が残ることはありません。
 
-## 7. 動作確認
+## 8. 動作確認
 
 ### ビューアーで
 
-ビューアーを開いたまま、Muse に「Workline に `startTask` で『接続テスト』を送って、`addStep` を 3 回送って、`finishTask` して」と頼みます。
-右上が「ライブ」で、ステップが 1 件ずつ増えれば成功です。
+ビューアーを開いたまま、Muse に「Workline に `startTask` で『接続テスト』を送って(agent に自分を申告して)、`addStep` を 3 回送って、`finishTask` して」と頼みます。
+右上が「ライブ」で、ステップが 1 件ずつ増え、タスク名の横に Muse の名前とアイコンが出れば成功です。
 
 ### Muse の連携がうまく作れないとき(curl で直接確認)
 
@@ -142,28 +190,32 @@ curl -s -X POST "<URL>/mcp" \
   -H "content-type: application/json" -H "authorization: Bearer <トークン>" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
 
-# 2) 画面に「curlテスト」が出れば OK
+# 2) 画面に「curlテスト」が Muse の名前つきで出れば OK
 curl -s -X POST "<URL>/mcp" \
   -H "content-type: application/json" -H "authorization: Bearer <トークン>" \
-  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"startTask","arguments":{"title":"curlテスト"}}}'
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"startTask","arguments":{"agent":{"name":"Muse","domain":"muse.ai"},"title":"curlテスト"}}}'
 ```
 
 `<URL>` は `https://…` から `/mcp` の手前まで、`<トークン>` は `MCP_TOKEN` の値です。
 トークン未設定なら `authorization` のヘッダーは不要です。
 
-## 8. うまくいかないとき
+## 9. うまくいかないとき
 
 | 症状 | 原因と対処 |
 | --- | --- |
 | `401 Unauthorized` | トークンが違う、またはヘッダーが付いていない。`Authorization: Bearer <MCP_TOKEN>` を確認する(ヘッダーを付けられない環境では URL の末尾に `?token=<MCP_TOKEN>` でも通ります) |
 | `403 Forbidden origin` | ブラウザから直接送っている。Muse など実行環境からの送信なら出ません |
 | ツールが `実行中のタスクがありません` と返す | `startTask` より先に `addStep` を呼んだ。先に `startTask` を呼ぶ |
+| `agent は必須です` と返る | `startTask` に `agent` が無い。`{ "name": "Muse" }` のように自分を申告する |
+| アイコンが出ず、頭文字だけ表示される | 取得できていない。`domain` が正しいか、`iconUrl` が `https` の画像か確認する。直したあとは、同じ名前で新しく `startTask` すると取り直します |
 | 画面が「再接続中」のまま | ネットワークの一時切断。自動で再接続し、その間も 5 秒ごとに最新状態を取りにいきます |
 | 画面に「最終更新から ○○ 経過」の警告が出た | 90 秒以上、何も送られていません。Muse が長い処理中か、送信が止まっています |
 | 古いタスクが消えた | 新しい方から 100 件、30 日以内のものだけ保存されます |
 
-## 9. セキュリティの注意
+## 10. セキュリティの注意
 
 - Muse に、パスワード・トークン・API キーを `title` / `detail` に書かせないでください(ルールに入れてあります)。
 - `MCP_TOKEN` は書き込み、`VIEW_TOKEN` は閲覧のためのものです。別の値にしてください。
 - トークンを変えたいときは、Cloudflare のシークレットを更新し、Muse の認証情報ストアも更新します。
+- `agent` は自己申告です。トークンを持っている送信元が、別の AI の名前を名乗ることもできます。AI ごとにトークンを分けたい場合は、別の Worker を立ててください。
+- アイコンの取得は、サーバーから外部サイトへアクセスします。取得先は公開 `https` のドメインに限り、画像以外の内容は保存しません。

@@ -40,6 +40,12 @@
   --color-warn: oklch(46% 0.12 70);
   --color-warn-soft: oklch(96% 0.05 85);
   --color-warn-rule: oklch(80% 0.12 85);
+  --color-av-0: oklch(42% 0.1 205); --color-av-0-bg: oklch(93% 0.04 205);
+  --color-av-1: oklch(40% 0.1 150); --color-av-1-bg: oklch(93% 0.04 150);
+  --color-av-2: oklch(42% 0.12 40); --color-av-2-bg: oklch(93% 0.04 40);
+  --color-av-3: oklch(42% 0.11 300); --color-av-3-bg: oklch(93% 0.04 300);
+  --color-av-4: oklch(42% 0.1 85); --color-av-4-bg: oklch(93% 0.05 85);
+  --color-av-5: oklch(42% 0.12 350); --color-av-5-bg: oklch(93% 0.04 350);
   --color-glass: color-mix(in oklab, var(--color-paper) 80%, transparent);
   --color-scrim: color-mix(in oklab, var(--color-ink) 38%, transparent);
   --shadow-sheet: 0 10px 20px -12px color-mix(in oklab, var(--color-ink) 38%, transparent);
@@ -55,7 +61,7 @@
 *, *::before, *::after { box-sizing: border-box; }
 html, body { overflow-x: clip; }
 html { scrollbar-color: var(--color-muted) var(--color-paper); scroll-padding-top: calc(var(--bar-h) + 140px); }
-body { margin: 0; background: var(--color-paper); color: var(--color-ink); font-family: var(--font-body); font-size: var(--text-md); line-height: 1.6; -webkit-font-smoothing: antialiased; caret-color: var(--color-accent); }
+body { margin: 0; background: var(--color-paper); color: var(--color-ink); font-family: var(--font-body); font-size: var(--text-md); line-height: 1.6; word-break: auto-phrase; -webkit-font-smoothing: antialiased; caret-color: var(--color-accent); }
 ::selection { background: color-mix(in oklab, var(--color-accent) 22%, transparent); color: var(--color-ink); }
 :focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 a { color: var(--color-accent); text-decoration-thickness: 1px; text-underline-offset: 0.16em; overflow-wrap: anywhere; }
@@ -113,11 +119,32 @@ button, input { font: inherit; color: inherit; }
 .trow[data-status="failed"] .trow-ic { color: var(--color-error); }
 .trow-main { display: flex; flex-direction: column; min-width: 0; }
 .trow-title { font-size: var(--text-sm); font-weight: 500; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-.trow-meta { display: flex; gap: var(--space-sm); font-size: var(--text-xs); color: var(--color-muted); }
+.trow-meta { display: flex; justify-content: space-between; gap: var(--space-sm); font-size: var(--text-xs); color: var(--color-muted); }
 .rail-foot { display: flex; flex-direction: column; gap: var(--space-xs); padding: var(--space-sm) var(--space-md) var(--space-md); border-top: var(--rule-hair) solid var(--color-rule); }
 .rail-note { display: flex; gap: var(--space-xs); align-items: flex-start; font-size: var(--text-xs); color: var(--color-warn); }
 .rail-note .ic { margin-top: var(--space-2xs); }
 .scrim { position: fixed; inset: 0; z-index: var(--z-scrim); background: var(--color-scrim); opacity: 0; }
+
+/* ---- agents (which AI is working) ---- */
+.av { --av: 20px; position: relative; display: inline-grid; place-items: center; flex: none; width: var(--av); height: var(--av); border-radius: var(--radius-ctl); overflow: hidden; font-size: calc(var(--av) * 0.52); font-weight: 700; line-height: 1; background: var(--color-av-0-bg); color: var(--color-av-0); }
+.av[data-t="1"] { background: var(--color-av-1-bg); color: var(--color-av-1); }
+.av[data-t="2"] { background: var(--color-av-2-bg); color: var(--color-av-2); }
+.av[data-t="3"] { background: var(--color-av-3-bg); color: var(--color-av-3); }
+.av[data-t="4"] { background: var(--color-av-4-bg); color: var(--color-av-4); }
+.av[data-t="5"] { background: var(--color-av-5-bg); color: var(--color-av-5); }
+.av img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: var(--color-paper); }
+.by { display: inline-flex; align-items: center; gap: var(--space-xs); min-width: 0; font-size: var(--text-sm); }
+.by-name { font-weight: 700; }
+.by-model { color: var(--color-muted); font-size: var(--text-xs); overflow-wrap: anywhere; }
+.head-top { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-xs) var(--space-md); }
+.s-by { display: inline-flex; align-items: center; gap: var(--space-2xs); color: var(--color-ink-2); }
+.agent-filter { display: flex; flex-wrap: wrap; gap: var(--space-xs); padding: 0 var(--space-md) var(--space-xs); }
+.agent-filter .num { font-family: var(--font-data); }
+.trow-meta { align-items: center; }
+.trow-when { flex: none; font-family: var(--font-data); }
+.trow[data-status="running"] .trow-when { color: var(--color-accent); }
+.trow[data-stale] .trow-ic, .trow[data-stale] .trow-when { color: var(--color-warn); }
+.trow-by { display: inline-flex; align-items: center; gap: var(--space-2xs); min-width: 0; color: var(--color-ink-2); }
 
 /* ---- buttons / fields ---- */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-xs); min-height: 40px; padding: 0 var(--space-md); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-ctl); background: var(--color-paper); color: var(--color-ink); font-size: var(--text-sm); cursor: pointer; transition: background var(--dur-micro), border-color var(--dur-micro), color var(--dur-micro), transform var(--dur-micro) var(--ease-out); }
@@ -134,7 +161,17 @@ button, input { font: inherit; color: inherit; }
 .field-error { min-height: 1lh; font-size: var(--text-sm); color: var(--color-error); }
 
 /* ---- main ---- */
-.main { padding: var(--space-lg) var(--space-xl) calc(var(--space-2xl) * 2); max-width: var(--measure); min-width: 0; }
+.main { padding: var(--space-lg) var(--space-xl) calc(var(--space-2xl) * 2); max-width: 82rem; min-width: 0; }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr); }
+.col-main, .col-side { min-width: 0; }
+.col-side:has(.plan[hidden]) { display: none; }
+.runs { display: inline-flex; align-items: center; gap: var(--space-xs); padding-inline: var(--space-sm); min-height: 32px; border-radius: var(--radius-pill); background: var(--color-accent-soft); color: var(--color-accent); font-size: var(--text-sm); font-weight: 500; }
+.runs .num { font-family: var(--font-data); }
+@media (min-width: 75rem) {
+  .cols { grid-template-columns: minmax(0, 1fr) 19rem; column-gap: var(--space-xl); align-items: start; }
+  .col-side .plan { position: sticky; top: calc(var(--bar-h) + var(--space-xs)); margin-top: 0; }
+  .head, .summary { max-width: none; }
+}
 .main:focus { outline: none; }
 .head { display: flex; flex-direction: column; gap: var(--space-xs); margin-bottom: var(--space-md); }
 .status { display: inline-flex; align-items: center; gap: var(--space-xs); align-self: flex-start; font-size: var(--text-sm); font-weight: 500; color: var(--color-muted); }
@@ -152,8 +189,10 @@ button, input { font: inherit; color: inherit; }
 .now:not([data-status="running"]) { position: static; box-shadow: none; background: var(--color-paper-2); }
 .now[data-status="done"] { border-color: var(--color-success); }
 .now[data-status="failed"] { border-color: var(--color-error); }
-.now-label { font-size: var(--text-xs); color: var(--color-muted); }
-.now-text { font-size: var(--text-lg); font-weight: 500; line-height: 1.4; overflow-wrap: anywhere; }
+.now-label { display: inline-flex; align-items: center; gap: var(--space-xs); font-size: var(--text-xs); color: var(--color-muted); }
+.now-label .ic { width: 14px; height: 14px; color: var(--color-accent); animation: pulse 1.6s ease-in-out infinite; }
+.now-text { font-size: var(--text-xl); font-weight: 500; line-height: 1.35; overflow-wrap: anywhere; }
+@media (max-width: 40rem) { .now-text { font-size: var(--text-lg); } }
 .now-next { font-size: var(--text-sm); color: var(--color-ink-2); display: flex; gap: var(--space-xs); }
 .now-next b { font-weight: 700; color: var(--color-muted); }
 .now-result { font-size: var(--text-sm); color: var(--color-ink-2); white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -206,7 +245,9 @@ button, input { font: inherit; color: inherit; }
 .step[data-status="running"] .s-node::after { content: ""; position: absolute; inset: -5px; border: 2px solid transparent; border-top-color: var(--color-accent); border-radius: var(--radius-pill); animation: spin 1.1s linear infinite; }
 .step[data-status="failed"] .s-node { border-color: var(--color-error); color: var(--color-error); background: var(--color-error-soft); }
 .step[data-status="skipped"] .s-node { border-style: dashed; color: var(--color-muted); }
-.s-body { min-width: 0; padding-top: var(--space-3xs); }
+.s-body { min-width: 0; margin: calc(var(--space-xs) * -1 + var(--space-3xs)) 0 0 calc(var(--space-xs) * -1); padding: var(--space-xs) var(--space-sm) var(--space-xs) var(--space-xs); border-radius: var(--radius-ctl); }
+.step[data-status="running"] .s-body { background: var(--color-accent-soft); }
+.step[data-status="failed"] .s-body { background: var(--color-error-soft); }
 .s-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-sm); font-size: var(--text-xs); color: var(--color-muted); line-height: 1.6; }
 .s-state { font-family: var(--font-data); }
 .s-state.run { color: var(--color-accent); }
@@ -230,6 +271,10 @@ button, input { font: inherit; color: inherit; }
 .endpoint code { flex: 1; min-width: 0; font-family: var(--font-data); font-size: var(--text-sm); overflow-wrap: anywhere; }
 .state form { display: flex; flex-direction: column; gap: var(--space-xs); width: 100%; }
 .state label { font-size: var(--text-sm); font-weight: 500; }
+.howto { list-style: none; counter-reset: n; display: flex; flex-direction: column; gap: var(--space-xs); margin-top: var(--space-sm); padding-top: var(--space-md); border-top: var(--rule-hair) solid var(--color-rule); width: 100%; font-size: var(--text-sm); color: var(--color-ink-2); }
+.howto li { counter-increment: n; display: grid; grid-template-columns: 1.6rem minmax(0, 1fr); }
+.howto li::before { content: counter(n); font-family: var(--font-data); color: var(--color-muted); }
+.howto code { font-family: var(--font-data); font-size: var(--text-xs); }
 .sk { border-radius: var(--radius-ctl); background: var(--color-paper-3); animation: pulse 1.4s ease-in-out infinite; }
 
 /* ---- narrow ---- */
@@ -238,7 +283,12 @@ button, input { font: inherit; color: inherit; }
   .shell { grid-template-columns: minmax(0, 1fr); }
   .rail { position: fixed; top: var(--bar-h); bottom: 0; left: 0; height: auto; width: min(20rem, 88vw); z-index: var(--z-drawer); transform: translateX(-105%); box-shadow: var(--shadow-sheet); transition: transform var(--dur-short) var(--ease-out); }
   .rail[data-open] { transform: none; }
-  .main { padding: var(--space-md) var(--space-md) calc(var(--space-2xl) * 2); }
+  .main { padding: var(--space-md) var(--space-md) calc(var(--space-2xl) * 2 + env(safe-area-inset-bottom, 0px)); }
+  .cols { display: flex; flex-direction: column; }
+  .col-main, .col-side { display: contents; }
+  .now { order: 1; }
+  .col-side .plan { order: 2; }
+  .log { order: 3; }
 }
 @media (max-width: 40rem) {
   .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-xs); }
@@ -247,6 +297,8 @@ button, input { font: inherit; color: inherit; }
   .step { --time-w: 3.6rem; --step-gap: var(--space-xs); }
   .now { padding: var(--space-sm) var(--space-md); }
   .head h1 { font-size: var(--text-lg); }
+  .runs > span { font-size: 0; }
+  .runs .num { font-size: var(--text-sm); }
   .conn span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }
 </style>
@@ -295,6 +347,7 @@ button, input { font: inherit; color: inherit; }
   <button class="icon-btn menu-btn" id="menuBtn" type="button" aria-label="タスク一覧を開く" aria-controls="rail" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-menu"/></svg></button>
   <div class="brand"><svg class="ic" aria-hidden="true"><use href="#i-activity"/></svg><span>Workline</span></div>
   <div class="bar-spacer"></div>
+  <div class="runs" id="runs" hidden></div>
   <div class="conn" id="conn" role="status" data-state="connecting"></div>
   <button class="icon-btn" id="orderBtn" type="button" aria-label="新しいステップを上に表示" title="新しい順に表示"><svg class="ic" aria-hidden="true"><use href="#i-arrow-up-narrow-wide"/></svg></button>
   <button class="icon-btn" id="soundBtn" type="button" aria-pressed="false" aria-label="通知音" title="新しいステップで小さな音を鳴らす"><svg class="ic" aria-hidden="true"><use href="#i-volume-x"/></svg></button>
@@ -306,6 +359,7 @@ button, input { font: inherit; color: inherit; }
       <h2>作業</h2>
       <button class="chip" id="followBtn" type="button" aria-pressed="true"><svg class="ic" aria-hidden="true"><use href="#i-radio"/></svg><span>最新を追う</span></button>
     </div>
+    <div class="agent-filter" id="agentFilter" role="group" aria-label="AIで絞り込み" hidden></div>
     <ul class="tasklist" id="taskList"></ul>
     <div class="rail-foot">
       <p class="rail-note" id="railNote" hidden><svg class="ic" aria-hidden="true"><use href="#i-triangle-alert"/></svg><span>書き込みトークンが未設定です。URLを知っている人は誰でも送信できます。</span></p>
@@ -317,12 +371,18 @@ button, input { font: inherit; color: inherit; }
     <div id="state"></div>
     <article id="task" hidden>
       <header class="head" id="head"></header>
-      <section class="now" id="now" aria-live="polite" aria-atomic="true"></section>
-      <details class="plan" id="plan" open></details>
-      <section class="log" aria-labelledby="logTitle">
-        <div class="log-head"><h2 id="logTitle">作業の流れ</h2><span class="num" id="logCount"></span><button class="btn small" type="button" id="copyLog"><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg><span>ログをコピー</span></button></div>
-        <ol class="steps" id="steps" data-order="new"></ol>
-      </section>
+      <div class="cols">
+        <div class="col-main">
+          <section class="now" id="now" aria-live="polite" aria-atomic="true"></section>
+          <section class="log" aria-labelledby="logTitle">
+            <div class="log-head"><h2 id="logTitle">作業の流れ</h2><span class="num" id="logCount"></span><button class="btn small" type="button" id="copyLog"><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg><span>ログをコピー</span></button></div>
+            <ol class="steps" id="steps" data-order="new"></ol>
+          </section>
+        </div>
+        <aside class="col-side" aria-label="予定">
+          <details class="plan" id="plan" open></details>
+        </aside>
+      </div>
     </article>
   </main>
 </div>
@@ -369,12 +429,25 @@ const FINISH_TEXT = { done: '作業が完了しました', failed: '作業が失
 
 /* ================= state ================= */
 const S = {
-  tasks: new Map(), sel: null, maxId: 0, follow: true,
+  tasks: new Map(), sel: null, maxId: 0, follow: true, agents: new Map(), filter: '', fsig: '',
   newestFirst: store.get('order', 'new') === 'new', sound: store.get('sound', '0') === '1',
   conn: 'connecting', offset: 0, auth: null, token: store.get('token', ''), planOpen: true,
   sig: '', expanded: new Set(), lastNow: '', lastProgress: 0, rows: new Map(), stepEls: new Map(), booted: false,
 };
 const nowMs = () => Date.now() + S.offset;
+
+/* ---- which AI: avatar (site icon fetched by the server, initial letter as fallback) ---- */
+const tintOf = (id) => { let h = 0; for (const c of String(id)) h = (h * 31 + c.codePointAt(0)) >>> 0; return h % 6; };
+const agentOf = (id) => S.agents.get(id) || { id, name: id || '不明なAI', model: '', domain: '', hasIcon: false };
+function avatar(id, size = 20) {
+  const a = agentOf(id);
+  const src = `/api/icon?agent=${encodeURIComponent(a.id)}${S.token ? '&token=' + encodeURIComponent(S.token) : ''}`;
+  return `<span class="av" data-t="${tintOf(a.id)}" style="--av:${size}px" aria-hidden="true"><span>${esc([...a.name][0] || '?')}</span>${a.hasIcon ? `<img src="${src}" alt="" loading="lazy" decoding="async">` : ''}</span>`;
+}
+// no icon could be fetched: drop the broken image and let the initial letter show
+document.addEventListener('error', (e) => { const t = e.target; if (t && t.tagName === 'IMG' && t.closest('.av')) t.remove(); }, true);
+const matches = (t) => !S.filter || t.agent === S.filter;
+const latest = () => { let m = 0; for (const t of S.tasks.values()) if (matches(t) && t.id > m) m = t.id; return m; };
 
 // token passed via URL once, then removed from the address bar
 try {
@@ -385,7 +458,7 @@ try {
 
 const el = {
   conn: $('#conn'), list: $('#taskList'), rail: $('#rail'), scrim: $('#scrim'), menu: $('#menuBtn'),
-  state: $('#state'), task: $('#task'), head: $('#head'), now: $('#now'), plan: $('#plan'),
+  filter: $('#agentFilter'), state: $('#state'), task: $('#task'), head: $('#head'), now: $('#now'), plan: $('#plan'),
   steps: $('#steps'), count: $('#logCount'), follow: $('#followBtn'), order: $('#orderBtn'),
   sound: $('#soundBtn'), note: $('#railNote'), main: $('#main'),
 };
@@ -500,7 +573,8 @@ function handle(msg, quiet = false) {
     S.offset = msg.serverTime - Date.now();
     S.auth = msg.auth;
     el.note.hidden = !(msg.auth && msg.auth.writeOpen);
-    const prevMax = S.maxId;
+    const prevLatest = latest();
+    for (const a of msg.agents || []) S.agents.set(a.id, a);
     for (const raw of [...msg.tasks].reverse()) {
       const t = upsertTask(raw);
       const known = new Set(t.order);
@@ -511,21 +585,27 @@ function handle(msg, quiet = false) {
     }
     if (S.sel === null || !S.tasks.has(S.sel)) {
       const hash = Number((location.hash.match(/t=(\d+)/) || [])[1]);
-      select(S.tasks.has(hash) ? hash : S.maxId || null, { keepFollow: true });
-    } else if (S.follow && S.maxId > prevMax) {
-      select(S.maxId, { keepFollow: true });
+      select(S.tasks.has(hash) ? hash : latest() || S.maxId || null, { keepFollow: true });
+    } else if (S.follow && latest() > prevLatest) {
+      select(latest(), { keepFollow: true });
     } else {
       const cur = S.tasks.get(S.sel);
       if (sig(cur) !== S.sig) buildSteps(cur);
       refreshSelected(quiet);
     }
     if (!S.tasks.size) showState('empty');
+    renderFilter();
     return;
   }
   if (msg.t !== 'patch') return;
 
-  const wasMax = S.maxId;
+  const wasLatest = latest();
   const prevStatus = S.tasks.get(msg.task.id)?.status;
+  if (msg.agent) {
+    const prev = S.agents.get(msg.agent.id);
+    S.agents.set(msg.agent.id, msg.agent);
+    if (!prev || prev.domain !== msg.agent.domain || prev.name !== msg.agent.name) { for (const x of S.tasks.values()) renderRow(x); }
+  }
   const t = upsertTask(msg.task);
   S.maxId = Math.max(S.maxId, t.id);
   ensureRow(t);
@@ -540,7 +620,8 @@ function handle(msg, quiet = false) {
     else if (prevStatus === 'running' && (t.status === 'failed' || t.status === 'cancelled')) sfx.fail();
     else if (fresh.length) sfx.step();
   }
-  if ((t.id > wasMax && S.follow) || S.sel === null) { select(t.id, { keepFollow: true }); return; }
+  renderFilter();
+  if ((matches(t) && t.id > wasLatest && S.follow) || S.sel === null) { select(t.id, { keepFollow: true }); return; }
   if (t.id === S.sel) refreshSelected(false, fresh, msg.steps || []);
 }
 
@@ -553,6 +634,7 @@ function ensureRow(t) {
   let anchor = null;
   for (const [id, row] of S.rows) if (id < t.id && (!anchor || id > anchor.id)) anchor = { id, row };
   el.list.insertBefore(li, anchor ? anchor.row : null);
+  li.hidden = !matches(t);
   S.rows.set(t.id, li);
   if (el.list.querySelector('.sk-row')) el.list.querySelectorAll('.sk-row').forEach((n) => n.remove());
 }
@@ -561,15 +643,16 @@ function renderRow(t) {
   const b = li.firstElementChild, st = TASK_ST[t.status] || TASK_ST.running;
   b.dataset.status = t.status;
   b.setAttribute('aria-current', String(t.id === S.sel));
-  const meta = t.status === 'running'
-    ? `<span>実行中</span><span class="num live" data-kind="elapsed" data-t0="${t.startedAt}">${clock(nowMs() - t.startedAt)}</span>`
-    : `<span>${st[0]}</span><span class="num">${hms(t.startedAt)}</span><span class="num">所要 ${human((t.finishedAt || t.updatedAt) - t.startedAt)}</span>`;
-  b.innerHTML = `<span class="trow-ic">${icon(st[1], t.status === 'running' ? 'spin' : '')}</span><span class="trow-main"><span class="trow-title">${esc(t.title)}</span><span class="trow-meta">${meta}</span></span>`;
+  const when = t.status === 'running'
+    ? `<span class="trow-when num live" data-kind="elapsed" data-t0="${t.startedAt}">${clock(nowMs() - t.startedAt)}</span>`
+    : `<span class="trow-when num">${st[0]} ${clock((t.finishedAt || t.updatedAt) - t.startedAt)}</span>`;
+  b.innerHTML = `<span class="trow-ic">${icon(st[1], t.status === 'running' ? 'spin' : '')}</span><span class="trow-main"><span class="trow-title">${esc(t.title)}</span><span class="trow-meta"><span class="trow-by">${avatar(t.agent, 16)}<span>${esc(agentOf(t.agent).name)}</span></span>${when}</span></span>`;
+  updateRuns();
 }
 el.list.addEventListener('click', (e) => {
   const b = e.target.closest('.trow'); if (!b) return;
   const id = Number(b.dataset.id);
-  if (id !== S.maxId) setFollow(false);
+  if (id !== latest()) setFollow(false);
   select(id, { keepFollow: true });
   closeDrawer();
 });
@@ -598,7 +681,11 @@ function refreshSelected(quiet, freshIds = [], touched = []) {
     let li = S.stepEls.get(s.id);
     if (!li) { li = document.createElement('li'); li.className = 'step'; S.stepEls.set(s.id, li); el.steps.appendChild(li); }
     fillStep(li, t, s);
-    if (freshIds.includes(s.id) && !quiet && motion()) gsap.fromTo(li, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.36, ease: 'power3.out', clearProps: 'transform,opacity' });
+    if (freshIds.includes(s.id) && !quiet && motion()) {
+      gsap.fromTo(li, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.36, ease: 'power3.out', clearProps: 'transform,opacity' });
+      const band = li.querySelector('.s-body');
+      gsap.fromTo(band, { backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--color-accent-soft').trim() }, { backgroundColor: 'transparent', duration: 1.4, ease: 'power2.out', clearProps: 'backgroundColor' });
+    }
   }
   // the previous newest step needs its gap/connector refreshed only when a neighbour changes; cheap to skip.
   if (freshIds.length && !S.newestFirst && nearBottom) scrollTo({ top: document.documentElement.scrollHeight, behavior: reduced ? 'auto' : 'smooth' });
@@ -636,7 +723,7 @@ function fillStep(li, t, s) {
   li.innerHTML = `
     <div class="s-time"><span class="num">${hms(s.createdAt)}</span>${prev && s.createdAt - prev.createdAt >= 1000 ? `<span class="num s-gap" title="前のステップから">+${clock(s.createdAt - prev.createdAt)}</span>` : ''}</div>
     <div><span class="s-node">${icon(k[1])}</span></div>
-    <div class="s-body"><div class="s-meta"><span>${k[0]}</span>${state}</div><div class="s-title">${esc(s.title)}</div>${detail}</div>`;
+    <div class="s-body"><div class="s-meta"><span>${k[0]}</span>${s.agent && s.agent !== t.agent ? `<span class="s-by">${avatar(s.agent, 16)}<span>${esc(agentOf(s.agent).name)}</span></span>` : ''}${state}</div><div class="s-title">${esc(s.title)}</div>${detail}</div>`;
 }
 el.steps.addEventListener('click', (e) => {
   const b = e.target.closest('[data-more]'); if (!b) return;
@@ -649,7 +736,8 @@ function renderHead(t) {
   const st = TASK_ST[t.status] || TASK_ST.running, run = t.status === 'running';
   const end = t.finishedAt || '';
   el.head.innerHTML = `
-    <div class="status ${t.status}">${icon(st[1], run ? 'spin' : '')}<span>${st[0]}</span></div>
+    <div class="head-top"><div class="status ${t.status}">${icon(st[1], run ? 'spin' : '')}<span>${st[0]}</span></div>
+      <div class="by">${avatar(t.agent, 24)}<span class="by-name">${esc(agentOf(t.agent).name)}</span>${t.model ? `<span class="by-model">${esc(t.model)}</span>` : ''}</div></div>
     <h1>${esc(t.title)}</h1>
     ${t.summary ? `<p class="summary">${linkify(t.summary)}</p>` : ''}
     <dl class="stats">
@@ -666,7 +754,7 @@ function renderNow(t, quiet) {
   const text = run ? (t.now || '作業を始めています') : (FINISH_TEXT[t.status] || '');
   const pct = t.progress == null ? null : Math.round(t.progress);
   el.now.innerHTML = `
-    <div class="now-label">${run ? 'いまやっていること' : '結果'}</div>
+    <div class="now-label">${run ? icon('radio') : ''}<span>${run ? 'いまやっていること' : '結果'}</span></div>
     <p class="now-text" id="nowText">${esc(text)}</p>
     ${run && t.next ? `<p class="now-next"><b>次</b><span>${esc(t.next)}</span></p>` : ''}
     ${!run && t.result ? `<p class="now-result">${linkify(t.result)}</p>` : ''}
@@ -691,10 +779,13 @@ el.plan.addEventListener('toggle', () => { S.planOpen = el.plan.open; });
 
 /* ================= states ================= */
 const endpoint = () => location.origin + '/mcp';
-const museBrief = () => `次のMCPサーバー(Streamable HTTP)に接続するカスタム連携を作ってください。
+const museBrief = () => `次のMCPサーバー(Streamable HTTP)に接続してください(カスタム連携が必要なら作ってください)。
 URL: ${endpoint()}
 認証: トークンを設定している場合は Authorization: Bearer <トークン> ヘッダーで送ります(トークンは安全な認証情報ストアに保存してください)。
-接続できたら、これ以降の作業は、このサーバーのツール(startTask / addStep / updateStep / setStatus / finishTask)に細かく送信しながら進めてください。小さな行動のたびに addStep を呼び、作業が終わったら finishTask を呼びます。パスワードやAPIキーなどの秘密情報は送らないでください。`;
+接続できたら、これ以降の作業は、このサーバーのツール(startTask / addStep / updateStep / setStatus / finishTask)に細かく送信しながら進めてください。
+- startTask の agent に、あなた自身を申告する。例: { "name": "Muse", "model": "Muse Spark 1.3", "domain": "muse.ai" }(domain は公式サイト。画面のアイコンに使います)
+- 小さな行動のたびに addStep を呼び、作業が終わったら finishTask を呼ぶ。
+- パスワードやAPIキーなどの秘密情報は送らない。`;
 
 function showState(kind) {
   el.task.hidden = true; S.sel = kind === 'empty' ? null : S.sel;
@@ -705,9 +796,10 @@ function showState(kind) {
     document.title = 'Workline';
     el.list.querySelectorAll('.sk-row').forEach((n) => n.remove());
     el.state.innerHTML = `<section class="state">${icon('radio-tower')}<h1>まだ作業が届いていません</h1>
-      <p>AIがMCPで送信を始めると、ここにリアルタイムで流れます。接続先は次のURLです。</p>
+      <p>AIがMCPで送信を始めると、ここにリアルタイムで流れます。複数のAIが同時に送っても、名前とアイコンで見分けられます。接続先は次のURLです。</p>
       <div class="endpoint"><code>${esc(endpoint())}</code><button class="btn small" type="button" data-copy="${esc(endpoint())}">${icon('copy')}<span>コピー</span></button></div>
-      <button class="btn" type="button" data-copy-brief>${icon('message-square-text')}<span>Museへの依頼文をコピー</span></button></section>`;
+      <button class="btn" type="button" data-copy-brief>${icon('message-square-text')}<span>AIへの依頼文をコピー</span></button>
+      <ol class="howto"><li><span>上のURLか依頼文を、AIに渡す</span></li><li><span>AIが <code>startTask</code> で自分の名前とモデルを申告する</span></li><li><span>この画面に、作業が1ステップずつ流れ始める</span></li></ol></section>`;
   } else if (kind === 'locked') {
     el.state.innerHTML = `<section class="state">${icon('lock')}<h1>閲覧トークンが必要です</h1>
       <p>このビューアーは閲覧が制限されています。設定した閲覧用トークンを入力してください。</p>
@@ -745,23 +837,47 @@ document.addEventListener('click', async (e) => {
 function logMarkdown(t) {
   if (!t) return '';
   const mark = { running: '…', done: 'OK', failed: 'NG', skipped: '-' };
-  const lines = [`# ${t.title}`, '', `状態: ${(TASK_ST[t.status] || TASK_ST.running)[0]} / 開始 ${hms(t.startedAt)} / ステップ ${t.steps.size}件`];
+  const lines = [`# ${t.title}`, '', `AI: ${agentOf(t.agent).name}${t.model ? ` (${t.model})` : ''} / 状態: ${(TASK_ST[t.status] || TASK_ST.running)[0]} / 開始 ${hms(t.startedAt)} / ステップ ${t.steps.size}件`];
   if (t.summary) lines.push('', t.summary);
   lines.push('');
   for (const id of t.order) {
     const s = t.steps.get(id);
-    lines.push(`- ${hms(s.createdAt)} [${mark[s.status] || '-'}] ${(KIND[s.kind] || KIND.note)[0]}: ${s.title}`);
+    lines.push(`- ${hms(s.createdAt)} [${mark[s.status] || '-'}] ${(KIND[s.kind] || KIND.note)[0]}${s.agent && s.agent !== t.agent ? ` (${agentOf(s.agent).name})` : ''}: ${s.title}`);
     if (s.detail) lines.push(...s.detail.split('\n').map((l) => `    ${l}`));
   }
   if (t.result) lines.push('', `結果: ${t.result}`);
   return lines.join('\n');
 }
 
+/* ---- filter by AI (shown when two or more AIs have reported) ---- */
+function renderFilter() {
+  const owners = new Set([...S.tasks.values()].map((t) => t.agent));   // sub-agents that only appear inside a task get no chip
+  const list = [...S.agents.values()].filter((a) => owners.has(a.id)).sort((a, b) => b.lastSeen - a.lastSeen);
+  const run = {};
+  for (const t of S.tasks.values()) if (t.status === 'running') run[t.agent] = (run[t.agent] || 0) + 1;
+  const sig = JSON.stringify([list.map((a) => [a.id, a.hasIcon]), run, S.filter]);
+  if (sig === S.fsig) return;
+  S.fsig = sig;
+  el.filter.hidden = list.length < 2;
+  if (list.length < 2) { if (S.filter) { S.filter = ''; applyFilter(); } return; }
+  el.filter.innerHTML = `<button class="chip" type="button" data-agent="" aria-pressed="${!S.filter}"><span>すべて</span></button>` +
+    list.map((a) => `<button class="chip" type="button" data-agent="${esc(a.id)}" aria-pressed="${S.filter === a.id}">${avatar(a.id, 16)}<span>${esc(a.name)}</span>${run[a.id] ? `<span class="num" title="実行中">${run[a.id]}</span>` : ''}</button>`).join('');
+}
+function applyFilter() {
+  for (const [id, li] of S.rows) li.hidden = !matches(S.tasks.get(id));
+  S.fsig = ''; renderFilter();
+}
+el.filter.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-agent]'); if (!b) return;
+  S.filter = b.dataset.agent; applyFilter();
+  if (S.follow && latest()) select(latest(), { keepFollow: true });
+});
+
 /* ================= toolbar ================= */
 function setFollow(on) { S.follow = on; el.follow.setAttribute('aria-pressed', String(on)); }
 el.follow.addEventListener('click', () => {
   const on = !S.follow; setFollow(on);
-  if (on && S.maxId) select(S.maxId, { keepFollow: true });
+  if (on && latest()) select(latest(), { keepFollow: true });
 });
 function applyOrder() {
   el.order.innerHTML = icon(S.newestFirst ? 'arrow-up-narrow-wide' : 'arrow-down-wide-narrow');
@@ -778,7 +894,7 @@ function applySound() {
 el.sound.addEventListener('click', () => { S.sound = !S.sound; store.set('sound', S.sound ? '1' : '0'); applySound(); if (S.sound) sfx.done(); });
 addEventListener('hashchange', () => {
   const id = Number((location.hash.match(/t=(\d+)/) || [])[1]);
-  if (id && id !== S.sel && S.tasks.has(id)) { if (id !== S.maxId) setFollow(false); select(id, { keepFollow: true }); }
+  if (id && id !== S.sel && S.tasks.has(id)) { if (id !== latest()) setFollow(false); select(id, { keepFollow: true }); }
 });
 
 /* ================= drawer (under 60rem): springy, interruptible, draggable ================= */
@@ -847,6 +963,13 @@ const endDrag = (e) => {
 el.rail.addEventListener('pointerup', endDrag);
 el.rail.addEventListener('pointercancel', endDrag);
 
+/* ---- how many tasks are running right now (all AIs) ---- */
+function updateRuns() {
+  const n = [...S.tasks.values()].filter((t) => t.status === 'running').length;
+  $('#runs').hidden = n === 0;
+  $('#runs').innerHTML = n ? `${icon('loader-circle', 'spin')}<span><span class="num">${n}</span>件実行中</span>` : '';
+}
+
 /* ================= live clocks ================= */
 setInterval(() => {
   if (document.hidden) return;
@@ -857,6 +980,11 @@ setInterval(() => {
     else if (k === 'since') n0.textContent = clock(n - t0);
     else if (k === 'ago') n0.textContent = clock(n - t0) + '前';
   });
+  for (const [id, li] of S.rows) {
+    const t = S.tasks.get(id), b = li.firstElementChild;
+    const stale = t.status === 'running' && n - t.updatedAt > 90000;
+    if (stale !== b.hasAttribute('data-stale')) { stale ? b.setAttribute('data-stale', '') : b.removeAttribute('data-stale'); b.title = stale ? '90秒以上、更新がありません' : ''; }
+  }
   const idle = $('#idle');
   if (idle) {
     const age = n - Number(idle.dataset.t0);

@@ -1,8 +1,9 @@
 // Workline: AIの作業をリアルタイムで見せるMCPサーバー + ビューアー配信
 // 構成: Worker(ルーティング/MCP) + Durable Object "Board"(SQLite保存 + WebSocket配信)
 import { DurableObject } from "cloudflare:workers";
+import { findIcon, parseAgent } from "./agents.js";
 
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 const PROTOCOLS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 
 const KINDS = ["plan", "think", "search", "read", "write", "run", "web", "check", "fix", "wait", "note"];
@@ -19,7 +20,10 @@ const SNAPSHOT_STEPS = 400;
 const INSTRUCTIONS = `Workline は、人間が別画面でリアルタイムに眺めている「AIの作業ログ」です。
 あなた(AI)がいま何をしているかを、できるだけ細かく、その場で送ってください。
 
+複数のAIが同じ画面に送ることがあります。startTask の agent で、あなた自身の名前とモデルを必ず申告してください(画面に名前とアイコンが出ます)。
+
 使い方のルール
+0. 自分の名前(例: Muse, Claude, ChatGPT)と、分かればモデル名を、startTask の agent に入れる。別のAI(サブエージェントなど)の作業を記録するときは、addStep の agent にそのAIの名前を入れる。
 1. 作業に取りかかる最初に startTask を1回呼ぶ。
 2. 小さな行動ひとつごとに addStep を呼ぶ(ファイルを読む、検索する、コマンドを実行する、編集する、確認する、方針を考える、待つ)。後でまとめて送らない。
 3. 時間がかかる行動は、始める時に status="running" で addStep し、終わったら updateStep で "done" か "failed" にする。すぐ終わる行動は status を省略して1回で送る。
@@ -29,20 +33,33 @@ const INSTRUCTIONS = `Workline は、人間が別画面でリアルタイムに�
 7. パスワード、トークン、APIキーなどの秘密情報は title/detail に絶対に書かない。
 8. taskId や stepId を忘れたら listTasks で確認できる。taskId を省略すると最新の実行中タスクが対象になる。`;
 
+const AGENT_SCHEMA = {
+  type: "object",
+  description: "あなた自身(AI)の申告。画面に名前とアイコンが表示される",
+  properties: {
+    name: { type: "string", description: "AIの名前(例: Muse, Claude, ChatGPT)" },
+    model: { type: "string", description: "モデル名(分かる場合。例: Muse Spark 1.3)" },
+    domain: { type: "string", description: "アイコン取得用の公式サイトのドメイン(例: muse.ai)。有名なAIなら省略可" },
+    iconUrl: { type: "string", description: "アイコン画像の https URL(任意)" },
+  },
+  required: ["name"],
+};
+
 const TOOLS = [
   {
     name: "startTask",
     title: "作業を開始する",
     description:
-      "新しい作業(タスク)の記録を始める。作業に取りかかる最初に必ず1回呼ぶ。戻り値の taskId は以降省略可(省略時は最新の実行中タスクが対象)。plan を渡すと予定チェックリストが表示され、addStep の planIndex で自動的に進行状況が更新される。",
+      "新しい作業(タスク)の記録を始める。作業に取りかかる最初に必ず1回呼ぶ。agent で自分(AI)の名前を申告する。戻り値の taskId は以降省略可(省略時は最新の実行中タスクが対象)。plan を渡すと予定チェックリストが表示され、addStep の planIndex で自動的に進行状況が更新される。",
     inputSchema: {
       type: "object",
       properties: {
+        agent: AGENT_SCHEMA,
         title: { type: "string", description: "作業のタイトル(例: noVNCをChromeで試す)" },
         summary: { type: "string", description: "何のための作業か、1〜2文で" },
         plan: { type: "array", items: { type: "string" }, description: "予定の手順(任意、最大30件)" },
       },
-      required: ["title"],
+      required: ["agent", "title"],
     },
     annotations: { title: "作業を開始する", readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
   },
@@ -68,6 +85,10 @@ const TOOLS = [
         next: { type: "string", description: "「次にやること」の表示文" },
         progress: { type: "number", minimum: 0, maximum: 100, description: "全体の進捗(%)。分かる時だけ" },
         planIndex: { type: "integer", minimum: 1, description: "startTask の plan の何番目に当たるか(1始まり)" },
+        agent: {
+          ...AGENT_SCHEMA,
+          description: "このステップを実行したAI。タスクの担当と別のAI(サブエージェントなど)のときだけ指定",
+        },
       },
       required: ["title"],
     },
@@ -289,6 +310,36 @@ async function handleWs(request, env, url) {
   return board(env).fetch(request);
 }
 
+const ICON_TTL = 7 * 86400000; // 取得成功したアイコンは7日使い回す
+const ICON_RETRY = 10 * 60000; // 取得に失敗したら10分は再取得しない
+
+async function handleIcon(request, env, url) {
+  if (!canRead(request, url, env)) return new Response("Unauthorized", { status: 401 });
+  const b = board(env);
+  const id = url.searchParams.get("agent") || "";
+  const agent = await b.getAgent(id);
+  const miss = () => new Response("Not found", { status: 404, headers: { "cache-control": "public, max-age=300" } });
+  if (!agent || (!agent.domain && !agent.icon_url)) return miss();
+
+  let cached = await b.getIcon(id);
+  const stale = !cached || Date.now() - cached.at > (cached.type ? ICON_TTL : ICON_RETRY);
+  if (stale) {
+    const img = await findIcon(agent);
+    cached = { type: img ? img.type : null, buf: img ? img.buf : null, at: Date.now() };
+    await b.saveIcon(id, cached.type, cached.buf);
+  }
+  if (!cached.type || !cached.buf) return miss();
+  return new Response(cached.buf, {
+    headers: {
+      "content-type": cached.type,
+      "cache-control": "public, max-age=86400",
+      "x-content-type-options": "nosniff",
+      // SVGが直接開かれてもスクリプトが動かないようにする(<img>経由なら元々動かない)
+      "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+    },
+  });
+}
+
 async function handleSnapshot(request, env, url) {
   if (!canRead(request, url, env)) return json({ error: "unauthorized" }, 401);
   return json(await board(env).snapshot());
@@ -302,6 +353,7 @@ export default {
       if (path === "/mcp") return await handleMcp(request, env, url);
       if (path === "/ws") return await handleWs(request, env, url);
       if (path === "/api/snapshot") return await handleSnapshot(request, env, url);
+      if (path === "/api/icon") return await handleIcon(request, env, url);
       if (path === "/api/health") return json({ ok: true, name: "workline", version: VERSION });
     } catch (e) {
       return json({ error: String(e?.message || e) }, 500);
@@ -325,6 +377,18 @@ const taskRow = (r) => ({
   updatedAt: r.updated_at,
   finishedAt: r.finished_at,
   result: r.result,
+  agent: r.agent_id || "",
+  model: r.model || "",
+});
+
+const agentRow = (r) => ({
+  id: r.id,
+  name: r.name,
+  vendor: r.vendor,
+  model: r.model,
+  domain: r.domain,
+  hasIcon: !!(r.domain || r.icon_url),
+  lastSeen: r.last_seen,
 });
 
 const stepRow = (r) => ({
@@ -335,6 +399,7 @@ const stepRow = (r) => ({
   detail: r.detail,
   status: r.status,
   planIdx: r.plan_idx,
+  agent: r.agent_id || null,
   createdAt: r.created_at,
   updatedAt: r.updated_at,
   endedAt: r.ended_at,
@@ -371,6 +436,29 @@ export class Board extends DurableObject {
       ended_at INTEGER
     )`);
     this.sql.exec("CREATE INDEX IF NOT EXISTS steps_task ON steps (task_id, id)");
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS agents (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      vendor TEXT NOT NULL DEFAULT '',
+      model TEXT NOT NULL DEFAULT '',
+      domain TEXT NOT NULL DEFAULT '',
+      icon_url TEXT NOT NULL DEFAULT '',
+      icon_type TEXT,
+      icon_blob BLOB,
+      icon_at INTEGER,
+      first_seen INTEGER NOT NULL,
+      last_seen INTEGER NOT NULL
+    )`);
+    // v1.0 からの更新用: 既に列があれば何もしない
+    for (const ddl of [
+      "ALTER TABLE tasks ADD COLUMN agent_id TEXT NOT NULL DEFAULT ''",
+      "ALTER TABLE tasks ADD COLUMN model TEXT NOT NULL DEFAULT ''",
+      "ALTER TABLE steps ADD COLUMN agent_id TEXT",
+    ]) {
+      try {
+        this.sql.exec(ddl);
+      } catch {}
+    }
     // クライアントの "ping" に、DOを起こさず "pong" を返す(接続維持と死活確認)
     ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair("ping", "pong"));
   }
@@ -428,6 +516,7 @@ export class Board extends DurableObject {
       t: "snapshot",
       serverTime: Date.now(),
       auth: { writeOpen: !this.env.MCP_TOKEN, readOpen: !this.env.VIEW_TOKEN },
+      agents: this.sql.exec("SELECT * FROM agents ORDER BY last_seen DESC LIMIT 50").toArray().map(agentRow),
       tasks,
     };
   }
@@ -502,9 +591,55 @@ export class Board extends DurableObject {
     );
   }
 
+  // 申告されたAIを登録・更新する。ドメインやアイコンURLが変わったら、保存済みアイコンを捨てる
+  upsertAgent(ag) {
+    const now = Date.now();
+    const prev = this.sql.exec("SELECT domain, icon_url FROM agents WHERE id = ?", ag.id).toArray()[0];
+    this.sql.exec(
+      `INSERT INTO agents (id, name, vendor, model, domain, icon_url, first_seen, last_seen)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET
+         name = excluded.name,
+         vendor = CASE WHEN excluded.vendor != '' THEN excluded.vendor ELSE vendor END,
+         model = CASE WHEN excluded.model != '' THEN excluded.model ELSE model END,
+         domain = CASE WHEN excluded.domain != '' THEN excluded.domain ELSE domain END,
+         icon_url = CASE WHEN excluded.icon_url != '' THEN excluded.icon_url ELSE icon_url END,
+         last_seen = excluded.last_seen`,
+      ag.id,
+      ag.name,
+      ag.vendor,
+      ag.model,
+      ag.domain,
+      ag.iconUrl,
+      now,
+      now,
+    );
+    if (prev && ((ag.domain && ag.domain !== prev.domain) || (ag.iconUrl && ag.iconUrl !== prev.icon_url))) {
+      this.sql.exec("UPDATE agents SET icon_type = NULL, icon_blob = NULL, icon_at = NULL WHERE id = ?", ag.id);
+    }
+    return agentRow(this.sql.exec("SELECT * FROM agents WHERE id = ?", ag.id).one());
+  }
+
+  // アイコン取得用(Worker から RPC で呼ぶ)
+  getAgent(id) {
+    return this.sql.exec("SELECT id, domain, icon_url FROM agents WHERE id = ?", String(id)).toArray()[0] || null;
+  }
+  getIcon(id) {
+    const r = this.sql.exec("SELECT icon_type, icon_blob, icon_at FROM agents WHERE id = ?", String(id)).toArray()[0];
+    return r && r.icon_at ? { type: r.icon_type, buf: r.icon_blob, at: r.icon_at } : null;
+  }
+  saveIcon(id, type, buf) {
+    this.sql.exec("UPDATE agents SET icon_type = ?, icon_blob = ?, icon_at = ? WHERE id = ?", type, buf, Date.now(), String(id));
+  }
+
   startTask(a) {
+    const ag = parseAgent(pick(a, "agent", "ai"));
+    if (!ag) {
+      throw new Error('agent は必須です。あなた自身(AI)を申告してください。例: { "name": "Muse", "model": "Muse Spark 1.3" }');
+    }
     const title = clip(pick(a, "title", "name"), LIMIT.title).trim();
     if (!title) throw new Error("title は必須です。");
+    const agent = this.upsertAgent(ag);
     const summary = clip(pick(a, "summary", "description", "goal"), LIMIT.summary);
     const plan = (Array.isArray(a.plan) ? a.plan : [])
       .slice(0, 30)
@@ -513,20 +648,23 @@ export class Board extends DurableObject {
     const now = Date.now();
     const row = this.sql
       .exec(
-        `INSERT INTO tasks (title, summary, status, plan, now_text, next_text, started_at, updated_at)
-         VALUES (?, ?, 'running', ?, '', ?, ?, ?) RETURNING *`,
+        `INSERT INTO tasks (title, summary, status, plan, now_text, next_text, started_at, updated_at, agent_id, model)
+         VALUES (?, ?, 'running', ?, '', ?, ?, ?, ?, ?) RETURNING *`,
         title,
         summary,
         JSON.stringify(plan),
         plan[0]?.title ?? "",
         now,
         now,
+        ag.id,
+        ag.model,
       )
       .one();
     this.prune();
-    this.broadcast({ t: "patch", task: taskRow(row) });
+    this.broadcast({ t: "patch", task: taskRow(row), agent: agent });
     return {
       taskId: row.id,
+      agent: ag.id,
       plan: plan.map((p, i) => ({ index: i + 1, title: p.title })),
       hint: "以降は addStep で小さな行動ごとに送ってください。plan がある場合は planIndex を渡すと予定が自動で更新されます。",
     };
@@ -543,17 +681,20 @@ export class Board extends DurableObject {
     const kind = KINDS.includes(a.kind) ? a.kind : "note";
     const status = STEP_STATUS.includes(a.status) ? a.status : "done";
     const planIdx = toInt(pick(a, "planIndex", "plan_index"));
+    const ag = parseAgent(pick(a, "agent", "ai"));
+    const agent = ag ? this.upsertAgent(ag) : null;
     const now = Date.now();
     const row = this.sql
       .exec(
-        `INSERT INTO steps (task_id, kind, title, detail, status, plan_idx, created_at, updated_at, ended_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
+        `INSERT INTO steps (task_id, kind, title, detail, status, plan_idx, agent_id, created_at, updated_at, ended_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
         task.id,
         kind,
         title,
         clip(a.detail, LIMIT.detail),
         status,
         planIdx,
+        ag && ag.id !== task.agent ? ag.id : null, // タスクの担当AIと同じなら記録しない
         now,
         now,
         status === "running" ? null : now,
@@ -562,7 +703,7 @@ export class Board extends DurableObject {
     // next は毎回置き換える(古い「次」を残さない)
     this.touchTask(task.id, { ...a, next: a.next ?? "" }, title);
     if (planIdx) this.mirrorPlan(task.id, planIdx, row.id, status);
-    this.broadcast({ t: "patch", task: this.getTask(task.id), steps: [stepRow(row)] });
+    this.broadcast({ t: "patch", task: this.getTask(task.id), steps: [stepRow(row)], ...(agent ? { agent } : {}) });
     return { stepId: row.id, taskId: task.id };
   }
 
@@ -638,6 +779,7 @@ export class Board extends DurableObject {
       tasks: rows.map((r) => ({
         taskId: r.id,
         title: r.title,
+        agent: r.agent_id,
         status: r.status,
         steps: this.sql.exec("SELECT COUNT(*) AS n FROM steps WHERE task_id = ?", r.id).one().n,
         startedAt: new Date(r.started_at).toISOString(),
