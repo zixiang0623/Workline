@@ -205,14 +205,14 @@ button, input { font: inherit; color: inherit; }
 .mem-time { flex: none; font-family: var(--font-data); font-size: var(--text-xs); color: var(--color-accent); }
 .mem-model { margin-top: calc(var(--space-xs) * -1); font-size: var(--text-xs); color: var(--color-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mem-now { font-size: var(--text-sm); line-height: 1.5; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.lanes { display: flex; flex-direction: column; gap: var(--space-xs); }
-.axis { display: grid; grid-template-columns: 13rem minmax(0, 1fr); font-family: var(--font-data); font-size: var(--text-xs); color: var(--color-muted); }
+.lanes { display: flex; flex-direction: column; gap: var(--space-sm); }
+.axis { display: grid; grid-template-columns: 13rem minmax(0, 1fr); padding: 0 var(--space-md); font-family: var(--font-data); font-size: var(--text-xs); color: var(--color-muted); }
 .axis > div { grid-column: 2; display: flex; justify-content: space-between; }
-.lane { display: grid; grid-template-columns: 13rem minmax(0, 1fr); align-items: start; gap: var(--space-sm); width: 100%; padding: var(--space-3xs) 0; border: 0; border-radius: var(--radius-ctl); background: transparent; text-align: left; cursor: pointer; transition: background var(--dur-micro); }
+.lane { display: grid; grid-template-columns: 13rem minmax(0, 1fr); align-items: start; gap: var(--space-sm); width: 100%; padding: var(--space-sm) var(--space-md); border: 0; border-radius: var(--radius-card); background: transparent; text-align: left; cursor: pointer; transition: background var(--dur-micro); }
 .lane:hover { background: var(--color-paper-2); }
 .lane[aria-current="true"] { background: var(--color-paper-2); box-shadow: inset 2px 0 0 var(--color-accent); }
 .lane[data-stale] { opacity: 0.55; }
-.lane-label { display: flex; flex-direction: column; gap: var(--space-3xs); min-width: 0; padding: 4px 0 0 var(--space-xs); }
+.lane-label { display: flex; flex-direction: column; gap: var(--space-3xs); min-width: 0; padding: 4px 0 0; }
 .lane-sub { display: flex; justify-content: space-between; gap: var(--space-xs); min-width: 0; padding-left: 0; font-size: var(--text-xs); color: var(--color-muted); }
 .lane-sub > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lane-state { flex: none; }
@@ -432,7 +432,7 @@ button, input { font: inherit; color: inherit; }
 @media (max-width: 40rem) {
   .axis { grid-template-columns: minmax(0, 1fr); }
   .axis > div { grid-column: 1; }
-  .lane { grid-template-columns: minmax(0, 1fr); gap: var(--space-2xs); padding: var(--space-xs) 0; }
+  .lane { grid-template-columns: minmax(0, 1fr); gap: var(--space-xs); padding: var(--space-sm) var(--space-md); }
   .lane-label { gap: var(--space-3xs); }
   .team { grid-template-columns: minmax(0, 1fr); }
   .badge { flex-wrap: wrap; row-gap: 0; }
