@@ -3,7 +3,7 @@
 import { DurableObject } from "cloudflare:workers";
 import { findIcon, parseAgent } from "./agents.js";
 
-const VERSION = "1.2.0";
+const VERSION = "1.3.0";
 const PROTOCOLS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 
 const KINDS = ["plan", "think", "search", "read", "write", "run", "web", "check", "fix", "wait", "note"];
@@ -14,7 +14,7 @@ const LIMIT = { title: 200, summary: 1000, detail: 6000, line: 300 };
 const MAX_STEPS_PER_TASK = 2000;
 const KEEP_TASKS = 100;
 const KEEP_DAYS = 30;
-const SNAPSHOT_TASKS = 20;
+const SNAPSHOT_TASKS = 20; // 新しい方から、ルートタスクを20件(その配下の子タスクは全部)
 const SNAPSHOT_STEPS = 400;
 
 const INSTRUCTIONS = `Workline は、人間が別画面でリアルタイムに眺めている「AIの作業ログ」です。
@@ -31,6 +31,8 @@ const INSTRUCTIONS = `Workline は、人間が別画面でリアルタイムに�
 5. 作業が終わったら(失敗・中断も)必ず finishTask を呼ぶ。
 6. title は人間が読む短い日本語(40文字以内目安)。補足・コマンド・結果の要約は detail に書く。
 7. パスワード、トークン、APIキーなどの秘密情報は title/detail に絶対に書かない。
+9. サブエージェントとして動くときは、親から渡された親の taskId を startTask の parentTaskId に入れる。戻り値の agentNumber(00=メイン、01,02…=サブ。サーバーが召喚順に採番)を、以降の報告で自分の番号として使う。
+10. 複数のエージェントが同時に動くときは、addStep / updateStep / setStatus / finishTask に、自分の startTask が返した taskId を毎回付ける(省略すると、他のエージェントのタスクに書き込んでしまうことがある)。
 8. taskId や stepId を忘れたら listTasks で確認できる。taskId を省略すると最新の実行中タスクが対象になる。`;
 
 const AGENT_SCHEMA = {
@@ -50,11 +52,15 @@ const TOOLS = [
     name: "startTask",
     title: "作業を開始する",
     description:
-      "新しい作業(タスク)の記録を始める。作業に取りかかる最初に必ず1回呼ぶ。agent で自分(AI)の名前を申告する。戻り値の taskId は以降省略可(省略時は最新の実行中タスクが対象)。plan を渡すと予定チェックリストが表示され、addStep の planIndex で自動的に進行状況が更新される。",
+      "新しい作業(タスク)の記録を始める。作業に取りかかる最初に必ず1回呼ぶ。agent で自分(AI)の名前を申告する。サブエージェントは parentTaskId に親の taskId を渡すと、親の配下に並んで表示され、agentNumber(01,02…)が返る。戻り値の taskId は以降省略可(省略時は最新の実行中タスクが対象)。plan を渡すと予定チェックリストが表示され、addStep の planIndex で自動的に進行状況が更新される。",
     inputSchema: {
       type: "object",
       properties: {
         agent: AGENT_SCHEMA,
+        parentTaskId: {
+          type: "integer",
+          description: "サブエージェントとして動くときだけ、親タスクの taskId。省略すると、独立したメインのタスク(番号 00)になる",
+        },
         title: { type: "string", description: "作業のタイトル(例: noVNCをChromeで試す)" },
         summary: { type: "string", description: "何のための作業か、1〜2文で" },
         plan: { type: "array", items: { type: "string" }, description: "予定の手順(任意、最大30件)" },
@@ -71,7 +77,7 @@ const TOOLS = [
     inputSchema: {
       type: "object",
       properties: {
-        taskId: { type: "integer", description: "対象タスク。省略すると最新の実行中タスク" },
+        taskId: { type: "integer", description: "対象タスク。省略すると最新の実行中タスク。複数のエージェントが同時に動くときは、自分の taskId を必ず付ける" },
         title: { type: "string", description: "このステップで何をしたか/しているか。40文字以内目安" },
         kind: {
           type: "string",
@@ -154,6 +160,7 @@ const TOOLS = [
       type: "object",
       properties: {
         limit: { type: "integer", minimum: 1, maximum: 30, description: "既定 10" },
+        rootTaskId: { type: "integer", description: "このルートタスクの配下(親と子すべて)だけを返す" },
         status: { type: "string", enum: ["running", ...TASK_END] },
       },
     },
@@ -460,6 +467,10 @@ const taskRow = (r) => ({
   result: r.result,
   agent: r.agent_id || "",
   model: r.model || "",
+  parentId: r.parent_id ?? null,
+  rootId: r.root_id ?? r.id, // 親子対応より前のタスクは、自分がルート
+  agentNo: r.agent_no ?? 0,
+  agentNumber: String(r.agent_no ?? 0).padStart(2, "0"),
 });
 
 const agentRow = (r) => ({
@@ -535,6 +546,9 @@ export class Board extends DurableObject {
       "ALTER TABLE tasks ADD COLUMN agent_id TEXT NOT NULL DEFAULT ''",
       "ALTER TABLE tasks ADD COLUMN model TEXT NOT NULL DEFAULT ''",
       "ALTER TABLE steps ADD COLUMN agent_id TEXT",
+      "ALTER TABLE tasks ADD COLUMN parent_id INTEGER", // v1.3: 親子(NULL = ルート。既存のタスクもここに入る)
+      "ALTER TABLE tasks ADD COLUMN root_id INTEGER",
+      "ALTER TABLE tasks ADD COLUMN agent_no INTEGER NOT NULL DEFAULT 0",
     ]) {
       try {
         this.sql.exec(ddl);
@@ -580,7 +594,12 @@ export class Board extends DurableObject {
 
   snapshot() {
     const tasks = this.sql
-      .exec("SELECT * FROM tasks ORDER BY id DESC LIMIT ?", SNAPSHOT_TASKS)
+      .exec(
+        `SELECT * FROM tasks WHERE COALESCE(root_id, id) IN
+           (SELECT id FROM tasks WHERE parent_id IS NULL ORDER BY id DESC LIMIT ?)
+         ORDER BY id DESC LIMIT 200`,
+        SNAPSHOT_TASKS,
+      )
       .toArray()
       .map(taskRow);
     for (const t of tasks) {
@@ -642,7 +661,12 @@ export class Board extends DurableObject {
           : "実行中のタスクがありません。先に startTask を呼んでください。",
       );
     }
-    return taskRow(r);
+    const task = taskRow(r);
+    if (id === null && this.sql.exec("SELECT COUNT(*) AS n FROM tasks WHERE status = 'running'").one().n > 1) {
+      // 並列に動くエージェントが複数いるのに taskId が無い: 最新の実行中タスクに書くが、間違いやすいので知らせる
+      task.warn = `実行中のタスクが複数あるため、最新の taskId ${task.id} に書き込みました。自分の taskId を指定してください。`;
+    }
+    return task;
   }
 
   mirrorPlan(taskId, idx, stepId, status) {
@@ -726,11 +750,23 @@ export class Board extends DurableObject {
       .slice(0, 30)
       .map((x) => ({ title: clip(typeof x === "string" ? x : x?.title, LIMIT.title).trim(), status: "planned", stepId: null }))
       .filter((x) => x.title);
+    // 親子: 親が見つかればその子(同じルートの配下)。見つからなくてもエラーにせず、ルートとして登録して知らせる
+    let parent = null, warning = "";
+    const wantedParent = toInt(pick(a, "parentTaskId", "parent_task_id", "parent"));
+    if (wantedParent !== null) {
+      parent = this.getTask(wantedParent);
+      if (!parent) warning = `parentTaskId ${wantedParent} が見つからないため、独立したタスク(00)として登録しました。`;
+    }
+    const rootId = parent ? parent.rootId : null;
+    // 番号はサーバーが採番する(Durable Object は1つずつ処理するので、同時に呼ばれても衝突しない)。ルートは 00、子は召喚順に 01,02…
+    const agentNo = parent
+      ? this.sql.exec("SELECT COALESCE(MAX(agent_no), 0) + 1 AS n FROM tasks WHERE COALESCE(root_id, id) = ?", rootId).one().n
+      : 0;
     const now = Date.now();
-    const row = this.sql
+    let row = this.sql
       .exec(
-        `INSERT INTO tasks (title, summary, status, plan, now_text, next_text, started_at, updated_at, agent_id, model)
-         VALUES (?, ?, 'running', ?, '', ?, ?, ?, ?, ?) RETURNING *`,
+        `INSERT INTO tasks (title, summary, status, plan, now_text, next_text, started_at, updated_at, agent_id, model, parent_id, root_id, agent_no)
+         VALUES (?, ?, 'running', ?, '', ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
         title,
         summary,
         JSON.stringify(plan),
@@ -739,13 +775,23 @@ export class Board extends DurableObject {
         now,
         ag.id,
         ag.model,
+        parent ? parent.id : null,
+        rootId,
+        agentNo,
       )
       .one();
+    if (!parent) row = this.sql.exec("UPDATE tasks SET root_id = id WHERE id = ? RETURNING *", row.id).one();
     this.prune();
-    this.broadcast({ t: "patch", task: taskRow(row), agent: agent });
+    const task = taskRow(row);
+    this.broadcast({ t: "patch", task, agent: agent });
     return {
       taskId: row.id,
       agent: ag.id,
+      agentNumber: task.agentNumber,
+      label: `${task.agentNumber} ${ag.name}`,
+      rootTaskId: task.rootId,
+      parentTaskId: task.parentId,
+      ...(warning ? { warning } : {}),
       plan: plan.map((p, i) => ({ index: i + 1, title: p.title })),
       hint: "以降は addStep で小さな行動ごとに送ってください。plan がある場合は planIndex を渡すと予定が自動で更新されます。",
     };
@@ -785,7 +831,7 @@ export class Board extends DurableObject {
     this.touchTask(task.id, { ...a, next: a.next ?? "" }, title);
     if (planIdx) this.mirrorPlan(task.id, planIdx, row.id, status);
     this.broadcast({ t: "patch", task: this.getTask(task.id), steps: [stepRow(row)], ...(agent ? { agent } : {}) });
-    return { stepId: row.id, taskId: task.id };
+    return { stepId: row.id, taskId: task.id, ...(task.warn ? { warning: task.warn } : {}) };
   }
 
   updateStep(a) {
@@ -821,7 +867,7 @@ export class Board extends DurableObject {
     const task = this.resolveTask(a);
     this.touchTask(task.id, a);
     this.broadcast({ t: "patch", task: this.getTask(task.id) });
-    return { ok: true, taskId: task.id };
+    return { ok: true, taskId: task.id, ...(task.warn ? { warning: task.warn } : {}) };
   }
 
   finishTask(a) {
@@ -848,19 +894,27 @@ export class Board extends DurableObject {
       task.id,
     );
     this.broadcast({ t: "patch", task: this.getTask(task.id), steps: closed });
-    return { ok: true, taskId: task.id, status };
+    return { ok: true, taskId: task.id, status, ...(task.warn ? { warning: task.warn } : {}) };
   }
 
   listTasks(a) {
     const limit = Math.max(1, Math.min(30, toInt(a.limit) ?? 10));
-    const rows = TASK_END.concat("running").includes(a.status)
-      ? this.sql.exec("SELECT * FROM tasks WHERE status = ? ORDER BY id DESC LIMIT ?", a.status, limit).toArray()
-      : this.sql.exec("SELECT * FROM tasks ORDER BY id DESC LIMIT ?", limit).toArray();
+    const root = toInt(pick(a, "rootTaskId", "root_task_id"));
+    const where = [], args = [];
+    if (TASK_END.concat("running").includes(a.status)) { where.push("status = ?"); args.push(a.status); }
+    if (root !== null) { where.push("COALESCE(root_id, id) = ?"); args.push(root); }
+    const rows = this.sql
+      .exec(`SELECT * FROM tasks ${where.length ? "WHERE " + where.join(" AND ") : ""} ORDER BY id DESC LIMIT ?`, ...args, limit)
+      .toArray();
     return {
       tasks: rows.map((r) => ({
         taskId: r.id,
         title: r.title,
         agent: r.agent_id,
+        model: r.model || "",
+        parentTaskId: r.parent_id ?? null,
+        rootTaskId: r.root_id ?? r.id,
+        agentNumber: String(r.agent_no ?? 0).padStart(2, "0"),
         status: r.status,
         steps: this.sql.exec("SELECT COUNT(*) AS n FROM steps WHERE task_id = ?", r.id).one().n,
         startedAt: new Date(r.started_at).toISOString(),
@@ -894,8 +948,10 @@ export class Board extends DurableObject {
 
   prune() {
     const cutoff = Date.now() - KEEP_DAYS * 86400000;
-    const doomed = "SELECT id FROM tasks WHERE id NOT IN (SELECT id FROM tasks ORDER BY id DESC LIMIT ?) OR started_at < ?";
-    this.sql.exec(`DELETE FROM steps WHERE task_id IN (${doomed})`, KEEP_TASKS, cutoff);
-    this.sql.exec(`DELETE FROM tasks WHERE id IN (${doomed})`, KEEP_TASKS, cutoff);
+    // 件数はルートタスク単位(新しい100件、30日以内)。消すときは、その配下の子タスクもまとめて消す
+    const roots = `SELECT id FROM tasks WHERE parent_id IS NULL AND
+      (id NOT IN (SELECT id FROM tasks WHERE parent_id IS NULL ORDER BY id DESC LIMIT ?) OR started_at < ?)`;
+    this.sql.exec(`DELETE FROM steps WHERE task_id IN (SELECT id FROM tasks WHERE COALESCE(root_id, id) IN (${roots}))`, KEEP_TASKS, cutoff);
+    this.sql.exec(`DELETE FROM tasks WHERE COALESCE(root_id, id) IN (${roots})`, KEEP_TASKS, cutoff);
   }
 }

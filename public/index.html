@@ -146,6 +146,84 @@ button, input { font: inherit; color: inherit; }
 .trow[data-stale] .trow-ic, .trow[data-stale] .trow-when { color: var(--color-warn); }
 .trow-by { display: inline-flex; align-items: center; gap: var(--space-2xs); min-width: 0; color: var(--color-ink-2); }
 
+/* ---- agent badge: number + service icon + name + model ---- */
+.badge { display: inline-flex; align-items: center; gap: var(--space-xs); min-width: 0; max-width: 100%; font-size: var(--text-sm); }
+.badge .no { flex: none; min-width: 2.2ch; padding: 0 var(--space-xs); border-radius: var(--radius-ctl); background: var(--color-av-0-bg); color: var(--color-av-0); font-size: var(--text-xs); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.7; text-align: center; }
+.badge[data-t="1"] .no { background: var(--color-av-1-bg); color: var(--color-av-1); }
+.badge[data-t="2"] .no { background: var(--color-av-2-bg); color: var(--color-av-2); }
+.badge[data-t="3"] .no { background: var(--color-av-3-bg); color: var(--color-av-3); }
+.badge[data-t="4"] .no { background: var(--color-av-4-bg); color: var(--color-av-4); }
+.badge[data-t="5"] .no { background: var(--color-av-5-bg); color: var(--color-av-5); }
+.badge .nm { font-weight: 700; white-space: nowrap; }
+.badge .md { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-muted); font-size: var(--text-xs); }
+.rail-tools { display: inline-flex; gap: var(--space-xs); }
+.crumb { align-self: flex-start; display: inline-flex; align-items: center; gap: var(--space-xs); max-width: 100%; min-height: 32px; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--color-accent); font-size: var(--text-sm); cursor: pointer; }
+.crumb:hover { text-decoration: underline; text-underline-offset: 0.2em; }
+.crumb:active { transform: scale(0.97); }
+.crumb span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sess-chip { display: inline-flex; align-items: center; min-height: 32px; padding: 0 var(--space-sm); border-radius: var(--radius-ctl); background: var(--color-paper-2); color: var(--color-ink-2); font-size: var(--text-sm); }
+.sess-chip b { font-weight: 700; font-variant-numeric: tabular-nums; margin: 0 var(--space-3xs); }
+
+/* ---- rail: the session tree ---- */
+.tnode { list-style: none; }
+.tnode > .trow-wrap { display: grid; grid-template-columns: 28px minmax(0, 1fr); align-items: start; }
+.tnode > .trow-wrap.no-fold { grid-template-columns: minmax(0, 1fr); }
+.fold { display: grid; place-items: center; width: 28px; height: 40px; border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--color-muted); cursor: pointer; }
+.fold:hover { background: var(--color-paper-3); }
+.fold:active { transform: scale(0.94); }
+.fold .ic { transition: transform var(--dur-short) var(--ease-out); }
+.fold[aria-expanded="true"] .ic { transform: rotate(90deg); }
+.kids { list-style: none; margin: 0 0 var(--space-xs) var(--space-md); padding: 0 0 0 var(--space-xs); border-left: 2px solid var(--color-rule); }
+.kids .tnode[data-depth="2"] { margin-left: var(--space-md); }
+.trow-model { display: block; margin-top: var(--space-3xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-xs); color: var(--color-muted); }
+.trow-sess { display: block; margin-top: var(--space-3xs); font-size: var(--text-xs); color: var(--color-ink-2); }
+.trow-sess b { font-family: var(--font-data); font-weight: 500; }
+.more-kids { margin: 0 0 var(--space-xs) var(--space-lg); min-height: 32px; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--color-accent); font-size: var(--text-xs); cursor: pointer; }
+.more-kids:hover { text-decoration: underline; text-underline-offset: 0.2em; }
+.trow[data-dim] { opacity: 0.6; }
+.trow-by .badge { font-size: var(--text-xs); }
+
+/* ---- session: who is working right now, and when ---- */
+.session { display: flex; flex-direction: column; gap: var(--space-sm); margin-bottom: var(--space-lg); padding: var(--space-md) 0; border-block: var(--rule-hair) solid var(--color-rule); }
+.sess-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-xs) var(--space-md); }
+.sess-head h2 { font-size: var(--text-lg); font-weight: 700; }
+.sess-chips { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
+.sess-chip.on { background: var(--color-accent-soft); color: var(--color-accent); font-weight: 500; }
+.sess-chip.warn { background: var(--color-warn-soft); color: var(--color-warn); }
+.sess-chip .ic { margin-right: var(--space-xs); }
+.team { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: var(--space-sm); }
+.team:empty { display: none; }
+.member { display: flex; flex-direction: column; gap: var(--space-xs); min-width: 0; padding: var(--space-sm); border: var(--rule-hair) solid var(--color-accent); border-radius: var(--radius-ctl); background: var(--color-accent-soft); text-align: left; cursor: pointer; transition: transform var(--dur-micro) var(--ease-out); }
+.member:hover { background: var(--color-paper); }
+.member:active { transform: scale(0.985); }
+.member[aria-current="true"] { box-shadow: 0 0 0 var(--rule-hair) var(--color-accent); }
+.mem-top { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); min-width: 0; }
+.mem-time { flex: none; font-family: var(--font-data); font-size: var(--text-xs); color: var(--color-accent); }
+.mem-model { margin-top: calc(var(--space-xs) * -1); font-size: var(--text-xs); color: var(--color-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mem-now { font-size: var(--text-sm); line-height: 1.5; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.lanes { display: flex; flex-direction: column; gap: var(--space-xs); }
+.axis { display: grid; grid-template-columns: 13rem minmax(0, 1fr); font-family: var(--font-data); font-size: var(--text-xs); color: var(--color-muted); }
+.axis > div { grid-column: 2; display: flex; justify-content: space-between; }
+.lane { display: grid; grid-template-columns: 13rem minmax(0, 1fr); align-items: center; gap: var(--space-sm); width: 100%; padding: var(--space-3xs) 0; border: 0; border-radius: var(--radius-ctl); background: transparent; text-align: left; cursor: pointer; transition: background var(--dur-micro); }
+.lane:hover { background: var(--color-paper-2); }
+.lane[aria-current="true"] { background: var(--color-paper-2); box-shadow: inset 2px 0 0 var(--color-accent); }
+.lane[data-stale] { opacity: 0.55; }
+.lane-label { display: flex; flex-direction: column; gap: var(--space-3xs); min-width: 0; padding-left: var(--space-xs); }
+.lane-sub { display: flex; justify-content: space-between; gap: var(--space-xs); min-width: 0; padding-left: 0; font-size: var(--text-xs); color: var(--color-muted); }
+.lane-sub > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lane-state { flex: none; }
+.lane[data-status="running"] .lane-state { color: var(--color-accent); }
+.lane[data-status="failed"] .lane-state { color: var(--color-error); }
+.track { display: block; height: 28px; border-radius: var(--radius-ctl); background: var(--color-paper); border: var(--rule-hair) solid var(--color-rule); overflow: hidden; }
+.track svg { display: block; width: 100%; height: 100%; shape-rendering: crispEdges; }
+.track .g { stroke: var(--color-rule); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.track .b-task { fill: var(--color-paper-3); }
+.track .b-step { fill: var(--color-ink-2); }
+.track .st-running { fill: var(--color-accent); }
+.track .st-failed { fill: var(--color-error); }
+.track .st-skipped { fill: var(--color-muted); opacity: 0.5; }
+.lane[data-status="running"]:not([data-stale]) .b-task { fill: var(--color-accent-soft); }
+
 /* ---- buttons / fields ---- */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-xs); min-height: 40px; padding: 0 var(--space-md); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-ctl); background: var(--color-paper); color: var(--color-ink); font-size: var(--text-sm); cursor: pointer; transition: background var(--dur-micro), border-color var(--dur-micro), color var(--dur-micro), transform var(--dur-micro) var(--ease-out); }
 .btn:hover { background: var(--color-paper-3); }
@@ -223,6 +301,8 @@ button, input { font: inherit; color: inherit; }
 .log { margin-top: var(--space-lg); }
 .log-head { display: flex; align-items: center; gap: var(--space-md); margin-bottom: var(--space-md); }
 .log-head h2 { font-size: var(--text-lg); font-weight: 700; }
+.scope { display: inline-flex; gap: var(--space-xs); }
+.s-owner { display: inline-flex; }
 .log-head .num { margin-right: auto; font-size: var(--text-sm); color: var(--color-muted); }
 
 /* ---- the ledger ---- */
@@ -322,6 +402,13 @@ button, input { font: inherit; color: inherit; }
   .log { order: 3; }
 }
 @media (max-width: 40rem) {
+  .axis { grid-template-columns: minmax(0, 1fr); }
+  .axis > div { grid-column: 1; }
+  .lane { grid-template-columns: minmax(0, 1fr); gap: var(--space-2xs); padding: var(--space-xs) 0; }
+  .lane-label { gap: var(--space-3xs); }
+  .team { grid-template-columns: minmax(0, 1fr); }
+  .badge { flex-wrap: wrap; row-gap: 0; }
+  .badge .md { white-space: normal; }
   .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-xs); }
   .stats dd { font-size: var(--text-xs); }
   .summary { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: var(--text-sm); }
@@ -375,6 +462,9 @@ button, input { font: inherit; color: inherit; }
 <symbol id="i-eraser" viewBox="0 0 24 24"><path d="M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21" /> <path d="m5.082 11.09 8.828 8.828" /></symbol>
 <symbol id="i-shield-check" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /> <path d="m9 12 2 2 4-4" /></symbol>
 <symbol id="i-undo-2" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5" /> <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11" /></symbol>
+<symbol id="i-list-tree" viewBox="0 0 24 24"><path d="M8 5h13" /> <path d="M13 12h8" /> <path d="M13 19h8" /> <path d="M3 10a2 2 0 0 0 2 2h3" /> <path d="M3 5v12a2 2 0 0 0 2 2h3" /></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M3 5h.01" /> <path d="M3 12h.01" /> <path d="M3 19h.01" /> <path d="M8 5h13" /> <path d="M8 12h13" /> <path d="M8 19h13" /></symbol>
+<symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></symbol>
 </defs></svg>
 <a class="skip" href="#main">本文へ移動</a>
 
@@ -392,7 +482,7 @@ button, input { font: inherit; color: inherit; }
   <aside class="rail" id="rail" aria-label="タスク一覧">
     <div class="rail-head">
       <h2>作業</h2>
-      <button class="chip" id="followBtn" type="button" aria-pressed="true"><svg class="ic" aria-hidden="true"><use href="#i-radio"/></svg><span>最新を追う</span></button>
+      <span class="rail-tools"><button class="chip" id="modeBtn" type="button" aria-label="一覧の表示を切り替える"></button><button class="chip" id="followBtn" type="button" aria-pressed="true"><svg class="ic" aria-hidden="true"><use href="#i-radio"/></svg><span>最新を追う</span></button></span>
     </div>
     <div class="agent-filter" id="agentFilter" role="group" aria-label="AIで絞り込み" hidden></div>
     <ul class="tasklist" id="taskList"></ul>
@@ -407,11 +497,12 @@ button, input { font: inherit; color: inherit; }
     <div id="state"></div>
     <article id="task" hidden>
       <header class="head" id="head"></header>
+      <section class="session" id="session" aria-label="セッション" hidden></section>
       <div class="cols">
         <div class="col-main">
           <section class="now" id="now" aria-live="polite" aria-atomic="true"></section>
           <section class="log" aria-labelledby="logTitle">
-            <div class="log-head"><h2 id="logTitle">作業の流れ</h2><span class="num" id="logCount"></span><button class="btn small" type="button" id="copyLog"><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg><span>ログをコピー</span></button></div>
+            <div class="log-head"><h2 id="logTitle">作業の流れ</h2><span class="num" id="logCount"></span><span class="scope" id="scopeBox" role="group" aria-label="表示するログ" hidden><button class="chip" type="button" data-scope="self" aria-pressed="true">このエージェント</button><button class="chip" type="button" data-scope="all" aria-pressed="false">全員</button></span><button class="btn small" type="button" id="copyLog"><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg><span>ログをコピー</span></button></div>
             <ol class="steps" id="steps" data-order="new"></ol>
           </section>
         </div>
@@ -472,7 +563,7 @@ const FINISH_TEXT = { done: '作業が完了しました', failed: '作業が失
 
 /* ================= state ================= */
 const S = {
-  tasks: new Map(), sel: null, maxId: 0, follow: true, agents: new Map(), filter: '', fsig: '',
+  tasks: new Map(), sel: null, maxId: 0, follow: true, agents: new Map(), filter: '', fsig: '', mode: store.get('mode', 'tree'), scope: store.get('scope', 'self'), fold: new Map(), rsig: '', ssig: '', chips: '',
   newestFirst: store.get('order', 'new') === 'new', sound: store.get('sound', '0') === '1',
   conn: 'connecting', offset: 0, auth: null, token: store.get('token', ''), planOpen: true,
   sig: '', expanded: new Set(), lastNow: '', lastProgress: 0, rows: new Map(), stepEls: new Map(), booted: false,
@@ -490,7 +581,23 @@ function avatar(id, size = 20) {
 // no icon could be fetched: drop the broken image and let the initial letter show
 document.addEventListener('error', (e) => { const t = e.target; if (t && t.tagName === 'IMG' && t.closest('.av')) t.remove(); }, true);
 const matches = (t) => !S.filter || t.agent === S.filter;
-const latest = () => { let m = 0; for (const t of S.tasks.values()) if (matches(t) && t.id > m) m = t.id; return m; };
+const isRoot = (t) => t.parentId == null;
+// "latest" is the newest session (root task). Sub-agents joining a session never pull the view away from it.
+const latest = () => { let m = 0; for (const t of S.tasks.values()) if (isRoot(t) && matches(t) && t.id > m) m = t.id; return m; };
+const STALE_KID_MS = 5 * 60000;   // a sub-agent that went quiet this long is dimmed (never failed automatically)
+const isStale = (t) => t.parentId != null && t.status === 'running' && nowMs() - t.updatedAt > STALE_KID_MS;
+const isActive = (t) => t.status === 'running' && !isStale(t);
+const treeOf = (rid) => [...S.tasks.values()].filter((x) => x.rootId === rid).sort((a, b) => a.agentNo - b.agentNo || a.id - b.id);
+function treeStats(rid) {
+  const tr = treeOf(rid), root = S.tasks.get(rid) || tr[0], kids = tr.filter((x) => x.id !== root.id);
+  return { tr, root, kids, kidsDone: kids.filter((k) => k.status !== 'running').length, failed: kids.filter((k) => k.status === 'failed').length, active: tr.filter(isActive), stale: kids.filter(isStale) };
+}
+const depthOf = (t) => { let d = 0, x = t; while (x && x.parentId != null && d < 5) { x = S.tasks.get(x.parentId); d++; } return d; };
+// number (server-assigned: 00 = main, 01.. = sub-agents) + service icon + name + this agent's own model; colour follows the model
+function badge(t, size = 18, withModel = true) {
+  const a = agentOf(t.agent);
+  return `<span class="badge" data-t="${tintOf(t.agent + '|' + (t.model || ''))}" title="${esc(a.name + (t.model ? ' / ' + t.model : ''))}"><b class="no">${esc(t.agentNumber || '00')}</b>${avatar(t.agent, size)}<span class="nm">${esc(a.name)}</span>${withModel && t.model ? `<span class="md">${esc(t.model)}</span>` : ''}</span>`;
+}
 
 // token passed via URL once, then removed from the address bar
 try {
@@ -501,7 +608,7 @@ try {
 
 const el = {
   conn: $('#conn'), list: $('#taskList'), rail: $('#rail'), scrim: $('#scrim'), menu: $('#menuBtn'),
-  filter: $('#agentFilter'), state: $('#state'), task: $('#task'), head: $('#head'), now: $('#now'), plan: $('#plan'),
+  session: $('#session'), mode: $('#modeBtn'), filter: $('#agentFilter'), state: $('#state'), task: $('#task'), head: $('#head'), now: $('#now'), plan: $('#plan'),
   steps: $('#steps'), count: $('#logCount'), follow: $('#followBtn'), order: $('#orderBtn'),
   sound: $('#soundBtn'), note: $('#railNote'), main: $('#main'),
 };
@@ -665,41 +772,76 @@ function handle(msg, quiet = false) {
     else if (fresh.length) sfx.step();
   }
   renderFilter();
-  if ((matches(t) && t.id > wasLatest && S.follow) || S.sel === null) { select(t.id, { keepFollow: true }); return; }
+  if ((isRoot(t) && matches(t) && t.id > wasLatest && S.follow) || S.sel === null) { select(t.id, { keepFollow: true }); return; }
   if (t.id === S.sel) refreshSelected(false, fresh, msg.steps || []);
+  else if (S.tasks.get(S.sel)?.rootId === t.rootId) {   // a teammate changed
+    const cur = S.tasks.get(S.sel); renderHead(cur); renderSession();
+    if (mergedView(cur) && (msg.steps || []).length) buildSteps(cur);
+  }
 }
 
-/* ================= task list ================= */
-function ensureRow(t) {
-  if (S.rows.has(t.id)) return;
-  const li = document.createElement('li');
-  li.innerHTML = `<button class="trow" type="button" data-id="${t.id}"></button>`;
-  // newest first: sit directly above the nearest row with a smaller id
-  let anchor = null;
-  for (const [id, row] of S.rows) if (id < t.id && (!anchor || id > anchor.id)) anchor = { id, row };
-  el.list.insertBefore(li, anchor ? anchor.row : null);
-  li.hidden = !matches(t);
-  S.rows.set(t.id, li);
-  if (el.list.querySelector('.sk-row')) el.list.querySelectorAll('.sk-row').forEach((n) => n.remove());
-}
-function renderRow(t) {
-  const li = S.rows.get(t.id); if (!li) return;
-  const b = li.firstElementChild, st = TASK_ST[t.status] || TASK_ST.running;
-  b.dataset.status = t.status;
-  b.setAttribute('aria-current', String(t.id === S.sel));
+/* ================= task list: a tree of sessions (or a flat list) ================= */
+const ensureRow = () => {};
+const renderRow = () => { railDirty(); updateRuns(); };
+let railQ = 0;
+function railDirty() { if (!railQ) railQ = requestAnimationFrame(() => { railQ = 0; renderRail(); }); }
+
+function rowHtml(t, extra = '') {
+  const st = TASK_ST[t.status] || TASK_ST.running;
   const when = t.status === 'running'
     ? `<span class="trow-when num live" data-kind="elapsed" data-t0="${t.startedAt}">${clock(nowMs() - t.startedAt)}</span>`
     : `<span class="trow-when num">${st[0]} ${clock((t.finishedAt || t.updatedAt) - t.startedAt)}</span>`;
-  b.innerHTML = `<span class="trow-ic">${icon(st[1], t.status === 'running' ? 'spin' : '')}</span><span class="trow-main"><span class="trow-title">${esc(t.title)}</span><span class="trow-meta"><span class="trow-by">${avatar(t.agent, 16)}<span>${esc(agentOf(t.agent).name)}</span></span>${when}</span></span>`;
-  updateRuns();
+  return `<button class="trow" type="button" data-id="${t.id}" data-status="${t.status}" aria-current="${t.id === S.sel}"${isStale(t) ? ' data-dim' : ''}>
+    <span class="trow-ic">${icon(st[1], t.status === 'running' ? 'spin' : '')}</span>
+    <span class="trow-main"><span class="trow-title">${esc(t.title)}</span><span class="trow-meta"><span class="trow-by">${badge(t, 16, false)}</span>${when}</span>${t.model ? `<span class="trow-model">${esc(t.model)}</span>` : ''}${extra}</span></button>`;
 }
+
+function renderRail() {
+  const all = [...S.tasks.values()];
+  const sig = JSON.stringify([S.mode, S.filter, S.sel, [...S.fold], all.map((t) => [t.id, t.status, t.parentId, t.agentNo, t.agent, t.model, t.title, isStale(t) ? 1 : 0])]);
+  if (sig === S.rsig) return;
+  S.rsig = sig;
+  const keep = document.activeElement?.closest?.('#taskList') ? document.activeElement.dataset.id || document.activeElement.dataset.fold : null;
+  const kidsMatch = (t) => matches(t) || all.some((x) => x.parentId === t.id && kidsMatch(x));
+  let html = '';
+  if (S.mode === 'flat') {
+    html = all.filter(matches).sort((a, b) => b.id - a.id).map((t) => `<li class="tnode"><div class="trow-wrap no-fold">${rowHtml(t)}</div></li>`).join('');
+  } else {
+    const roots = all.filter((t) => isRoot(t) && kidsMatch(t)).sort((a, b) => b.id - a.id);
+    for (const r of roots) {
+      const tree = treeOf(r.rootId), kids = tree.filter((x) => x.id !== r.id);
+      const hasSel = tree.some((x) => x.id === S.sel);
+      const user = S.fold.get(r.id), open = user !== undefined ? user : hasSel;
+      const shown = kids.filter((k) => kidsMatch(k) && (open || isActive(k) || k.id === S.sel));
+      const hidden = kids.filter((k) => kidsMatch(k)).length - shown.length;
+      const done = kids.filter((k) => k.status !== 'running').length;
+      const sess = kids.length ? `<span class="trow-sess">子 <b>${done}/${kids.length}</b> 完了${tree.filter(isActive).length > 1 ? `・<b>${tree.filter(isActive).length}</b>体が実行中` : ''}</span>` : '';
+      html += `<li class="tnode"><div class="trow-wrap${kids.length ? '' : ' no-fold'}">${kids.length ? `<button class="fold" type="button" data-fold="${r.id}" aria-expanded="${open}" aria-label="子タスクを${open ? '畳む' : '開く'}">${icon('chevron-right')}</button>` : ''}${rowHtml(r, sess)}</div>`;
+      if (shown.length || hidden) {
+        html += `<ul class="kids">${shown.map((k) => `<li class="tnode" data-depth="${depthOf(k)}"><div class="trow-wrap no-fold">${rowHtml(k)}</div></li>`).join('')}${hidden ? `<li><button class="more-kids" type="button" data-fold="${r.id}">終わった子 ${hidden}件を表示</button></li>` : ''}</ul>`;
+      }
+      html += `</li>`;
+    }
+  }
+  el.list.innerHTML = html;
+  if (keep) el.list.querySelector(`[data-id="${keep}"],[data-fold="${keep}"]`)?.focus({ preventScroll: true });
+}
+
 el.list.addEventListener('click', (e) => {
+  const f = e.target.closest('[data-fold]');
+  if (f) { const id = Number(f.dataset.fold), cur = S.fold.get(id); S.fold.set(id, f.classList.contains('more-kids') ? true : !(cur !== undefined ? cur : treeOf(id).some((x) => x.id === S.sel))); S.rsig = ''; railDirty(); return; }
   const b = e.target.closest('.trow'); if (!b) return;
   const id = Number(b.dataset.id);
   if (id !== latest()) setFollow(false);
   select(id, { keepFollow: true });
   closeDrawer();
 });
+function applyMode() {
+  el.mode.innerHTML = `${icon(S.mode === 'tree' ? 'list-tree' : 'list')}<span>${S.mode === 'tree' ? 'ツリー' : '一覧'}</span>`;
+  el.mode.title = S.mode === 'tree' ? '親子のツリーで表示中(クリックでフラットな一覧)' : 'フラットな一覧で表示中(クリックで親子のツリー)';
+  S.rsig = ''; railDirty();
+}
+el.mode.addEventListener('click', () => { S.mode = S.mode === 'tree' ? 'flat' : 'tree'; store.set('mode', S.mode); applyMode(); });
 
 /* ================= selected task view ================= */
 function select(id, opts = {}) {
@@ -708,7 +850,7 @@ function select(id, opts = {}) {
   S.sel = id;
   if (!opts.keepFollow) setFollow(false);
   history.replaceState(null, '', `#t=${id}`);
-  for (const [tid, li] of S.rows) li.firstElementChild.setAttribute('aria-current', String(tid === id));
+  railDirty();
   el.state.innerHTML = ''; el.task.hidden = false;
   buildSteps(S.tasks.get(id));
   refreshSelected(true);
@@ -718,13 +860,13 @@ function select(id, opts = {}) {
 function refreshSelected(quiet, freshIds = [], touched = []) {
   const t = S.tasks.get(S.sel); if (!t) return;
   S.sig = sig(t);
-  renderHead(t); renderNow(t, quiet); renderPlan(t);
-  el.count.textContent = `${t.steps.size}件`;
+  renderHead(t); renderSession(); renderNow(t, quiet); renderPlan(t);
+  el.count.textContent = `${mergedView(t) ? stepItems(t).length : t.steps.size}件`;
   const nearBottom = innerHeight + scrollY >= document.documentElement.scrollHeight - 160;
   for (const s of touched) {
     let li = S.stepEls.get(s.id);
     if (!li) { li = document.createElement('li'); li.className = 'step'; S.stepEls.set(s.id, li); el.steps.appendChild(li); }
-    fillStep(li, t, s);
+    fillStep(li, t, s, mergedView(t) ? { owner: true } : {});
     if (freshIds.includes(s.id) && !quiet && motion()) {
       gsap.fromTo(li, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.36, ease: 'power3.out', clearProps: 'transform,opacity' });
       const band = li.querySelector('.s-body');
@@ -737,22 +879,31 @@ function refreshSelected(quiet, freshIds = [], touched = []) {
 }
 
 const sig = (t) => `${t.order.length}/${[...t.steps.values()].reduce((a, s) => Math.max(a, s.updatedAt), 0)}`;
+const mergedView = (t) => S.scope === 'all' && treeOf(t.rootId).length > 1;
+function stepItems(t) {
+  if (!mergedView(t)) return t.order.map((id) => [t, t.steps.get(id)]);
+  return treeOf(t.rootId).flatMap((x) => x.order.map((id) => [x, x.steps.get(id)])).sort((a, b) => a[1].createdAt - b[1].createdAt || a[1].id - b[1].id);
+}
 function buildSteps(t) {
   S.sig = sig(t);
   el.steps.dataset.order = S.newestFirst ? 'new' : 'old';
   el.steps.innerHTML = ''; S.stepEls.clear(); S.lastNow = ''; S.lastProgress = 0;
-  const frag = document.createDocumentFragment();
-  for (const id of t.order) {
-    const s = t.steps.get(id), li = document.createElement('li');
-    li.className = 'step'; S.stepEls.set(id, li); fillStep(li, t, s); frag.appendChild(li);
-  }
+  const frag = document.createDocumentFragment(), items = stepItems(t), merged = mergedView(t);
+  items.forEach(([owner, s], i) => {
+    const li = document.createElement('li');
+    li.className = 'step'; S.stepEls.set(s.id, li);
+    fillStep(li, owner, s, merged ? { owner: true, prev: i ? items[i - 1][1] : null } : {});
+    frag.appendChild(li);
+  });
   el.steps.appendChild(frag);
+  el.count.textContent = `${items.length}件`;
+  for (const b of $('#scopeBox').querySelectorAll('[data-scope]')) b.setAttribute('aria-pressed', String(b.dataset.scope === (merged ? 'all' : 'self')));
 }
 
-function fillStep(li, t, s) {
+function fillStep(li, t, s, opt = {}) {
   const k = KIND[s.kind] || KIND.note;
-  const idx = t.order.indexOf(s.id), prev = idx > 0 ? t.steps.get(t.order[idx - 1]) : null;
-  li.dataset.status = s.status; li.dataset.kind = s.kind; li.dataset.id = s.id;
+  const idx = t.order.indexOf(s.id), prev = opt.prev !== undefined ? opt.prev : idx > 0 ? t.steps.get(t.order[idx - 1]) : null;
+  li.dataset.status = s.status; li.dataset.kind = s.kind; li.dataset.id = s.id; li.dataset.owner = t.id;
   const dur = s.endedAt ? s.endedAt - s.createdAt : 0;
   let state = '';
   if (s.status === 'running') state = `<span class="s-state run">実行中 <span class="num live" data-kind="since" data-t0="${s.createdAt}">${clock(nowMs() - s.createdAt)}</span></span>`;
@@ -764,24 +915,29 @@ function fillStep(li, t, s) {
   const detail = s.detail
     ? `<div class="s-detail${long && !open ? ' clamp' : ''}" id="d${s.id}">${linkify(s.detail)}</div>${long ? `<button class="more" type="button" data-more="${s.id}" aria-expanded="${open}" aria-controls="d${s.id}">${open ? '閉じる' : 'すべて表示'}</button>` : ''}`
     : '';
+  const by = opt.owner ? `<span class="s-owner">${badge(t, 16, false)}</span>` : '';
   li.innerHTML = `
     <div class="s-time"><span class="num">${hms(s.createdAt)}</span>${prev && s.createdAt - prev.createdAt >= 1000 ? `<span class="num s-gap" title="前のステップから">+${clock(s.createdAt - prev.createdAt)}</span>` : ''}</div>
     <div><span class="s-node">${icon(k[1])}</span></div>
-    <div class="s-body"><div class="s-meta"><span>${k[0]}</span>${s.agent && s.agent !== t.agent ? `<span class="s-by">${avatar(s.agent, 16)}<span>${esc(agentOf(s.agent).name)}</span></span>` : ''}${state}</div><div class="s-title">${esc(s.title)}</div>${detail}</div>`;
+    <div class="s-body"><div class="s-meta">${by}<span>${k[0]}</span>${s.agent && s.agent !== t.agent ? `<span class="s-by">${avatar(s.agent, 16)}<span>${esc(agentOf(s.agent).name)}</span></span>` : ''}${state}</div><div class="s-title">${esc(s.title)}</div>${detail}</div>`;
 }
 el.steps.addEventListener('click', (e) => {
   const b = e.target.closest('[data-more]'); if (!b) return;
-  const id = Number(b.dataset.more), t = S.tasks.get(S.sel);
+  const id = Number(b.dataset.more), li = S.stepEls.get(id), t = S.tasks.get(Number(li.dataset.owner)) || S.tasks.get(S.sel);
   S.expanded.has(id) ? S.expanded.delete(id) : S.expanded.add(id);
-  fillStep(S.stepEls.get(id), t, t.steps.get(id));
+  fillStep(li, t, t.steps.get(id), mergedView(S.tasks.get(S.sel)) ? { owner: true } : {});
 });
 
 function renderHead(t) {
   const st = TASK_ST[t.status] || TASK_ST.running, run = t.status === 'running';
   const end = t.finishedAt || '';
+  const parent = t.parentId != null ? S.tasks.get(t.parentId) : null;
+  const ts = treeStats(t.rootId), isTop = isRoot(t) && ts.kids.length;
   el.head.innerHTML = `
+    ${parent ? `<button class="crumb" type="button" data-goto="${parent.id}">${icon('undo-2')}<span>親 ${esc(parent.agentNumber)} ${esc(agentOf(parent.agent).name)}「${esc(parent.title)}」へ戻る</span></button>` : ''}
     <div class="head-top"><div class="status ${t.status}">${icon(st[1], run ? 'spin' : '')}<span>${st[0]}</span></div>
-      <div class="by">${avatar(t.agent, 24)}<span class="by-name">${esc(agentOf(t.agent).name)}</span>${t.model ? `<span class="by-model">${esc(t.model)}</span>` : ''}</div></div>
+      ${badge(t, 24)}
+      ${isTop ? `<span class="sess-chip">子 <b>${ts.kidsDone}/${ts.kids.length}</b> 完了</span>` : ''}</div>
     <h1>${esc(t.title)}</h1>
     ${t.summary ? `<p class="summary">${linkify(t.summary)}</p>` : ''}
     <dl class="stats">
@@ -791,6 +947,78 @@ function renderHead(t) {
       <div><dt>最終更新</dt><dd class="num">${run ? `<span class="live" data-kind="ago" data-t0="${t.updatedAt}">${clock(nowMs() - t.updatedAt)}前</span>` : hms(t.updatedAt)}</dd></div>
     </dl>`;
 }
+el.head.addEventListener('click', (e) => {
+  const g = e.target.closest('[data-goto]'); if (!g) return;
+  const id = Number(g.dataset.goto); if (id !== latest()) setFollow(false);
+  select(id, { keepFollow: true });
+});
+
+/* ---- the session: who is working right now, and how their work overlaps in time ---- */
+function memberHtml(t) {
+  return `<button class="member" type="button" data-id="${t.id}" aria-current="${t.id === S.sel}"><span class="mem-top">${badge(t, 20, false)}<span class="mem-time num live" data-kind="elapsed" data-t0="${t.startedAt}">${clock(nowMs() - t.startedAt)}</span></span>${t.model ? `<span class="mem-model">${esc(t.model)}</span>` : ''}<span class="mem-now" data-now="${t.id}"></span></button>`;
+}
+function laneHtml(t) {
+  const stale = isStale(t), label = stale ? '更新が止まっています' : (TASK_ST[t.status] || TASK_ST.running)[0];
+  return `<button class="lane" type="button" data-id="${t.id}" data-status="${t.status}"${stale ? ' data-stale' : ''} aria-current="${t.id === S.sel}"><span class="lane-label">${badge(t, 18, false)}<span class="lane-sub"><span>${esc(t.model || '')}</span><span class="lane-state">${label}</span></span></span><span class="track"><svg viewBox="0 0 1000 28" preserveAspectRatio="none" aria-hidden="true" data-lane="${t.id}"></svg></span></button>`;
+}
+function renderSession() {
+  const sel = S.tasks.get(S.sel);
+  if (!sel) { el.session.hidden = true; return; }
+  const st = treeStats(sel.rootId);
+  $('#scopeBox').hidden = st.tr.length < 2;
+  if (st.tr.length < 2) { el.session.hidden = true; S.ssig = ''; return; }
+  el.session.hidden = false;
+  const sig = JSON.stringify([S.sel, st.tr.map((x) => [x.id, x.status, isStale(x) ? 1 : 0, x.agent, x.model, x.agentNo, x.title])]);
+  if (sig !== S.ssig) {
+    S.ssig = sig;
+    el.session.innerHTML = `<div class="sess-head"><h2>セッション</h2><div class="sess-chips" id="sessChips"></div></div>
+      <div class="team" id="team">${st.active.map(memberHtml).join('')}</div>
+      <div class="lanes" role="list" aria-label="エージェントごとの作業の時間帯"><div class="axis" aria-hidden="true"><div><span id="ax0"></span><span id="ax1"></span><span id="ax2"></span></div></div>${st.tr.map(laneHtml).join('')}</div>`;
+    S.chips = '';
+  }
+  paintSession(st);
+}
+function paintSession(st) {
+  const n = nowMs(), active = st.active.length, kids = st.kids.length;
+  const end = active ? '' : Math.max(...st.tr.map((x) => x.finishedAt || x.updatedAt));
+  const rootDoneKidsRun = st.root.status !== 'running' && st.active.some((x) => x.id !== st.root.id);
+  const chips = [
+    `<span class="sess-chip">子 <b>${st.kidsDone}/${kids}</b> 完了${st.failed ? `(失敗 ${st.failed})` : ''}</span>`,
+    `<span class="sess-chip">全体 <b class="live" data-kind="elapsed" data-t0="${st.root.startedAt}" data-t1="${end}">${clock((end || n) - st.root.startedAt)}</b></span>`,
+    active ? `<span class="sess-chip on">${icon('loader-circle', 'spin')}<b>${active}</b>体が同時に実行中</span>` : `<span class="sess-chip">全員、作業を終えました</span>`,
+    rootDoneKidsRun ? `<span class="sess-chip warn">親は完了。子はまだ実行中です</span>` : '',
+    st.stale.length ? `<span class="sess-chip warn">更新が止まっている子 <b>${st.stale.length}</b></span>` : '',
+  ].join('');
+  if (chips !== S.chips) { S.chips = chips; $('#sessChips').innerHTML = chips; }
+  for (const t of st.active) { const e = el.session.querySelector(`[data-now="${t.id}"]`); if (e) e.textContent = t.now || '作業を始めています'; }
+  // shared time axis: every lane uses the same start and end, so overlapping bars mean "worked in parallel"
+  const endOf = (x) => (isStale(x) ? x.updatedAt : x.status === 'running' ? n : x.finishedAt || x.updatedAt);
+  const t0 = Math.min(...st.tr.map((x) => x.startedAt));
+  const t1 = Math.max(t0 + 15000, ...st.tr.map(endOf));
+  const X = (m) => Math.max(0, Math.min(1000, ((m - t0) / (t1 - t0)) * 1000)).toFixed(1);
+  for (const t of st.tr) {
+    const svg = el.session.querySelector(`svg[data-lane="${t.id}"]`); if (!svg) continue;
+    const e = endOf(t);
+    let h = `<line class="g" x1="250" x2="250" y1="0" y2="28"/><line class="g" x1="500" x2="500" y1="0" y2="28"/><line class="g" x1="750" x2="750" y1="0" y2="28"/>`;
+    h += `<rect class="b-task" x="${X(t.startedAt)}" y="3" width="${Math.max(2, X(e) - X(t.startedAt)).toFixed(1)}" height="22"/>`;
+    for (const sid of t.order) {
+      const s = t.steps.get(sid), se = s.endedAt || (s.status === 'running' ? e : s.createdAt);
+      h += `<rect class="b-step st-${s.status}" x="${X(s.createdAt)}" y="9" width="${Math.max(3, X(se) - X(s.createdAt)).toFixed(1)}" height="10"><title>${esc(hms(s.createdAt) + ' ' + s.title)}</title></rect>`;
+    }
+    svg.innerHTML = h;
+  }
+  $('#ax0').textContent = hms(t0); $('#ax1').textContent = hms((t0 + t1) / 2); $('#ax2').textContent = hms(t1);
+}
+$('#scopeBox').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-scope]'); if (!b) return;
+  S.scope = b.dataset.scope; store.set('scope', S.scope);
+  const t = S.tasks.get(S.sel); if (t) buildSteps(t);
+});
+el.session.addEventListener('click', (e) => {
+  const b = e.target.closest('.member,.lane'); if (!b) return;
+  const id = Number(b.dataset.id); if (id !== latest()) setFollow(false);
+  select(id, { keepFollow: true });
+});
 
 function renderNow(t, quiet) {
   const run = t.status === 'running';
@@ -881,7 +1109,7 @@ document.addEventListener('click', async (e) => {
 function logMarkdown(t) {
   if (!t) return '';
   const mark = { running: '…', done: 'OK', failed: 'NG', skipped: '-' };
-  const lines = [`# ${t.title}`, '', `AI: ${agentOf(t.agent).name}${t.model ? ` (${t.model})` : ''} / 状態: ${(TASK_ST[t.status] || TASK_ST.running)[0]} / 開始 ${hms(t.startedAt)} / ステップ ${t.steps.size}件`];
+  const lines = [`# ${t.title}`, '', `AI: ${t.agentNumber} ${agentOf(t.agent).name}${t.model ? ` (${t.model})` : ''} / 状態: ${(TASK_ST[t.status] || TASK_ST.running)[0]} / 開始 ${hms(t.startedAt)} / ステップ ${t.steps.size}件`];
   if (t.summary) lines.push('', t.summary);
   lines.push('');
   for (const id of t.order) {
@@ -908,8 +1136,7 @@ function renderFilter() {
     list.map((a) => `<button class="chip" type="button" data-agent="${esc(a.id)}" aria-pressed="${S.filter === a.id}">${avatar(a.id, 16)}<span>${esc(a.name)}</span>${run[a.id] ? `<span class="num" title="実行中">${run[a.id]}</span>` : ''}</button>`).join('');
 }
 function applyFilter() {
-  for (const [id, li] of S.rows) li.hidden = !matches(S.tasks.get(id));
-  S.fsig = ''; renderFilter();
+  S.fsig = ''; renderFilter(); S.rsig = ''; railDirty();
 }
 el.filter.addEventListener('click', (e) => {
   const b = e.target.closest('[data-agent]'); if (!b) return;
@@ -1017,8 +1244,8 @@ const wpost = async (action, extra = {}) => {
 };
 
 function clearAll() {
-  S.tasks.clear(); S.agents.clear(); S.rows.clear(); S.stepEls.clear(); S.expanded.clear();
-  el.list.innerHTML = ''; el.steps.innerHTML = '';
+  S.tasks.clear(); S.agents.clear(); S.rows.clear(); S.stepEls.clear(); S.expanded.clear(); S.fold.clear();
+  el.list.innerHTML = ''; el.steps.innerHTML = ''; el.session.hidden = true; S.rsig = ''; S.ssig = '';
   S.sel = null; S.maxId = 0; S.filter = ''; S.fsig = ''; S.sig = '';
   history.replaceState(null, '', location.pathname + location.search);
   renderFilter(); updateRuns(); showState('empty');
@@ -1173,7 +1400,8 @@ function mountTrace(wrap, name, onState) {
 
 /* ---- how many tasks are running right now (all AIs) ---- */
 function updateRuns() {
-  const n = [...S.tasks.values()].filter((t) => t.status === 'running').length;
+  const n = [...S.tasks.values()].filter(isActive).length;   // quiet sub-agents are not counted as "running"
+
   $('#runs').hidden = n === 0;
   $('#runs').innerHTML = n ? `${icon('loader-circle', 'spin')}<span><span class="num">${n}</span>件実行中</span>` : '';
 }
@@ -1188,11 +1416,13 @@ setInterval(() => {
     else if (k === 'since') n0.textContent = clock(n - t0);
     else if (k === 'ago') n0.textContent = clock(n - t0) + '前';
   });
-  for (const [id, li] of S.rows) {
-    const t = S.tasks.get(id), b = li.firstElementChild;
+  for (const b of el.list.querySelectorAll('.trow[data-id]')) {
+    const t = S.tasks.get(Number(b.dataset.id)); if (!t) continue;
     const stale = t.status === 'running' && n - t.updatedAt > 90000;
     if (stale !== b.hasAttribute('data-stale')) { stale ? b.setAttribute('data-stale', '') : b.removeAttribute('data-stale'); b.title = stale ? '90秒以上、更新がありません' : ''; }
   }
+  railDirty(); updateRuns();
+  if (!el.session.hidden) renderSession();
   const idle = $('#idle');
   if (idle) {
     const age = n - Number(idle.dataset.t0);
@@ -1203,7 +1433,7 @@ setInterval(() => {
 
 /* ================= go ================= */
 setConn('connecting');
-applyOrder(); applySound();
+applyOrder(); applySound(); applyMode();
 syncDrawer(); boot();   // gsap is deferred, so it is ready by DOMContentLoaded; without it the viewer still works, just without motion
 });
 </script>
