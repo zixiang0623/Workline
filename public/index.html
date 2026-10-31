@@ -25,6 +25,10 @@
 
   --color-paper: oklch(98.5% 0.004 235);
   --color-paper-2: oklch(96.2% 0.006 235);
+  /* 作業の種類ごとの色(白いアイコンを載せても3:1以上になる明度) */
+  --k-plan: oklch(50% 0.15 275); --k-think: oklch(50% 0.16 315); --k-search: oklch(52% 0.11 205); --k-read: oklch(52% 0.12 135);
+  --k-write: oklch(55% 0.14 60); --k-run: oklch(52% 0.17 28); --k-web: oklch(52% 0.15 245); --k-check: oklch(50% 0.11 170);
+  --k-fix: oklch(54% 0.12 95); --k-wait: oklch(54% 0.03 250); --k-note: oklch(55% 0.01 250);
   --color-paper-3: oklch(93.2% 0.008 235);
   --color-ink: oklch(23% 0.02 250);
   --color-ink-2: oklch(40% 0.02 250);
@@ -204,25 +208,49 @@ button, input { font: inherit; color: inherit; }
 .lanes { display: flex; flex-direction: column; gap: var(--space-xs); }
 .axis { display: grid; grid-template-columns: 13rem minmax(0, 1fr); font-family: var(--font-data); font-size: var(--text-xs); color: var(--color-muted); }
 .axis > div { grid-column: 2; display: flex; justify-content: space-between; }
-.lane { display: grid; grid-template-columns: 13rem minmax(0, 1fr); align-items: center; gap: var(--space-sm); width: 100%; padding: var(--space-3xs) 0; border: 0; border-radius: var(--radius-ctl); background: transparent; text-align: left; cursor: pointer; transition: background var(--dur-micro); }
+.lane { display: grid; grid-template-columns: 13rem minmax(0, 1fr); align-items: start; gap: var(--space-sm); width: 100%; padding: var(--space-3xs) 0; border: 0; border-radius: var(--radius-ctl); background: transparent; text-align: left; cursor: pointer; transition: background var(--dur-micro); }
 .lane:hover { background: var(--color-paper-2); }
 .lane[aria-current="true"] { background: var(--color-paper-2); box-shadow: inset 2px 0 0 var(--color-accent); }
 .lane[data-stale] { opacity: 0.55; }
-.lane-label { display: flex; flex-direction: column; gap: var(--space-3xs); min-width: 0; padding-left: var(--space-xs); }
+.lane-label { display: flex; flex-direction: column; gap: var(--space-3xs); min-width: 0; padding: 4px 0 0 var(--space-xs); }
 .lane-sub { display: flex; justify-content: space-between; gap: var(--space-xs); min-width: 0; padding-left: 0; font-size: var(--text-xs); color: var(--color-muted); }
 .lane-sub > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lane-state { flex: none; }
 .lane[data-status="running"] .lane-state { color: var(--color-accent); }
 .lane[data-status="failed"] .lane-state { color: var(--color-error); }
-.track { display: block; height: 28px; border-radius: var(--radius-ctl); background: var(--color-paper); border: var(--rule-hair) solid var(--color-rule); overflow: hidden; }
-.track svg { display: block; width: 100%; height: 100%; shape-rendering: crispEdges; }
-.track .g { stroke: var(--color-rule); stroke-width: 1; vector-effect: non-scaling-stroke; }
-.track .b-task { fill: var(--color-paper-3); }
-.track .b-step { fill: var(--color-ink-2); }
-.track .st-running { fill: var(--color-accent); }
-.track .st-failed { fill: var(--color-error); }
-.track .st-skipped { fill: var(--color-muted); opacity: 0.5; }
-.lane[data-status="running"]:not([data-stale]) .b-task { fill: var(--color-accent-soft); }
+.lane-r { display: flex; flex-direction: column; gap: var(--space-2xs); min-width: 0; }
+.track { position: relative; display: block; height: 34px; padding: 4px; border-radius: 17px; background: var(--color-paper-2); border: var(--rule-hair) solid var(--color-rule); overflow: hidden; }
+.track > .g { position: absolute; top: 4px; bottom: 4px; width: 1px; background: var(--color-rule); opacity: 0.6; }
+.track > .b-task { position: absolute; top: 4px; bottom: 4px; border-radius: 12px; background: var(--color-paper-3); }
+.lane[data-status="running"]:not([data-stale]) .track > .b-task { background: var(--color-accent-soft); }
+.seg { position: absolute; top: 4px; bottom: 4px; min-width: 6px; display: flex; align-items: center; justify-content: center; border-radius: 9px; background: var(--k-note); color: #fff; container-type: inline-size; overflow: hidden; box-shadow: 0 0 0 1px var(--color-paper); }
+.seg .ic { display: none; width: 14px; height: 14px; flex: none; }
+@container (min-width: 22px) { .seg .ic { display: block; } }
+.seg[data-st="running"] { box-shadow: 0 0 0 1px var(--color-paper), 0 0 0 2.5px var(--color-accent); }
+.seg[data-st="failed"] { box-shadow: 0 0 0 1px var(--color-paper), 0 0 0 2.5px var(--color-error); }
+.seg[data-st="skipped"] { opacity: 0.45; }
+.lane[data-stale] .seg[data-st="running"] { box-shadow: 0 0 0 1px var(--color-paper); }
+.lane-use { display: flex; flex-wrap: wrap; gap: var(--space-2xs) var(--space-xs); min-height: 24px; align-items: center; }
+.use-chip { display: inline-flex; align-items: center; gap: var(--space-2xs); padding: 0 var(--space-xs) 0 2px; min-height: 24px; border-radius: 12px; background: var(--color-paper); border: var(--rule-hair) solid var(--color-rule); font-size: var(--text-xs); color: var(--color-ink-2); }
+.use-chip .sw { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 10px; background: var(--k-note); color: #fff; }
+.use-chip .sw .ic { width: 12px; height: 12px; }
+.use-chip b { font-family: var(--font-data); font-weight: 600; color: var(--color-ink); font-variant-numeric: tabular-nums; }
+.use-chip .pct { color: var(--color-muted); font-variant-numeric: tabular-nums; }
+.use-chip[data-top] { border-color: var(--color-ink-2); background: var(--color-paper-2); }
+.use-chip .top { font-weight: 600; color: var(--color-ink); }
+.use-chip .sr, .seg .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.use-none { font-size: var(--text-xs); color: var(--color-muted); }
+.seg[data-k="plan"], .use-chip[data-k="plan"] .sw { background: var(--k-plan); }
+.seg[data-k="think"], .use-chip[data-k="think"] .sw { background: var(--k-think); }
+.seg[data-k="search"], .use-chip[data-k="search"] .sw { background: var(--k-search); }
+.seg[data-k="read"], .use-chip[data-k="read"] .sw { background: var(--k-read); }
+.seg[data-k="write"], .use-chip[data-k="write"] .sw { background: var(--k-write); }
+.seg[data-k="run"], .use-chip[data-k="run"] .sw { background: var(--k-run); }
+.seg[data-k="web"], .use-chip[data-k="web"] .sw { background: var(--k-web); }
+.seg[data-k="check"], .use-chip[data-k="check"] .sw { background: var(--k-check); }
+.seg[data-k="fix"], .use-chip[data-k="fix"] .sw { background: var(--k-fix); }
+.seg[data-k="wait"], .use-chip[data-k="wait"] .sw { background: var(--k-wait); }
+.seg[data-k="note"], .use-chip[data-k="note"] .sw { background: var(--k-note); }
 
 /* ---- buttons / fields ---- */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-xs); min-height: 40px; padding: 0 var(--space-md); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-ctl); background: var(--color-paper); color: var(--color-ink); font-size: var(--text-sm); cursor: pointer; transition: background var(--dur-micro), border-color var(--dur-micro), color var(--dur-micro), transform var(--dur-micro) var(--ease-out); }
@@ -1043,7 +1071,7 @@ function memberHtml(t) {
 }
 function laneHtml(t) {
   const stale = isStale(t), label = stale ? '更新が止まっています' : (TASK_ST[t.status] || TASK_ST.running)[0];
-  return `<button class="lane" type="button" data-id="${t.id}" data-status="${t.status}"${stale ? ' data-stale' : ''} aria-current="${t.id === S.sel}"><span class="lane-label">${badge(t, 18, false)}<span class="lane-sub"><span>${esc(t.model || '')}</span><span class="lane-state">${label}</span></span></span><span class="track"><svg viewBox="0 0 1000 28" preserveAspectRatio="none" aria-hidden="true" data-lane="${t.id}"></svg></span></button>`;
+  return `<button class="lane" type="button" data-id="${t.id}" data-status="${t.status}"${stale ? ' data-stale' : ''} aria-current="${t.id === S.sel}"><span class="lane-label">${badge(t, 18, false)}<span class="lane-sub"><span>${esc(t.model || '')}</span><span class="lane-state">${label}</span></span></span><span class="lane-r"><span class="track" aria-hidden="true" data-lane="${t.id}"></span><span class="lane-use" data-use="${t.id}"></span></span></button>`;
 }
 function renderSession() {
   const sel = S.tasks.get(S.sel);
@@ -1079,17 +1107,24 @@ function paintSession(st) {
   const endOf = (x) => (isStale(x) ? x.updatedAt : x.status === 'running' ? n : x.finishedAt || x.updatedAt);
   const t0 = Math.min(...st.tr.map((x) => x.startedAt));
   const t1 = Math.max(t0 + 15000, ...st.tr.map(endOf));
-  const X = (m) => Math.max(0, Math.min(1000, ((m - t0) / (t1 - t0)) * 1000)).toFixed(1);
+  const P = (m) => Math.max(0, Math.min(100, ((m - t0) / (t1 - t0)) * 100));
   for (const t of st.tr) {
-    const svg = el.session.querySelector(`svg[data-lane="${t.id}"]`); if (!svg) continue;
-    const e = endOf(t);
-    let h = `<line class="g" x1="250" x2="250" y1="0" y2="28"/><line class="g" x1="500" x2="500" y1="0" y2="28"/><line class="g" x1="750" x2="750" y1="0" y2="28"/>`;
-    h += `<rect class="b-task" x="${X(t.startedAt)}" y="3" width="${Math.max(2, X(e) - X(t.startedAt)).toFixed(1)}" height="22"/>`;
-    for (const sid of t.order) {
-      const s = t.steps.get(sid), se = s.endedAt || (s.status === 'running' ? e : s.createdAt);
-      h += `<rect class="b-step st-${s.status}" x="${X(s.createdAt)}" y="9" width="${Math.max(3, X(se) - X(s.createdAt)).toFixed(1)}" height="10"><title>${esc(hms(s.createdAt) + ' ' + s.title)}</title></rect>`;
-    }
-    svg.innerHTML = h;
+    const host = el.session.querySelector(`.track[data-lane="${t.id}"]`), useEl = el.session.querySelector(`[data-use="${t.id}"]`); if (!host) continue;
+    const e = endOf(t), spent = {};
+    let h = '<i class="g" style="left:25%"></i><i class="g" style="left:50%"></i><i class="g" style="left:75%"></i>';
+    h += `<i class="b-task" style="left:${P(t.startedAt).toFixed(2)}%;width:${Math.max(0.5, P(e) - P(t.startedAt)).toFixed(2)}%"></i>`;
+    t.order.forEach((sid, i) => {
+      const x = t.steps.get(sid), k = KIND[x.kind] ? x.kind : 'note', nx = i + 1 < t.order.length ? t.steps.get(t.order[i + 1]).createdAt : e;
+      // 各作業の長さ = 次の作業を始めるまで(最後は終了/現在まで)。記録された終了時刻の方が遅ければそちら
+      const xe = Math.max(x.createdAt, Math.max(nx, x.endedAt || 0) <= e || x.status === 'running' ? Math.max(nx, x.endedAt || 0) : nx);
+      spent[k] = (spent[k] || 0) + (xe - x.createdAt);
+      h += `<i class="seg" data-k="${k}" data-st="${x.status}" style="left:${P(x.createdAt).toFixed(2)}%;width:${Math.max(0.3, P(xe) - P(x.createdAt)).toFixed(2)}%" title="${KIND[k][0]} ${clock(xe - x.createdAt)}">${icon(KIND[k][1])}<span class="sr">${KIND[k][0]}</span></i>`;
+    });
+    if (host._h !== h) { host._h = h; host.innerHTML = h; }
+    const total = Object.values(spent).reduce((a, b) => a + b, 0) || 1;
+    const list = Object.entries(spent).filter(([, v]) => v >= 1000).sort((a, b) => b[1] - a[1]);
+    const u = list.length ? list.map(([k, v], i) => `<span class="use-chip" data-k="${k}"${i === 0 && list.length > 1 ? ' data-top' : ''} title="${KIND[k][0]} ${clock(v)}(${Math.round((v / total) * 100)}%)"><span class="sw">${icon(KIND[k][1])}</span><span class="sr">${KIND[k][0]}</span><b>${clock(v)}</b><span class="pct">${Math.round((v / total) * 100)}%</span>${i === 0 && list.length > 1 ? '<span class="top">最長</span>' : ''}</span>`).join('') : '<span class="use-none">作業の記録を待っています</span>';
+    if (useEl._h !== u) { useEl._h = u; useEl.innerHTML = u; }
   }
   $('#ax0').textContent = hms(t0); $('#ax1').textContent = hms((t0 + t1) / 2); $('#ax2').textContent = hms(t1);
 }
