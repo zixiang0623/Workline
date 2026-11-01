@@ -577,8 +577,7 @@ button, input { font: inherit; color: inherit; }
     <div class="rail-foot">
       <p class="rail-note" id="railNote" hidden><svg class="ic" aria-hidden="true"><use href="#i-triangle-alert"/></svg><span>書き込みトークンが未設定です。URLを知っている人は誰でも送信できます。</span></p>
       <button class="btn small" id="openInbox" type="button"><svg class="ic" aria-hidden="true"><use href="#i-inbox"/></svg><span>指令 inbox</span><b class="cnt" id="inboxCnt" hidden></b></button>
-      <button class="btn small" id="refreshNow" type="button"><svg class="ic" aria-hidden="true"><use href="#i-refresh-cw"/></svg><span>更新</span></button>
-      <button class="btn small" id="refreshIcons" type="button"><svg class="ic" aria-hidden="true"><use href="#i-refresh-cw"/></svg><span>アイコンを全て更新</span></button>
+      <button class="btn small" id="refreshIcons" type="button"><svg class="ic" aria-hidden="true"><use href="#i-refresh-cw"/></svg><span>更新</span></button>
       <p class="rail-note" id="iconStat" role="status" aria-live="polite" hidden></p>
       <button class="btn small" id="copyEndpoint" type="button" data-copy-endpoint><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg><span>MCPのURLをコピー</span></button>
       <button class="btn small danger" id="openPurge" type="button"><svg class="ic" aria-hidden="true"><use href="#i-trash-2"/></svg><span>ログをすべて消去…</span></button>
@@ -1695,37 +1694,33 @@ function inboxRender() {
       ${group('未受領', by(['posted']).reverse())}${group('作業中', by(['accepted']))}${group('完了・終了(直近5件)', by(['done', 'failed', 'rejected']).slice(0, 5))}</section>`;
   }).join('')}</div>` : `<p class="inbox-empty" style="padding:var(--space-lg)">指令はまだありません。</p>`;
 }
-/* 更新: タスク・ステップ・指令を、サーバーの最新の状態に今すぐ合わせる(ライブ接続が切れていれば、つなぎ直す) */
-$('#refreshNow').addEventListener('click', async () => {
-  const btn = $('#refreshNow'), stat = $('#iconStat'), label = btn.querySelector('span'); if (btn.disabled) return;
-  btn.disabled = true; label.textContent = '更新中…'; stat.hidden = false; stat.textContent = '';
+/* 更新: タスク・ステップ・指令を最新に合わせ(ライブ接続が切れていればつなぎ直し)、AIのアイコンも今すぐ全部取り直す */
+$('#refreshIcons').addEventListener('click', async () => {
+  const btn = $('#refreshIcons'), stat = $('#iconStat'); if (btn.disabled) return;
+  const label = btn.querySelector('span'), orig = label.textContent; btn.disabled = true; stat.hidden = false; stat.textContent = '最新の状態を取得しています…'; label.textContent = '更新中…';
+  const post = async (body) => { const r = await fetch('/api/icons/refresh', { method: 'POST', headers: { 'content-type': 'application/json', ...authHeaders() }, body: JSON.stringify(body) }); if (!r.ok) throw new Error(r.status === 401 ? '権限がありません' : 'http ' + r.status); return r.json(); };
+  let msg = '';
   try {
     handle(await fetchSnapshot(), true);
     if (!ws || ws.readyState > 1) connect();
-    stat.textContent = `更新しました(${hms(nowMs())})`;
-  } catch (e) { stat.textContent = e.denied ? '権限がありません。' : '更新できませんでした。しばらくしてからもう一度。'; }
-  btn.disabled = false; label.textContent = '更新';
-});
-/* アイコンを今すぐ全部取り直す(対応表で補ったドメインも反映)。1件ずつ順に取りに行き、進み具合を出す */
-$('#refreshIcons').addEventListener('click', async () => {
-  const btn = $('#refreshIcons'), stat = $('#iconStat'); if (btn.disabled) return;
-  const label = btn.querySelector('span'), orig = label.textContent; btn.disabled = true; stat.hidden = false; stat.textContent = '準備しています…';
-  const post = async (body) => { const r = await fetch('/api/icons/refresh', { method: 'POST', headers: { 'content-type': 'application/json', ...authHeaders() }, body: JSON.stringify(body) }); if (!r.ok) throw new Error(r.status === 401 ? '権限がありません' : 'http ' + r.status); return r.json(); };
+    msg = `更新しました(${hms(nowMs())})`;
+  } catch (e) { stat.textContent = e.denied ? '権限がありません。' : '更新できませんでした。しばらくしてからもう一度。'; btn.disabled = false; label.textContent = orig; return; }
   try {
+    stat.textContent = 'アイコンを準備しています…';
     const prep = await post({});
     for (const a of prep.agents || []) S.agents.set(a.id, a);
     let ok = 0, done = 0; const total = prep.targets.length;
     for (const t of prep.targets) {
-      label.textContent = `更新中 ${done + 1}/${total}`; stat.textContent = `${t.name} を取得しています…`;
+      label.textContent = `更新中 ${done + 1}/${total}`; stat.textContent = `${t.name} のアイコンを取得しています…`;
       try { if ((await post({ agent: t.id })).ok) ok++; } catch {}
       done++;
     }
     S.iconRev = Date.now();
     for (const x of S.tasks.values()) renderRow(x);
     renderFilter(); refreshSelected(); v14Render(); if ($('#inbox').open) inboxRender();
-    stat.textContent = total ? `${total}件中${ok}件を更新しました${ok < total ? `(${total - ok}件は取得できず、頭文字のままです)` : ''}` : '取得先のあるAIがありません。';
-  } catch (e) { stat.textContent = '更新できませんでした: ' + e.message; }
-  btn.disabled = false; label.textContent = orig;
+    if (total) msg += `・アイコン ${ok}/${total}件${ok < total ? '(取得できなかったAIは頭文字のまま)' : ''}`;
+  } catch (e) { msg += '・アイコンは更新できませんでした: ' + e.message; }
+  stat.textContent = msg; btn.disabled = false; label.textContent = orig;
 });
 $('#openInbox').addEventListener('click', () => { inboxRender(); $('#inbox').showModal(); });
 $('#inboxClose').addEventListener('click', () => $('#inbox').close());
