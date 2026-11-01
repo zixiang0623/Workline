@@ -513,6 +513,24 @@ async function handleMessage(request, env, url) {
   }
 }
 
+// ビューアーから、宛先が "user" の指令を人間が受領・完了する
+async function handleDirective(request, env, url) {
+  if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: { allow: "POST" } });
+  if (!originOk(request, env)) return json({ error: "forbidden origin" }, 403);
+  if (!canRead(request, url, env)) return json({ error: "unauthorized" }, 401);
+  let b;
+  try {
+    b = await request.json();
+  } catch {
+    return json({ error: "bad request" }, 400);
+  }
+  try {
+    return json(await board(env).userDirective(b));
+  } catch (e) {
+    return json({ error: String(e?.message || e) }, 400);
+  }
+}
+
 const ICON_TTL = 7 * 86400000; // 取得成功したアイコンは7日使い回す
 const ICON_RETRY = 10 * 60000; // 取得に失敗したら10分は再取得しない
 
@@ -557,6 +575,7 @@ export default {
       if (path === "/ws") return await handleWs(request, env, url);
       if (path === "/api/snapshot") return await handleSnapshot(request, env, url);
       if (path === "/api/icon") return await handleIcon(request, env, url);
+      if (path === "/api/directive") return await handleDirective(request, env, url);
       if (path === "/api/message") return await handleMessage(request, env, url);
       if (path === "/api/purge") return await handlePurge(request, env, url);
       if (path === "/api/health") return json({ ok: true, name: "workline", version: VERSION });
@@ -965,6 +984,27 @@ export class Board extends DurableObject {
       status, now, child ?? null, clip(pick(a, "summary", "result"), LIMIT.summary), this.hist(r, status, me),
     ]);
     return { ok: true, status, directive: dirOut(n) };
+  }
+
+  // 宛先が user の指令だけ、人間が画面から ack(受領) / done / failed / rejected にできる(リースなし)
+  userDirective(b) {
+    const r = this.getDir(b || {});
+    if (r.to_id !== "user") throw new Error("画面から操作できるのは、宛先が user の指令だけです。");
+    const act = String(b.action || "");
+    const now = Date.now();
+    if (act === "ack") {
+      if (r.status !== "posted") throw new Error(`指令 #${r.id} は既に ${r.status} です。`);
+      const n = this.saveDir(r, "status = 'accepted', accepted_by = 'user', accepted_at = ?, lease_until = NULL, history = ?", [now, this.hist(r, "accepted", "user")]);
+      return { ok: true, directive: dirOut(n) };
+    }
+    if (!DIRECTIVE_END.includes(act)) throw new Error("action は ack / done / failed / rejected のどれかです。");
+    if (DIRECTIVE_END.includes(r.status)) throw new Error(`指令 #${r.id} は既に ${r.status} で閉じています。`);
+    let hist = r.history;
+    if (r.status === "posted") hist = this.hist(r, "accepted", "user"); // 受領せずに閉じたときも履歴に残す
+    const n = this.saveDir(r, "status = ?, accepted_by = 'user', accepted_at = COALESCE(accepted_at, ?), completed_at = ?, lease_until = NULL, result_summary = ?, history = ?", [
+      act, now, now, clip(b.summary, LIMIT.summary), this.hist({ history: hist }, act, "user"),
+    ]);
+    return { ok: true, directive: dirOut(n) };
   }
 
   insertMessage({ from, verified, toId, toTask, body, kind, control, taskId, expiresAt }) {

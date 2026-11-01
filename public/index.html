@@ -628,7 +628,7 @@ button, input { font: inherit; color: inherit; }
 </dialog>
 <dialog class="wiz" id="inbox" aria-labelledby="inboxTitle">
   <div class="wiz-in">
-    <header class="wiz-head"><h2 id="inboxTitle"><svg class="ic" aria-hidden="true"><use href="#i-inbox"/></svg><span>指令 inbox</span></h2><button class="btn small" id="inboxReadAll" type="button"><svg class="ic" aria-hidden="true"><use href="#i-check-check"/></svg><span>すべて既読にする</span></button><button class="icon-btn" id="inboxClose" type="button" aria-label="閉じる"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></header>
+    <header class="wiz-head"><h2 id="inboxTitle"><svg class="ic" aria-hidden="true"><use href="#i-inbox"/></svg><span>指令 inbox</span></h2><button class="btn small" id="inboxReadAll" type="button"><svg class="ic" aria-hidden="true"><use href="#i-check-check"/></svg><span title="この画面の未読表示を消すだけです(指令の状態は変わりません)">すべて既読にする</span></button><button class="icon-btn" id="inboxClose" type="button" aria-label="閉じる"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></header>
     <div id="inboxBody"></div>
   </div>
 </dialog>
@@ -1607,6 +1607,8 @@ function dirCard(d, t) {
     <div class="dir-foot">
       ${child && child !== t.id ? `<button class="btn small" type="button" data-goto="${child}">${icon('chevron-right')}<span>子タスク #${child} へ</span></button>` : ''}
       ${d.taskId !== t.id && S.tasks.has(d.taskId) ? `<button class="btn small" type="button" data-goto="${d.taskId}">${icon('undo-2')}<span>指令元 #${d.taskId} へ</span></button>` : ''}
+      ${d.to === 'user' && d.status === 'posted' ? `<button class="btn small primary" type="button" data-dact="ack" data-did="${d.directiveId}">${icon('inbox')}<span>受領する</span></button>` : ''}
+      ${d.to === 'user' && (d.status === 'posted' || d.status === 'accepted') ? `<button class="btn small" type="button" data-dact="done" data-did="${d.directiveId}">${icon('circle-check')}<span>完了にする</span></button><button class="btn small" type="button" data-dact="rejected" data-did="${d.directiveId}">${icon('ban')}<span>辞退する</span></button>` : ''}
       <button class="btn small" type="button" data-relay="${d.directiveId}">${icon('copy')}<span>AIに渡す文をコピー</span></button></div>
   </article>`;
 }
@@ -1643,8 +1645,8 @@ function v14Render(t = S.tasks.get(S.sel)) {
   $('#v14msgs').innerHTML = msgs.map((x) => `<li${x.kind === 'control' ? ' data-ctl' : ''}><span class="dchip" data-s="${x.status === 'pending' ? 'posted' : 'done'}">${x.status === 'pending' ? '配達待ち' : '確認済み'}</span><span class="dchip">${x.kind === 'control' ? '停止' : x.kind === 'steer' ? '軌道修正' : '伝言'}</span><span>${esc(x.body)}</span><span class="dir-time">${esc(x.from)} ${hms(ms(x.createdAt))}</span></li>`).join('');
 }
 const isDesc = (x, rootId) => { let c = x; for (let i = 0; c && i < 8; i++) { if (c.parentId === rootId) return true; c = S.tasks.get(c.parentId); } return false; };
-async function v14Post(body) {
-  const r = await fetch('/api/message', { method: 'POST', headers: { 'content-type': 'application/json', ...authHeaders() }, body: JSON.stringify(body) });
+async function v14Post(body, path = '/api/message') {
+  const r = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json', ...authHeaders() }, body: JSON.stringify(body) });
   const j = await r.json().catch(() => ({}));
   if (!r.ok || j.error) throw new Error(j.error || 'http ' + r.status);
   return j;
@@ -1668,6 +1670,8 @@ $('#v14form').addEventListener('submit', async (e) => {
   b.disabled = false;
 });
 $('#v14').addEventListener('click', (e) => {
+  const act = e.target.closest('[data-dact]');
+  if (act) { v14Post({ directiveId: Number(act.dataset.did), action: act.dataset.dact }, '/api/directive').catch((err) => { $('#v14status').textContent = '操作できませんでした: ' + err.message; }); return; }
   const g = e.target.closest('[data-goto]'), r = e.target.closest('[data-relay]');
   if (g) { const id = Number(g.dataset.goto); if (id !== latest()) setFollow(false); select(id, { keepFollow: true }); }
   else if (r) { const d = S.dirs.get(Number(r.dataset.relay)); if (d) copyText(relayText(d), r); }
