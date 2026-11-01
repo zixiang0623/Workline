@@ -577,6 +577,7 @@ button, input { font: inherit; color: inherit; }
     <div class="rail-foot">
       <p class="rail-note" id="railNote" hidden><svg class="ic" aria-hidden="true"><use href="#i-triangle-alert"/></svg><span>書き込みトークンが未設定です。URLを知っている人は誰でも送信できます。</span></p>
       <button class="btn small" id="openInbox" type="button"><svg class="ic" aria-hidden="true"><use href="#i-inbox"/></svg><span>指令 inbox</span><b class="cnt" id="inboxCnt" hidden></b></button>
+      <button class="btn small" id="refreshNow" type="button"><svg class="ic" aria-hidden="true"><use href="#i-refresh-cw"/></svg><span>更新</span></button>
       <button class="btn small" id="refreshIcons" type="button"><svg class="ic" aria-hidden="true"><use href="#i-refresh-cw"/></svg><span>アイコンを全て更新</span></button>
       <p class="rail-note" id="iconStat" role="status" aria-live="polite" hidden></p>
       <button class="btn small" id="copyEndpoint" type="button" data-copy-endpoint><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg><span>MCPのURLをコピー</span></button>
@@ -1694,6 +1695,17 @@ function inboxRender() {
       ${group('未受領', by(['posted']).reverse())}${group('作業中', by(['accepted']))}${group('完了・終了(直近5件)', by(['done', 'failed', 'rejected']).slice(0, 5))}</section>`;
   }).join('')}</div>` : `<p class="inbox-empty" style="padding:var(--space-lg)">指令はまだありません。</p>`;
 }
+/* 更新: タスク・ステップ・指令を、サーバーの最新の状態に今すぐ合わせる(ライブ接続が切れていれば、つなぎ直す) */
+$('#refreshNow').addEventListener('click', async () => {
+  const btn = $('#refreshNow'), stat = $('#iconStat'), label = btn.querySelector('span'); if (btn.disabled) return;
+  btn.disabled = true; label.textContent = '更新中…'; stat.hidden = false; stat.textContent = '';
+  try {
+    handle(await fetchSnapshot(), true);
+    if (!ws || ws.readyState > 1) connect();
+    stat.textContent = `更新しました(${hms(nowMs())})`;
+  } catch (e) { stat.textContent = e.denied ? '権限がありません。' : '更新できませんでした。しばらくしてからもう一度。'; }
+  btn.disabled = false; label.textContent = '更新';
+});
 /* アイコンを今すぐ全部取り直す(対応表で補ったドメインも反映)。1件ずつ順に取りに行き、進み具合を出す */
 $('#refreshIcons').addEventListener('click', async () => {
   const btn = $('#refreshIcons'), stat = $('#iconStat'); if (btn.disabled) return;
