@@ -870,14 +870,16 @@ export class Board extends DurableObject {
     return this.sql
       .exec(
         `SELECT * FROM messages WHERE status = 'pending' AND (expires_at IS NULL OR expires_at > ?)
-           AND ((to_task IS NULL AND to_id = ?) OR (to_task IS NOT NULL AND to_task = ?))
+           AND ((to_task IS NULL AND to_id = ?) OR (to_task IS NOT NULL AND (to_task = ? OR (? <> '' AND to_task IN (SELECT id FROM tasks WHERE agent_id = ? AND status = 'running')))))
          ORDER BY (control IS NOT NULL) DESC, id LIMIT 20`,
         Date.now(),
         id,
         tid ?? -1,
+        id,
+        id,
       )
       .toArray()
-      .map(msgOut);
+      .map(msgOut);  // タスク宛は、その呼び出しが taskId を持たなくても、担当エージェント本人の実行中タスクあてなら届く(ポーリング役にも停止が届く)
   }
 
   getDir(a) {
