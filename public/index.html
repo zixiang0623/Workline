@@ -1607,8 +1607,8 @@ function dirCard(d, t) {
     <div class="dir-foot">
       ${child && child !== t.id ? `<button class="btn small" type="button" data-goto="${child}">${icon('chevron-right')}<span>子タスク #${child} へ</span></button>` : ''}
       ${d.taskId !== t.id && S.tasks.has(d.taskId) ? `<button class="btn small" type="button" data-goto="${d.taskId}">${icon('undo-2')}<span>指令元 #${d.taskId} へ</span></button>` : ''}
-      ${d.to === 'user' && d.status === 'posted' ? `<button class="btn small primary" type="button" data-dact="ack" data-did="${d.directiveId}">${icon('inbox')}<span>受領する</span></button>` : ''}
-      ${d.to === 'user' && (d.status === 'posted' || d.status === 'accepted') ? `<button class="btn small" type="button" data-dact="done" data-did="${d.directiveId}">${icon('circle-check')}<span>完了にする</span></button><button class="btn small" type="button" data-dact="rejected" data-did="${d.directiveId}">${icon('ban')}<span>辞退する</span></button>` : ''}
+      ${d.status === 'posted' ? `<button class="btn small primary" type="button" data-dact="ack" data-did="${d.directiveId}">${icon('inbox')}<span>受領する</span></button>` : ''}
+      ${d.status === 'posted' || d.status === 'accepted' ? `<button class="btn small" type="button" data-dact="done" data-did="${d.directiveId}">${icon('circle-check')}<span>完了にする</span></button><button class="btn small" type="button" data-dact="rejected" data-did="${d.directiveId}">${icon('ban')}<span>辞退する</span></button>` : ''}
       <button class="btn small" type="button" data-relay="${d.directiveId}">${icon('copy')}<span>AIに渡す文をコピー</span></button></div>
   </article>`;
 }

@@ -986,23 +986,24 @@ export class Board extends DurableObject {
     return { ok: true, status, directive: dirOut(n) };
   }
 
-  // 宛先が user の指令だけ、人間が画面から ack(受領) / done / failed / rejected にできる(リースなし)
+  // ユーザーが画面から、どの宛先の指令でも ack(受領) / done / failed / rejected にできる(宛先本人に代わる操作として履歴に by: user を残す)
   userDirective(b) {
     const r = this.getDir(b || {});
-    if (r.to_id !== "user") throw new Error("画面から操作できるのは、宛先が user の指令だけです。");
+    const mine = r.to_id === "user"; // 宛先が本人なら受領者も本人(期限なし)。他のAI宛なら、受領者はそのAIのまま(AIが続きを完了できる)
+    const holder = mine ? "user" : r.to_id;
     const act = String(b.action || "");
     const now = Date.now();
     if (act === "ack") {
       if (r.status !== "posted") throw new Error(`指令 #${r.id} は既に ${r.status} です。`);
-      const n = this.saveDir(r, "status = 'accepted', accepted_by = 'user', accepted_at = ?, lease_until = NULL, history = ?", [now, this.hist(r, "accepted", "user")]);
+      const n = this.saveDir(r, "status = 'accepted', accepted_by = ?, accepted_at = ?, lease_until = ?, history = ?", [holder, now, mine ? null : now + this.leaseMs(), this.hist(r, "accepted", "user", mine ? {} : { onBehalfOf: r.to_id })]);
       return { ok: true, directive: dirOut(n) };
     }
     if (!DIRECTIVE_END.includes(act)) throw new Error("action は ack / done / failed / rejected のどれかです。");
     if (DIRECTIVE_END.includes(r.status)) throw new Error(`指令 #${r.id} は既に ${r.status} で閉じています。`);
     let hist = r.history;
     if (r.status === "posted") hist = this.hist(r, "accepted", "user"); // 受領せずに閉じたときも履歴に残す
-    const n = this.saveDir(r, "status = ?, accepted_by = 'user', accepted_at = COALESCE(accepted_at, ?), completed_at = ?, lease_until = NULL, result_summary = ?, history = ?", [
-      act, now, now, clip(b.summary, LIMIT.summary), this.hist({ history: hist }, act, "user"),
+    const n = this.saveDir(r, "status = ?, accepted_by = COALESCE(accepted_by, ?), accepted_at = COALESCE(accepted_at, ?), completed_at = ?, lease_until = NULL, result_summary = ?, history = ?", [
+      act, holder, now, now, clip(b.summary, LIMIT.summary), this.hist({ history: hist }, act, "user"),
     ]);
     return { ok: true, directive: dirOut(n) };
   }
