@@ -561,6 +561,24 @@ async function handleIcon(request, env, url) {
   });
 }
 
+// アイコンの手動更新。agent なし: 対応表からドメインを補い、保存済みアイコンを全部捨てて対象を返す / agent あり: そのAIの分だけ今すぐ取りに行く
+async function handleIconRefresh(request, env, url) {
+  if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: { allow: "POST" } });
+  if (!originOk(request, env)) return json({ error: "forbidden origin" }, 403);
+  if (!canRead(request, url, env)) return json({ error: "unauthorized" }, 401);
+  let b = {};
+  try {
+    b = await request.json();
+  } catch {}
+  const brd = board(env);
+  if (!b.agent) return json(await brd.prepareIcons());
+  const agent = await brd.getAgent(String(b.agent));
+  if (!agent || (!agent.domain && !agent.icon_url)) return json({ id: String(b.agent), ok: false, reason: "no-source" });
+  const img = await findIcon(agent);
+  await brd.saveIcon(agent.id, img ? img.type : null, img ? img.buf : null);
+  return json({ id: agent.id, ok: !!img, type: img ? img.type : null });
+}
+
 async function handleSnapshot(request, env, url) {
   if (!canRead(request, url, env)) return json({ error: "unauthorized" }, 401);
   return json(await board(env).snapshot());
@@ -575,6 +593,7 @@ export default {
       if (path === "/ws") return await handleWs(request, env, url);
       if (path === "/api/snapshot") return await handleSnapshot(request, env, url);
       if (path === "/api/icon") return await handleIcon(request, env, url);
+      if (path === "/api/icons/refresh") return await handleIconRefresh(request, env, url);
       if (path === "/api/directive") return await handleDirective(request, env, url);
       if (path === "/api/message") return await handleMessage(request, env, url);
       if (path === "/api/purge") return await handlePurge(request, env, url);
@@ -1146,6 +1165,17 @@ export class Board extends DurableObject {
       this.sql.exec("UPDATE agents SET icon_type = NULL, icon_blob = NULL, icon_at = NULL WHERE id = ?", ag.id);
     }
     return agentRow(this.sql.exec("SELECT * FROM agents WHERE id = ?", ag.id).one());
+  }
+
+  // アイコンを今すぐ更新する準備: 名前から分かるドメインを補い(既に決まっているものは変えない)、保存済みアイコンを捨てる
+  prepareIcons() {
+    for (const r of this.sql.exec("SELECT id, name, domain FROM agents").toArray()) {
+      const dom = r.domain || parseAgent({ name: r.name })?.domain || "";
+      if (dom !== r.domain) this.sql.exec("UPDATE agents SET domain = ? WHERE id = ?", dom, r.id);
+    }
+    this.sql.exec("UPDATE agents SET icon_type = NULL, icon_blob = NULL, icon_at = NULL");
+    const rows = this.sql.exec("SELECT * FROM agents ORDER BY last_seen DESC").toArray().map(agentRow);
+    return { agents: rows, targets: rows.filter((a) => a.hasIcon).map((a) => ({ id: a.id, name: a.name })) };
   }
 
   // アイコン取得用(Worker から RPC で呼ぶ)
