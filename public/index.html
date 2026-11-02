@@ -1856,7 +1856,7 @@ $('#notifyBody').addEventListener('click', async (e) => {
     st.textContent = j.ok ? '保存しました。' : '保存できませんでした: ' + (j.error || '');
   } else {
     st.textContent = '送信しています…'; const j = await post('/api/notify/test', {});
-    st.textContent = j.ok ? 'テスト通知を送りました。スマホに届くか確認してください。' : '送れませんでした: ' + (j.reason || j.status || j.error || '');
+    st.textContent = j.ok ? 'テスト通知を送りました。スマホに届くか確認してください。' : '送れませんでした: ' + (j.reason || (j.status ? 'HTTP ' + j.status : '') + (j.detail ? `(ntfy: ${j.detail})` : '') || j.error || '') + (j.status === 429 ? ' — ntfy.sh の送信回数の制限です。ntfy のアカウントを作り、アクセストークンを Worker のシークレット NTFY_TOKEN に設定してください。' : '');
   }
 });
 

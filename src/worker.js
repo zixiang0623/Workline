@@ -1130,9 +1130,18 @@ export class Board extends DurableObject {
     let u; try { u = new URL(url); } catch { return { ok: false, reason: "NTFY_URL の形式が正しくありません" }; }
     const topic = u.pathname.replace(/^\/+|\/+$/g, ""); if (!topic) return { ok: false, reason: "NTFY_URL にトピック名がありません" };
     const headers = { "content-type": "application/json" }; if (this.env.NTFY_TOKEN) headers.authorization = `Bearer ${this.env.NTFY_TOKEN}`;
+    const send = () => fetch(`${u.origin}/`, { method: "POST", headers, body: JSON.stringify({ topic, ...payload }) });
     try {
-      const r = await fetch(`${u.origin}/`, { method: "POST", headers, body: JSON.stringify({ topic, ...payload }) });
-      return { ok: r.ok, status: r.status };
+      let r = await send();
+      if (r.status === 429) { // 送信回数の制限: 少し待って1回だけやり直す
+        const wait = Math.min(6, Number(r.headers.get("retry-after")) || 3);
+        await new Promise((res) => setTimeout(res, wait * 1000));
+        r = await send();
+      }
+      if (r.ok) return { ok: true, status: r.status };
+      let detail = "";
+      try { const j = await r.json(); detail = clip(j.error || j.message || "", 200); } catch {}
+      return { ok: false, status: r.status, detail };
     } catch (e) { return { ok: false, reason: "送信できませんでした" }; }
   }
   clickUrl(taskId) { const base = this.getSet("base") || this.env.PUBLIC_URL || ""; return base ? (taskId ? `${base}/#t=${taskId}` : base) : undefined; }
