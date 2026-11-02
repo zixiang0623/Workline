@@ -220,6 +220,21 @@ details > summary { cursor: pointer; font-size: var(--text-xs); color: var(--col
         <div class="btns"><button class="btn" id="doNow" type="button"><svg class="ic" aria-hidden="true"><use href="#i-radio"/></svg><span>状況を送る</span></button></div>
       </section>
 
+      <section class="card" aria-labelledby="hAsk">
+        <h2 id="hAsk"><svg class="ic" aria-hidden="true"><use href="#i-inbox"/></svg>ユーザーに確認する <span class="num" style="font-weight:400;color:var(--color-muted);font-size:var(--text-xs)">askUser / getRequest</span></h2>
+        <label>確認したいこと<input id="akQ" type="text" autocomplete="off" placeholder="例: 古いログを削除してよいですか"></label>
+        <label>選択肢(1行に1つ・2〜4個。空なら「進める」「やめる」)<textarea id="akOpts" rows="3"></textarea></label>
+        <div class="row">
+          <label>危険度<select id="akRisk"><option value="medium">中</option><option value="low">低</option><option value="high">高</option><option value="destructive">破壊的</option></select></label>
+          <label>回答の期限(分)<input id="akMin" type="number" min="1" max="1440" value="30" inputmode="numeric"></label>
+        </div>
+        <div class="btns">
+          <button class="btn primary" id="doAsk" type="button"><svg class="ic" aria-hidden="true"><use href="#i-send"/></svg><span>確認を出す</span></button>
+          <button class="btn" id="doReq" type="button"><svg class="ic" aria-hidden="true"><use href="#i-refresh-cw"/></svg><span>結果を見る</span></button>
+        </div>
+        <p class="hint" id="akInfo">答えは、このあと「伝言・受信」に届きます。時間切れは「拒否」として届きます。</p>
+      </section>
+
       <section class="card" aria-labelledby="hFin">
         <h2 id="hFin"><svg class="ic" aria-hidden="true"><use href="#i-flag"/></svg>作業を終える <span class="num" style="font-weight:400;color:var(--color-muted);font-size:var(--text-xs)">finishTask</span></h2>
         <label>結果の要約(1〜3文)<textarea id="fnSummary"></textarea></label>
@@ -406,6 +421,17 @@ bind('#doNow', async () => { await call('setStatus', clean({ taskId: needTask(),
 for (const b of $$('[data-fin]')) b.addEventListener('click', run(b, async () => {
   await call('finishTask', clean({ taskId: needTask(), status: b.dataset.fin, summary: $('#fnSummary').value.trim() })); toast('作業を閉じました。'); $('#fnSummary').value = '';
 }));
+bind('#doAsk', async () => {
+  const question = $('#akQ').value.trim(); if (!question) { toast('確認したいことを入れてください。', 'error'); throw 0; }
+  const options = $('#akOpts').value.split('\n').map((x) => x.trim()).filter(Boolean);
+  const d = await call('askUser', clean({ taskId: needTask(), question, options: options.length >= 2 ? options : undefined, risk: $('#akRisk').value, timeoutMinutes: int($('#akMin').value) }));
+  S.lastReq = d.requestId; $('#akInfo').textContent = `確認 #${d.requestId} を出しました(期限 ${ago(Date.parse(d.expiresAt))})。答えが来るまで、その操作はしないでください。`; toast(`確認 #${d.requestId} を出しました。`);
+});
+bind('#doReq', async () => {
+  if (!S.lastReq) { toast('まだ確認を出していません。', 'error'); throw 0; }
+  const d = await call('getRequest', { requestId: S.lastReq });
+  $('#akInfo').textContent = `確認 #${d.requestId}: ${d.status === 'pending' ? '回答待ち' : d.status === 'answered' ? `「${d.answer}」${d.comment ? '(' + d.comment + ')' : ''}` : d.status === 'expired' ? '時間切れで拒否されました' : '取り消されました'}`;
+});
 bind('#doTasks', async () => { const d = await call('listTasks', { limit: 10 }); renderTasks(d.tasks || []); });
 function renderTasks(list) {
   $('#taskList').innerHTML = list.length ? list.map((t) => `<div class="item" data-s="${esc(t.status)}"><div class="top"><span class="chip num">#${t.taskId}</span><span class="chip">${esc(t.agentNumber ?? '')} ${esc(t.agent || '')}</span><span class="chip" data-s="${esc(t.status)}">${esc(ST[t.status] || t.status)}</span>${t.directiveId ? `<span class="chip num">指令 #${t.directiveId}</span>` : ''}</div><h3>${esc(t.title)}</h3><div class="btns"><button class="btn small" data-pick="${t.taskId}" data-no="${esc(t.agentNumber ?? '')}">${ic('flag')}<span>これを対象にする</span></button></div></div>`).join('') : '<p class="empty">タスクはありません。</p>';
