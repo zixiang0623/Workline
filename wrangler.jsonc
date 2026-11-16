@@ -11,6 +11,6 @@
   "durable_objects": {
     "bindings": [{ "name": "BOARD", "class_name": "Board" }]
   },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Board"] }],
+  // Board は本番に作成済み(公開済みスクリプトの移行タグは v2)。ここに v1 を残すと「作成済みのクラスに new-sqlite-class を適用できない」で deploy が失敗するため、移行は書かない。新しい移行が必要になったら v3 から足す
   "observability": { "enabled": true }
 }
