@@ -1,10 +1,9 @@
 // Workline: AIの作業をリアルタイムで見せるMCPサーバー + ビューアー配信
 // 構成: Worker(ルーティング/MCP) + Durable Object "Board"(SQLite保存 + WebSocket配信)
-import BETA_HTML from "./beta.html"; // 新しい画面(ベータ版)。静的アセットの扱いに頼らず、Worker が直接返す
 import { DurableObject } from "cloudflare:workers";
 import { findIcon, parseAgent, slugify } from "./agents.js";
 
-const VERSION = "2.0.0";
+const VERSION = "2.1.0";
 const ALIASES = { getRequest: "getConfirmation" }; // 旧名(askUser の結果取得)。人間からの「要求」とは別物
 const PROTOCOLS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 
@@ -693,12 +692,6 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     const path = url.pathname.replace(/\/+$/, "") || "/";
-    if (path === "/beta" || path === "/beta.html") {
-      if (request.method !== "GET" && request.method !== "HEAD") return new Response("Method Not Allowed", { status: 405, headers: { allow: "GET, HEAD" } });
-      return new Response(request.method === "HEAD" ? null : BETA_HTML, {
-        headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-cache", "x-content-type-options": "nosniff" },
-      });
-    }
     try {
       if (path === "/mcp") return await handleMcp(request, env, url);
       if (path === "/ws") return await handleWs(request, env, url);
