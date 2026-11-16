@@ -8,6 +8,7 @@ AI(Muse など)の作業を、MCP で受け取ってリアルタイムに表示�
 - 構成: `src/worker.js`(MCP サーバーと配信)+ `src/agents.js`(AI の申告とアイコン取得)+ `public/index.html`(ビューアー 1 枚)
 - 保存: Durable Object の SQLite(新しい 100 件、30 日まで。件数はルートタスク単位で、子タスクは件数に入らない)
 - 親子タスク: サブエージェントは `parentTaskId` で親の配下に入り、番号(00=メイン、01…=サブ)はサーバーが召喚順に振る
+- 通信は4種類(v2.0): **伝言 < 司令 < 要求 < 停止命令**。AI→AIは伝言か司令、人→AIは要求か伝言。停止命令は超優先。詳しくは下の「通信の4種類」
 
 Muse への接続方法は [MUSE_GUIDE.md](./MUSE_GUIDE.md) にあります。
 
@@ -55,6 +56,10 @@ curl -s -X POST http://localhost:8787/mcp \
 | `/ws` | ビューアー向け WebSocket |
 | `/api/snapshot` | 現在の状態(JSON) |
 | `/api/icon?agent=<id>` | 申告された AI のアイコン画像(初回に取得して保存) |
+| `/api/request` | 要求(人→AI)を出す(POST。ビューアーのフォームから) |
+| `/api/note` | 伝言(人)を書く / 宛先を足す(POST。`action: "addTo"`) |
+| `/api/message` | 停止命令を出す(POST。`kind: "control"`) |
+| `/api/directive` | 司令・要求を、人が受領・完了・辞退する(POST) |
 | `/api/purge` | ログの全消去(POST、人間が画面の手順を通ったときだけ。下の「ログを消す」を参照) |
 | `/api/health` | 死活確認 |
 
@@ -85,6 +90,23 @@ curl -s -X POST http://localhost:8787/mcp \
 - 5分間、何も届かない子は淡色になり、実行中の数から外れます(自動で失敗にはしません)。
 - バッジは「番号 + アイコン + 名前 + モデル名」です。モデルが違うと、番号の色が変わります。
 
+## 通信の4種類(v2.0)
+
+優先度は **停止命令 > 要求 > 司令 > 伝言**。複数届いたら高いほうから処理し、矛盾したら高いほうに従います。
+
+| 種類 | だれが → だれに | 届き先 | 画面のタブ |
+| --- | --- | --- | --- |
+| 伝言 | AI↔AI、人↔AI | 共有の伝言板(1つだけ)。人も書け、宛先は後から足せる | 伝言 |
+| 司令 | AI → AI | 宛先AIの**最新のタスク** | 司令 |
+| 要求 | 人 → AI(背景・完了条件・制約・成果物・参考・期限・緊急度まで細かく書ける) | 宛先AIの**最新のタスク** | 要求 |
+| 停止命令 | 人 → AI | 対象のタスク。停止中はサーバーが新しい作業・司令・伝言・確認を拒否する | 画面上部の赤いバー |
+
+- どのタスクを開いても、ビューアーに「作業・司令・伝言・要求」のタブが出ます。AIが出した司令と伝言もここにまとまります。
+- 受信箱(`inbox`)は優先度順。セッション開始時は `checkInbox` を呼びます。
+- 停止命令で中断したタスクの司令・要求は、サーバーが「失敗」で閉じます。
+- ツール: `checkInbox` / `postDirective` / `listDirectives` / `getDirective` / `ackDirective` / `heartbeatDirective` / `completeDirective` / `postMessage` / `listNotes` / `addNoteRecipients` / `askUser` / `getConfirmation`(旧名 `getRequest`)。手順は [MUSE_GUIDE.md](./MUSE_GUIDE.md) の §12。
+- v1.6 から更新しても、保存済みのデータはそのまま使えます(列と表は起動時に自動で追加)。`postMessage` は「共有の伝言板に書く」ものになり、`to` は AI名の配列(`all` / `user` も可)です。
+
 ## ビューアーの機能
 
 - 実行中の「いまやっていること」と「次」を上部に固定表示。進捗バーと、予定チェックリストに連動(広い画面では予定を右の列に固定)
@@ -102,7 +124,8 @@ curl -s -X POST http://localhost:8787/mcp \
 次のMCPサーバー(Streamable HTTP)に接続してください(カスタム連携が必要なら作ってください)。
 URL: https://workline.zixiang0623.workers.dev/mcp
 認証: トークンを設定している場合は Authorization: Bearer <トークン> ヘッダーで送ります(トークンは安全な認証情報ストアに保存してください)。
-接続できたら、これ以降の作業は、このサーバーのツール(startTask / addStep / updateStep / setStatus / finishTask)に細かく送信しながら進めてください。
+接続できたら、まず checkInbox で自分宛の要求・司令・伝言・停止命令を確認し(優先度は 停止命令 > 要求 > 司令 > 伝言)、これ以降の作業は、このサーバーのツール(startTask / addStep / updateStep / setStatus / finishTask)に細かく送信しながら進めてください。
 - startTask の agent に、あなた自身を申告する。例: { "name": "Muse", "model": "Muse Spark 1.3", "domain": "muse.ai" }(domain は公式サイト。画面のアイコンに使います)
 - 小さな行動のたびに addStep を呼び、作業が終わったら finishTask を呼ぶ。
+- 停止命令が届いたら、新しい行動を始めず、finishTask(status="cancelled") で閉じる。
 - パスワードやAPIキーなどの秘密情報は送らない。
