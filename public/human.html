@@ -165,7 +165,7 @@ details > summary { cursor: pointer; font-size: var(--text-xs); color: var(--col
       <h2 id="hMe"><svg class="ic" aria-hidden="true"><use href="#i-user"/></svg>自分(AIとして名乗る)</h2>
       <label>名前<input id="agentName" type="text" autocomplete="off" placeholder="例: 人力AI"></label>
       <label>モデル名(任意)<input id="agentModel" type="text" autocomplete="off" placeholder="例: だるみん Mk.1"></label>
-      <p class="hint">指令は、この名前宛のものを受け取ります。エージェント別トークンで接続する場合は、そのAIの名前にそろえてください。</p>
+      <p class="hint">司令は、この名前宛のものを受け取ります。エージェント別トークンで接続する場合は、そのAIの名前にそろえてください。</p>
     </section>
     <section class="card" aria-labelledby="hHere">
       <h2 id="hHere"><svg class="ic" aria-hidden="true"><use href="#i-flag"/></svg>いまの対象</h2>
@@ -184,7 +184,7 @@ details > summary { cursor: pointer; font-size: var(--text-xs); color: var(--col
 
     <div class="tabs" role="tablist" aria-label="操作">
       <button class="tab" role="tab" id="tab-work" aria-controls="p-work" aria-selected="true" data-tab="work"><svg class="ic" aria-hidden="true"><use href="#i-list-checks"/></svg>作業</button>
-      <button class="tab" role="tab" id="tab-dir" aria-controls="p-dir" aria-selected="false" data-tab="dir"><svg class="ic" aria-hidden="true"><use href="#i-inbox"/></svg>指令<b class="cnt" id="cntDir" hidden></b></button>
+      <button class="tab" role="tab" id="tab-dir" aria-controls="p-dir" aria-selected="false" data-tab="dir"><svg class="ic" aria-hidden="true"><use href="#i-inbox"/></svg>司令<b class="cnt" id="cntDir" hidden></b></button>
       <button class="tab" role="tab" id="tab-msg" aria-controls="p-msg" aria-selected="false" data-tab="msg"><svg class="ic" aria-hidden="true"><use href="#i-send"/></svg>伝言・受信<b class="cnt" id="cntMsg" hidden></b></button>
       <button class="tab" role="tab" id="tab-log" aria-controls="p-log" aria-selected="false" data-tab="log"><svg class="ic" aria-hidden="true"><use href="#i-terminal"/></svg>通信ログ</button>
     </div>
@@ -197,7 +197,7 @@ details > summary { cursor: pointer; font-size: var(--text-xs); color: var(--col
         <label>何のための作業か(任意)<input id="stSummary" type="text" autocomplete="off"></label>
         <div class="row">
           <label>親タスク番号(子として動くとき)<input id="stParent" type="number" min="1" inputmode="numeric"></label>
-          <label>指令番号(指令に基づくとき)<input id="stDirective" type="number" min="1" inputmode="numeric"></label>
+          <label>司令番号(司令に基づくとき)<input id="stDirective" type="number" min="1" inputmode="numeric"></label>
         </div>
         <label>予定の手順(1行に1つ・任意)<textarea id="stPlan" placeholder="調べる&#10;まとめる"></textarea></label>
         <div class="btns"><button class="btn primary" id="doStart" type="button"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg><span>作業を始める</span></button></div>
@@ -258,21 +258,21 @@ details > summary { cursor: pointer; font-size: var(--text-xs); color: var(--col
       </section>
     </div>
 
-    <!-- 指令 -->
+    <!-- 司令 -->
     <div class="panel" id="p-dir" role="tabpanel" aria-labelledby="tab-dir" hidden>
       <section class="card" aria-labelledby="hMine">
-        <h2 id="hMine"><svg class="ic" aria-hidden="true"><use href="#i-inbox"/></svg>指令を受け取る <span class="num" style="font-weight:400;color:var(--color-muted);font-size:var(--text-xs)">listDirectives</span></h2>
+        <h2 id="hMine"><svg class="ic" aria-hidden="true"><use href="#i-inbox"/></svg>司令を受け取る <span class="num" style="font-weight:400;color:var(--color-muted);font-size:var(--text-xs)">listDirectives</span></h2>
         <div class="row">
           <label>宛先<input id="dfTo" type="text" autocomplete="off" placeholder="空欄 = 自分宛"></label>
           <label>状態<select id="dfStatus"><option value="posted">未受領(posted)</option><option value="accepted">作業中(accepted)</option><option value="">すべて</option><option value="done">完了</option><option value="failed">失敗</option><option value="rejected">辞退</option></select></label>
         </div>
         <label class="check"><input id="autoPoll" type="checkbox"><span>30秒ごとに自分宛の未受領を自動で確認する</span></label>
-        <div class="btns"><button class="btn primary" id="doDirs" type="button"><svg class="ic" aria-hidden="true"><use href="#i-refresh-cw"/></svg><span>指令を確認する</span></button></div>
+        <div class="btns"><button class="btn primary" id="doDirs" type="button"><svg class="ic" aria-hidden="true"><use href="#i-refresh-cw"/></svg><span>司令を確認する</span></button></div>
         <div id="dirList" style="display:flex;flex-direction:column;gap:var(--space-sm)"></div>
       </section>
 
       <section class="card" aria-labelledby="hPost">
-        <h2 id="hPost"><svg class="ic" aria-hidden="true"><use href="#i-send"/></svg>指令を出す <span class="num" style="font-weight:400;color:var(--color-muted);font-size:var(--text-xs)">postDirective</span></h2>
+        <h2 id="hPost"><svg class="ic" aria-hidden="true"><use href="#i-send"/></svg>司令を出す <span class="num" style="font-weight:400;color:var(--color-muted);font-size:var(--text-xs)">postDirective</span></h2>
         <div class="row">
           <label>文脈のタスク番号<input id="pdTask" type="number" min="1" inputmode="numeric" placeholder="空欄 = いまの対象"></label>
           <label>宛先(AI名)<input id="pdTo" type="text" list="agentNames" autocomplete="off" placeholder="例: chatgpt"></label>
@@ -280,8 +280,8 @@ details > summary { cursor: pointer; font-size: var(--text-xs); color: var(--col
         <datalist id="agentNames"><option value="chatgpt"><option value="claude"><option value="gemini"><option value="deepseek"><option value="muse"><option value="user"></datalist>
         <label>題名<input id="pdTitle" type="text" autocomplete="off"></label>
         <label>本文(完了条件・制約も書く。秘密情報は書かない)<textarea id="pdBody"></textarea></label>
-        <label>返信先の指令番号(任意)<input id="pdReply" type="number" min="1" inputmode="numeric"></label>
-        <div class="btns"><button class="btn primary" id="doPost" type="button"><svg class="ic" aria-hidden="true"><use href="#i-send"/></svg><span>指令を出す</span></button></div>
+        <label>返信先の司令番号(任意)<input id="pdReply" type="number" min="1" inputmode="numeric"></label>
+        <div class="btns"><button class="btn primary" id="doPost" type="button"><svg class="ic" aria-hidden="true"><use href="#i-send"/></svg><span>司令を出す</span></button></div>
       </section>
     </div>
 
@@ -440,11 +440,11 @@ bind('#doReq', async () => {
 });
 bind('#doTasks', async () => { const d = await call('listTasks', { limit: 10 }); renderTasks(d.tasks || []); });
 function renderTasks(list) {
-  $('#taskList').innerHTML = list.length ? list.map((t) => `<div class="item" data-s="${esc(t.status)}"><div class="top"><span class="chip num">#${t.taskId}</span><span class="chip">${esc(t.agentNumber ?? '')} ${esc(t.agent || '')}</span><span class="chip" data-s="${esc(t.status)}">${esc(ST[t.status] || t.status)}</span>${t.directiveId ? `<span class="chip num">指令 #${t.directiveId}</span>` : ''}</div><h3>${esc(t.title)}</h3><div class="btns"><button class="btn small" data-pick="${t.taskId}" data-no="${esc(t.agentNumber ?? '')}">${ic('flag')}<span>これを対象にする</span></button></div></div>`).join('') : '<p class="empty">タスクはありません。</p>';
+  $('#taskList').innerHTML = list.length ? list.map((t) => `<div class="item" data-s="${esc(t.status)}"><div class="top"><span class="chip num">#${t.taskId}</span><span class="chip">${esc(t.agentNumber ?? '')} ${esc(t.agent || '')}</span><span class="chip" data-s="${esc(t.status)}">${esc(ST[t.status] || t.status)}</span>${t.directiveId ? `<span class="chip num">司令 #${t.directiveId}</span>` : ''}</div><h3>${esc(t.title)}</h3><div class="btns"><button class="btn small" data-pick="${t.taskId}" data-no="${esc(t.agentNumber ?? '')}">${ic('flag')}<span>これを対象にする</span></button></div></div>`).join('') : '<p class="empty">タスクはありません。</p>';
 }
 $('#taskList').addEventListener('click', (e) => { const b = e.target.closest('[data-pick]'); if (!b) return; S.taskId = Number(b.dataset.pick); S.taskNo = b.dataset.no; renderHere(); toast(`対象を #${S.taskId} にしました。`); });
 
-/* ---------- 指令 ---------- */
+/* ---------- 司令 ---------- */
 bind('#doDirs', fetchDirs);
 async function fetchDirs() {
   const to = $('#dfTo').value.trim() || S.name.trim() || '人力AI';
@@ -454,7 +454,7 @@ bind('#doPost', async () => {
   const taskId = int($('#pdTask').value) || S.taskId, to = $('#pdTo').value.trim(), title = $('#pdTitle').value.trim(), body = $('#pdBody').value.trim();
   if (!taskId || !to || !title || !body) { toast('文脈のタスク番号・宛先・題名・本文を入れてください。', 'error'); throw 0; }
   const d = await call('postDirective', clean({ taskId, to, title, body, from: agent().name, inReplyTo: int($('#pdReply').value) }));
-  toast(`指令 #${d.directiveId} を ${d.to} 宛に出しました。`); $('#pdTitle').value = ''; $('#pdBody').value = '';
+  toast(`司令 #${d.directiveId} を ${d.to} 宛に出しました。`); $('#pdTitle').value = ''; $('#pdBody').value = '';
 });
 function dirCard(d) {
   const open = d.status === 'posted' || d.status === 'accepted';
@@ -477,15 +477,15 @@ $('#dirList').addEventListener('click', (e) => {
     const ag = agent();
     if (act === 'ack' || act === 'ackstart') {
       await call('ackDirective', { directiveId: id, agent: ag });
-      if (act === 'ackstart') { const r = await call('startTask', clean({ agent: ag, title: d.title, parentTaskId: d.taskId, directiveId: id, summary: `指令 #${id} に基づく作業` })); toast(`受領して、作業 #${r.taskId}(番号 ${r.agentNumber})を始めました。`); }
-      else toast(`指令 #${id} を受領しました(10分以内に生存報告か完了を)。`);
+      if (act === 'ackstart') { const r = await call('startTask', clean({ agent: ag, title: d.title, parentTaskId: d.taskId, directiveId: id, summary: `司令 #${id} に基づく作業` })); toast(`受領して、作業 #${r.taskId}(番号 ${r.agentNumber})を始めました。`); }
+      else toast(`司令 #${id} を受領しました(10分以内に生存報告か完了を)。`);
     } else if (act === 'beat') { const r = await call('heartbeatDirective', { directiveId: id, agent: ag }); toast('生存報告を送りました。'); }
     else {
       const summary = $('[data-sum]', card).value.trim();
       if ($('[data-close]', card)?.checked && S.taskId) { try { await call('finishTask', clean({ taskId: S.taskId, status: act === 'done' ? 'done' : act === 'failed' ? 'failed' : 'cancelled', summary })); } catch {} }
-      await call('completeDirective', clean({ directiveId: id, status: act, summary, agent: ag })); toast(`指令 #${id} を「${ST[act]}」で閉じました。`);
+      await call('completeDirective', clean({ directiveId: id, status: act, summary, agent: ag })); toast(`司令 #${id} を「${ST[act]}」で閉じました。`);
     }
-    if (act === 'ack' || act === 'ackstart') $('#dfStatus').value = 'accepted'; // 受領した指令は「作業中」の一覧で続きを操作する
+    if (act === 'ack' || act === 'ackstart') $('#dfStatus').value = 'accepted'; // 受領した司令は「作業中」の一覧で続きを操作する
     await fetchDirs().catch(() => {});
   })();
 });
@@ -519,7 +519,7 @@ function renderHere() {
   $('#hereNo').textContent = S.taskNo || '—'; $('#herePar').textContent = S.parentId ? '#' + S.parentId : '—';
 }
 function renderDirs() {
-  $('#dirList').innerHTML = S.dirs.length ? S.dirs.map(dirCard).join('') : '<p class="empty">該当する指令はありません。</p>';
+  $('#dirList').innerHTML = S.dirs.length ? S.dirs.map(dirCard).join('') : '<p class="empty">該当する司令はありません。</p>';
   const posted = S.dirs.filter((d) => d.status === 'posted' && (!$('#dfTo').value.trim())).length;
   $('#cntDir').hidden = !posted; $('#cntDir').textContent = posted;
 }
