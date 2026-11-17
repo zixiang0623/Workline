@@ -368,6 +368,11 @@ button, input { font: inherit; color: inherit; }
 .s-title { font-size: var(--text-md); font-weight: 500; line-height: 1.5; overflow-wrap: anywhere; }
 .step[data-status="failed"] .s-title { color: var(--color-error); }
 .step[data-status="skipped"] .s-title { color: var(--color-muted); }
+.s-shots { display: flex; flex-wrap: wrap; gap: var(--space-xs); margin-top: var(--space-xs); }
+.s-shots a { display: block; width: 104px; height: 66px; border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-ctl); overflow: hidden; background: var(--color-paper-2); transition: border-color var(--dur-micro), transform var(--dur-micro); }
+.s-shots a:hover { border-color: var(--color-accent); }
+.s-shots a:active { transform: scale(0.97); }
+.s-shots img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .s-detail { margin-top: var(--space-2xs); font-size: var(--text-sm); color: var(--color-ink-2); white-space: pre-wrap; overflow-wrap: anywhere; }
 .step[data-kind="run"] .s-detail { font-family: var(--font-data); font-size: var(--text-xs); line-height: 1.7; padding: var(--space-xs) var(--space-sm); border-radius: var(--radius-ctl); background: var(--color-paper-2); }
 .s-detail.clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
@@ -1139,6 +1144,13 @@ function buildSteps(t) {
   for (const b of $('#scopeBox').querySelectorAll('[data-scope]')) b.setAttribute('aria-pressed', String(b.dataset.scope === (merged ? 'all' : 'self')));
 }
 
+S.shots = new Map();
+const shotUrl = (id) => `/api/shot?id=${id}${S.token ? '&token=' + encodeURIComponent(S.token) : ''}`;
+// スクリーンショットのサムネイル(押すと原寸を新しいタブで開く)
+function shotsHtml(stepId) {
+  const list = [...S.shots.values()].filter((x) => x.stepId === stepId).sort((a, b) => a.shotId - b.shotId);
+  return list.length ? `<div class="s-shots">${list.map((x) => `<a href="${shotUrl(x.shotId)}" target="_blank" rel="noopener" aria-label="スクリーンショットを開く${x.caption ? ': ' + esc(x.caption) : ''}"><img src="${shotUrl(x.shotId)}" alt="${esc(x.caption || 'スクリーンショット')}" loading="lazy" decoding="async"></a>`).join('')}</div>` : '';
+}
 function fillStep(li, t, s, opt = {}) {
   const k = KIND[s.kind] || KIND.note;
   const idx = t.order.indexOf(s.id), prev = opt.prev !== undefined ? opt.prev : idx > 0 ? t.steps.get(t.order[idx - 1]) : null;
@@ -1158,7 +1170,7 @@ function fillStep(li, t, s, opt = {}) {
   li.innerHTML = `
     <div class="s-time"><span class="num">${hms(s.createdAt)}</span>${prev && s.createdAt - prev.createdAt >= 1000 ? `<span class="num s-gap" title="前のステップから">+${clock(s.createdAt - prev.createdAt)}</span>` : ''}</div>
     <div><span class="s-node">${icon(k[1])}</span></div>
-    <div class="s-body"><button class="dots" type="button" data-info-step="${s.id}" data-owner="${t.id}" aria-label="ステップ #${s.id} の詳細">${icon('ellipsis')}</button><div class="s-meta">${by}<span>${k[0]}</span>${s.agent && s.agent !== t.agent ? `<span class="s-by">${avatar(s.agent, 16)}<span>${esc(agentOf(s.agent).name)}</span></span>` : ''}${state}</div><div class="s-title">${esc(s.title)}</div>${detail}</div>`;
+    <div class="s-body"><button class="dots" type="button" data-info-step="${s.id}" data-owner="${t.id}" aria-label="ステップ #${s.id} の詳細">${icon('ellipsis')}</button><div class="s-meta">${by}<span>${k[0]}</span>${s.agent && s.agent !== t.agent ? `<span class="s-by">${avatar(s.agent, 16)}<span>${esc(agentOf(s.agent).name)}</span></span>` : ''}${state}</div><div class="s-title">${esc(s.title)}</div>${detail}<div data-shots>${shotsHtml(s.id)}</div></div>`;
 }
 el.steps.addEventListener('click', (e) => {
   const b = e.target.closest('[data-more]'); if (!b) return;
@@ -1696,7 +1708,8 @@ const whoAv = (id, size = 18) => (id === 'user' ? `<span class="av" data-t="0" s
 let noteSeen = Number(store.get('note-seen', '0')) || 0;
 
 function commsHandle(m) {
-  if (m.t === 'purged') { S.dirs.clear(); S.msgs.clear(); S.notes.clear(); noteSeen = 0; store.set('note-seen', '0'); return false; }
+  if (m.t === 'shot') { S.shots.set(m.shot.shotId, m.shot); const box = m.shot.stepId != null && document.querySelector(`.step[data-id="${m.shot.stepId}"] [data-shots]`); if (box) box.innerHTML = shotsHtml(m.shot.stepId); return true; }
+  if (m.t === 'purged') { S.shots.clear(); S.dirs.clear(); S.msgs.clear(); S.notes.clear(); noteSeen = 0; store.set('note-seen', '0'); return false; }
   if (m.t === 'directive') S.dirs.set(m.directive.directiveId, m.directive);
   else if (m.t === 'note') S.notes.set(m.note.noteId, m.note);
   else if (m.t === 'message') { if (m.message.control) S.msgs.set(m.message.messageId, m.message); }
@@ -1712,6 +1725,7 @@ function commsSnap(m) {
   for (const d of m.directives || []) S.dirs.set(d.directiveId, d);
   for (const x of m.messages || []) S.msgs.set(x.messageId, x);
   for (const n of m.notes || []) S.notes.set(n.noteId, n);
+  for (const x of m.shots || []) S.shots.set(x.shotId, x);
   S.approvals = new Map((m.approvals || []).map((a) => [a.requestId, a])); queueMicrotask(apprRender);
 }
 // 既読になった(確認された)メッセージは、次の取得までは画面上の配達状態に反映しない(伝言の配達状態はスナップショットで更新)

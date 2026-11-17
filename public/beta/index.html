@@ -322,6 +322,29 @@ main { min-width: 0; padding: var(--space-lg) var(--space-xl) var(--space-2xl); 
 .rowbtn { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; overflow-wrap: anywhere; }
 .rowbtn:hover { text-decoration: underline; text-underline-offset: 0.2em; }
 
+/* ---- screenshots ---- */
+.thumbs { display: flex; flex-wrap: wrap; gap: var(--space-xs); margin-top: var(--space-xs); }
+.thumb { position: relative; width: 96px; height: 60px; padding: 0; border: var(--rule-hair) solid var(--color-rule); background: var(--color-paper-3); cursor: pointer; overflow: hidden; transition: border-color var(--dur-micro) var(--ease-out), transform var(--dur-micro) var(--ease-out); }
+.thumb:hover { border-color: var(--color-ink-2); }
+.thumb:active { transform: scale(0.97); }
+.thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.ledger .ti .thumbs { margin-top: var(--space-xs); }
+.attach { display: grid; gap: var(--space-xs); }
+.attach-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-xs) var(--space-md); }
+.pending { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
+.pending li { position: relative; display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; gap: var(--space-sm); width: min(100%, 22rem); padding: var(--space-2xs); border: var(--rule-hair) solid var(--color-rule); font-size: var(--text-xs); }
+.pending li img { width: 56px; height: 40px; object-fit: cover; display: block; background: var(--color-paper-3); }
+.pending li .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-ink-2); }
+.pending li .nm small { display: block; color: var(--color-muted); }
+.pending li[data-state="error"] .nm small { color: var(--color-error); }
+.compose[data-drop], .reqbox[data-drop] { outline: 1px dashed var(--color-accent); outline-offset: var(--space-xs); }
+dialog { max-width: min(96%, 1240px); max-height: 94dvh; padding: 0; border: var(--rule-hair) solid var(--color-rule); background: var(--color-paper); color: var(--color-ink); }
+dialog::backdrop { background: color-mix(in oklab, var(--color-paper-3) 88%, transparent); }
+.lb-bar { display: flex; align-items: center; gap: var(--space-xs); padding: var(--space-xs) var(--space-sm); border-bottom: var(--rule-hair) solid var(--color-rule); }
+.lb-cap { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-sm); color: var(--color-ink-2); }
+.lb-n { font-size: var(--text-xs); color: var(--color-muted); }
+#lbImg { display: block; margin: 0 auto; max-width: 100%; max-height: calc(94dvh - 52px); object-fit: contain; background: var(--color-paper-3); }
+
 </style>
 </head>
 <body>
@@ -379,6 +402,9 @@ main { min-width: 0; padding: var(--space-lg) var(--space-xl) var(--space-2xl); 
 <symbol id="i-git-branch" viewBox="0 0 24 24"><path d="M15 6a9 9 0 0 0-9 9V3" /> <circle cx="18" cy="6" r="3" /> <circle cx="6" cy="18" r="3" /></symbol>
 <symbol id="i-circle-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <line x1="12" x2="12" y1="8" y2="12" /> <line x1="12" x2="12.01" y1="16" y2="16" /></symbol>
 <symbol id="i-square-pen" viewBox="0 0 24 24"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /> <path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z" /></symbol>
+<symbol id="i-image" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /> <circle cx="9" cy="9" r="2" /> <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></symbol>
+<symbol id="i-paperclip" viewBox="0 0 24 24"><path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551" /></symbol>
+<symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></symbol>
 </defs></svg>
 <header class="top">
   <button class="btn quiet menu-btn" id="menuBtn" type="button" aria-label="セッション一覧を開く" aria-expanded="false" aria-controls="list"><svg class="ic" aria-hidden="true"><use href="#i-menu"/></svg></button>
@@ -435,6 +461,13 @@ main { min-width: 0; padding: var(--space-lg) var(--space-xl) var(--space-2xl); 
     </div>
   </main>
 </div>
+<dialog id="lightbox" aria-label="スクリーンショットの拡大表示">
+  <div class="lb-bar"><span class="lb-cap" id="lbCap"></span><span class="num lb-n" id="lbN"></span>
+    <button class="btn small quiet" id="lbPrev" type="button" aria-label="前の画像"><svg class="ic" aria-hidden="true"><use href="#i-chevron-left"/></svg></button>
+    <button class="btn small quiet" id="lbNext" type="button" aria-label="次の画像"><svg class="ic" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
+    <button class="btn small quiet" id="lbClose" type="button" aria-label="閉じる"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+  <img id="lbImg" alt="">
+</dialog>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
 <script>
@@ -474,7 +507,7 @@ const S = {
   sel: null, tab: ['work', 'dir', 'note', 'req'].includes(store.get('beta.tab', 'work')) ? store.get('beta.tab', 'work') : 'work',
   follow: store.get('beta.follow', '1') === '1', filter: '', scope: store.get('beta.scope', 'all'), newest: store.get('beta.order', 'new') === 'new',
   conn: 'connecting', offset: 0, auth: null, token: store.get('token', ''), sound: store.get('beta.sound', '0') === '1', booted: false,
-  exp: new Set(), dirFilter: 'all', noteFilter: 'all', rcp: new Set(), replyTo: null, seen: new Set(), maxId: 0, showAll: false, iconRev: 0,
+  shots: new Map(), pend: { note: [], req: [] }, exp: new Set(), dirFilter: 'all', noteFilter: 'all', rcp: new Set(), replyTo: null, seen: new Set(), maxId: 0, showAll: false, iconRev: 0,
 };
 try { const u = new URL(location.href), t = u.searchParams.get('token'); if (t) { S.token = t; store.set('token', t); u.searchParams.delete('token'); history.replaceState(null, '', u.pathname + (u.search || '') + u.hash); } } catch {}
 const nowMs = () => Date.now() + S.offset;
@@ -488,6 +521,9 @@ function avatar(id, size = 18) {
   return `<span class="av" style="--av:${size}px" aria-hidden="true"><span>${esc([...a.name][0] || '?')}</span>${a.hasIcon ? `<img src="${src}" alt="" loading="lazy" decoding="async">` : ''}</span>`;
 }
 document.addEventListener('error', (e) => { const t = e.target; if (t && t.tagName === 'IMG' && t.closest('.av')) t.remove(); }, true);
+const shotSrc = (id) => `/api/shot?id=${id}${S.token ? '&token=' + encodeURIComponent(S.token) : ''}`;
+const shotsOf = (col, id) => [...S.shots.values()].filter((s) => s[col] === id).sort((a, b) => a.shotId - b.shotId);
+const thumbs = (list) => (list.length ? `<div class="thumbs">${list.map((s, i) => `<button class="thumb" type="button" data-shot="${s.shotId}" data-group="${list.map((x) => x.shotId).join(',')}" aria-label="スクリーンショット ${i + 1}/${list.length} を開く${s.caption ? ': ' + esc(s.caption) : ''}"><img src="${shotSrc(s.shotId)}" alt="${esc(s.caption || 'スクリーンショット')}" loading="lazy" decoding="async"></button>`).join('')}</div>` : '');
 const isRoot = (t) => t.parentId == null;
 const matches = (t) => !S.filter || t.agent === S.filter;
 const treeOf = (rid) => [...S.tasks.values()].filter((x) => x.rootId === rid).sort((a, b) => a.agentNo - b.agentNo || a.id - b.id);
@@ -578,7 +614,8 @@ function upsertStep(s) {
   return { t, isNew };
 }
 function handle(msg, quiet = false) {
-  if (msg.t === 'purged') { for (const m of [S.tasks, S.dirs, S.msgs, S.notes, S.approvals]) m.clear(); S.sel = null; S.seen.clear(); renderAll(); showState('stEmpty'); return; }
+  if (msg.t === 'shot') { S.shots.set(msg.shot.shotId, msg.shot); sigs.work = sigs.dir = sigs.req = sigs.note = ''; renderComms(); return; }
+  if (msg.t === 'purged') { for (const m of [S.tasks, S.dirs, S.msgs, S.notes, S.approvals, S.shots]) m.clear(); S.sel = null; S.seen.clear(); renderAll(); showState('stEmpty'); return; }
   if (msg.t === 'directive') { S.dirs.set(msg.directive.directiveId, msg.directive); renderComms(); return; }
   if (msg.t === 'note') { S.notes.set(msg.note.noteId, msg.note); renderComms(); return; }
   if (msg.t === 'message') { if (msg.message.control) S.msgs.set(msg.message.messageId, msg.message); renderComms(); return; }
@@ -591,6 +628,7 @@ function handle(msg, quiet = false) {
     for (const d of msg.directives || []) S.dirs.set(d.directiveId, d);
     for (const x of msg.messages || []) S.msgs.set(x.messageId, x);
     for (const n of msg.notes || []) S.notes.set(n.noteId, n);
+    for (const x of msg.shots || []) S.shots.set(x.shotId, x);
     S.approvals = new Map((msg.approvals || []).map((a) => [a.requestId, a]));
     const prev = latestRoot();
     for (const raw of [...msg.tasks].reverse()) {
@@ -745,7 +783,7 @@ function lanesHtml(root) {
 function stepRow(s, task, multi) {
   const k = KIND[s.kind] || KIND.note, st = STEP_ST[s.status] || STEP_ST.done, open = S.exp.has(s.id), who = multi ? agentOf(task.agent) : null;
   const dur = s.status === 'running' ? `<span data-live="el" data-t0="${s.createdAt}">${clock(nowMs() - s.createdAt)}</span>` : clock(Math.max(0, (s.endedAt || s.updatedAt || s.createdAt) - s.createdAt));
-  const main = `<tr class="sr" data-step="${s.id}" data-s="${s.status}"${S.hit === s.id ? ' data-hit' : ''}><td class="tm">${hms(s.createdAt)}</td><td class="kd">${icon(k[1])}${k[0]}</td><td class="ti"><button class="rowbtn" type="button" aria-expanded="${open}" data-open-step="${s.id}">${esc(s.title)}</button>${who ? `<small>${esc(who.name)} ${esc(task.agentNumber)}</small>` : ''}</td><td class="sv">${st[0]}</td><td class="du">${dur}</td></tr>`;
+  const main = `<tr class="sr" data-step="${s.id}" data-s="${s.status}"${S.hit === s.id ? ' data-hit' : ''}><td class="tm">${hms(s.createdAt)}</td><td class="kd">${icon(k[1])}${k[0]}</td><td class="ti"><button class="rowbtn" type="button" aria-expanded="${open}" data-open-step="${s.id}">${esc(s.title)}</button>${who ? `<small>${esc(who.name)} ${esc(task.agentNumber)}</small>` : ''}${thumbs(shotsOf('stepId', s.id))}</td><td class="sv">${st[0]}</td><td class="du">${dur}</td></tr>`;
   return main + (open ? `<tr class="dt"><td colspan="5"><pre>${s.detail ? esc(s.detail) : '補足はありません。'}</pre></td></tr>` : '');
 }
 function renderWork(t) {
@@ -753,7 +791,7 @@ function renderWork(t) {
   const src = multi ? tree : [t];
   const all = src.flatMap((x) => [...x.steps.values()].map((s) => [s, x])).sort((a, b) => (S.newest ? b[0].createdAt - a[0].createdAt : a[0].createdAt - b[0].createdAt));
   const run = tree.some((x) => x.status === 'running');
-  const sig = JSON.stringify([t.id, S.scope, S.newest, [...S.exp], S.hit, tree.map((x) => [x.id, x.status, x.now, x.next, x.progress, x.updatedAt, x.steps.size]), all.map(([s]) => [s.id, s.status, s.updatedAt]), run ? Math.floor(nowMs() / 15000) : 0, S.dirs.size, S.notes.size, S.msgs.size]);
+  const sig = JSON.stringify([t.id, S.scope, S.newest, [...S.exp], S.hit, tree.map((x) => [x.id, x.status, x.now, x.next, x.progress, x.updatedAt, x.steps.size]), all.map(([s]) => [s.id, s.status, s.updatedAt]), run ? Math.floor(nowMs() / 15000) : 0, S.dirs.size, S.notes.size, S.msgs.size, S.shots.size]);
   if (sig === sigs.work) return; sigs.work = sig;
   const pn = $('#pn-work'), st = TASK_ST[t.status] || TASK_ST.running, pc = Math.round(Math.min(100, Math.max(0, t.progress || 0)));
   const nowTxt = t.status === 'running' ? (t.now || '作業中') : t.result || { done: '作業が完了しました', failed: '作業が失敗しました', cancelled: '作業を中断しました' }[t.status];
@@ -786,6 +824,7 @@ function orderRow(d, t) {
   return `<article class="ord" data-s="${d.status}" data-kind="${d.kind}"${isUnread(d) ? ' data-unread' : ''}>
     <div class="ord-top"><span class="kd">${KIND_L[d.kind]}</span><span class="who">${avatar(d.from, 18)}${esc(whoName(d.from))}${icon('chevron-right')}${avatar(d.to, 18)}${esc(agentOf(d.to).name)}</span>${dirn ? `<span>${dirn}</span>` : ''}<span class="stt">${icon(st[1])}${st[0]}</span>${sp.urgency && sp.urgency !== 'normal' ? `<span class="stt urg-${sp.urgency}">${icon('triangle-alert')}${URG[sp.urgency]}</span>` : ''}${sp.deadline ? `<span class="stt">${icon('clock')}期限 ${esc(sp.deadline)}</span>` : ''}${d.expiredCount ? `<span title="受領後に生存報告が途絶え、いったん未受領へ戻りました">リース切れ ${d.expiredCount}回</span>` : ''}<span class="tm" data-live="${end ? 'fix' : 'el'}" data-t0="${c0}" data-t1="${end || ''}">${clock((end || nowMs()) - c0)}</span></div>
     <h3><span class="num">#${d.directiveId}</span> ${esc(d.title)}</h3>
+    ${thumbs(shotsOf('directiveId', d.directiveId))}
     ${d.resultSummary ? `<p class="res">${linkify(d.resultSummary)}</p>` : ''}
     <details><summary>本文・詳細・履歴</summary><p class="body">${linkify(d.body)}</p>${specHtml(sp)}<div class="hist">${(d.history || []).map((h) => `${hms(ms(h.at))} ${esc(h.ev)}${h.by ? ' ' + esc(h.by) : ''}${h.taskId ? ' #' + h.taskId : ''}`).join('<br>')}</div></details>
     <div class="ord-foot">${child && child !== t.id ? `<button class="btn small" type="button" data-sel="${child}">${icon('chevron-right')}<span>作業 #${child}</span></button>` : ''}${tgt && tgt !== t.id ? `<button class="btn small" type="button" data-sel="${tgt}">${icon('chevron-right')}<span>宛先のタスク #${tgt}</span></button>` : ''}
@@ -794,7 +833,7 @@ function orderRow(d, t) {
 }
 function renderDir(t, all) {
   const list = all.filter((d) => S.dirFilter === 'in' ? d.to === t.agent : S.dirFilter === 'out' ? d.from === t.agent : S.dirFilter === 'open' ? d.status === 'posted' || d.status === 'accepted' : true);
-  const sig = JSON.stringify([t.id, S.dirFilter, list, S.sel]); if (sig === sigs.dir) return; sigs.dir = sig;
+  const sig = JSON.stringify([t.id, S.dirFilter, list, S.sel, S.shots.size]); if (sig === sigs.dir) return; sigs.dir = sig;
   $('#pn-dir').innerHTML = `<p class="pn-lead">AIがAIに出す正式な依頼です。宛先のAIの最新のタスクに届きます。人間からの依頼は「要求」タブで書きます。</p>
     <div class="filters" role="group" aria-label="絞り込み">${[['all', 'すべて'], ['in', '受信'], ['out', '送信'], ['open', '未完了']].map(([k, l]) => `<button class="btn small" type="button" data-df="${k}" aria-pressed="${S.dirFilter === k}"><span>${l}</span></button>`).join('')}</div>
     ${list.length ? list.map((d) => orderRow(d, t)).join('') : `<p class="empty-row">${all.length ? '該当する司令はありません。' : 'このタスクに関わる司令はまだありません。AIが postDirective で出すと、ここに並びます。'}</p>`}`;
@@ -819,6 +858,7 @@ function renderReq(t, all) {
         ${ta('rqHints', '進め方の希望', '例: まず骨組みだけ見せてほしい', '')}
         <div class="f-grid"><div class="f-field"><label for="rqConfirm">実行前に確認してほしい操作</label><input class="f-in" id="rqConfirm" name="confirm" maxlength="400" autocomplete="off" placeholder="例: 公開・削除・外部への送信"><span class="f-help"></span></div><div class="f-field"><label for="rqDeadline">期限</label><input class="f-in" id="rqDeadline" name="deadline" type="datetime-local"><span class="f-help"></span></div></div>
         <div class="f-field"><span class="f-l" id="rqUrgL">緊急度</span><div class="opt" role="radiogroup" aria-labelledby="rqUrgL"><label><input type="radio" name="rqUrg" value="low"><span>低</span></label><label><input type="radio" name="rqUrg" value="normal" checked><span>通常</span></label><label><input type="radio" name="rqUrg" value="high"><span>高</span></label><label><input type="radio" name="rqUrg" value="urgent"><span>至急</span></label></div></div>
+        <div class="attach" data-attach="req"><div class="attach-row"><button class="btn small" type="button" data-pick="req">${icon('paperclip')}<span>画像を添付</span></button><span class="f-help">スクリーンショットは、貼り付け(Ctrl+V)やドラッグでも追加できます。PNG・JPEG・WebP・GIF</span><input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden data-file="req"></div><ul class="pending" id="pending-req" aria-live="polite"></ul></div>
         <div class="form-row"><button class="btn primary" id="rqSend" type="submit">${icon('send')}<span>要求を送る</span></button><span class="form-status" id="rqStatus" role="status" aria-live="polite"></span></div>
       </form></details>
       <div class="sec-h"><h2>この作業の要求 <span class="num" id="rqCount" style="font-size:var(--text-sm);color:var(--color-muted)"></span></h2><div class="tools" id="rqFilters"></div></div><div id="rqList"></div>`;
@@ -830,7 +870,7 @@ function renderReq(t, all) {
   const list = all.filter((d) => S.dirFilter === 'open' ? d.status === 'posted' || d.status === 'accepted' : true);
   $('#rqCount').textContent = all.length ? String(all.length) : '';
   $('#rqFilters').innerHTML = [['all', 'すべて'], ['open', '未完了']].map(([k, l]) => `<button class="btn small" type="button" data-df="${k}" aria-pressed="${(S.dirFilter === 'open') === (k === 'open')}"><span>${l}</span></button>`).join('');
-  const sig = JSON.stringify([t.id, S.dirFilter, list]); if (sig === sigs.req) return; sigs.req = sig;
+  const sig = JSON.stringify([t.id, S.dirFilter, list, S.shots.size]); if (sig === sigs.req) return; sigs.req = sig;
   $('#rqList').innerHTML = list.length ? list.map((d) => orderRow(d, t)).join('') : `<p class="empty-row">${all.length ? '該当する要求はありません。' : 'この作業に関わる要求はまだありません。上のフォームから書けます。'}</p>`;
 }
 
@@ -846,6 +886,7 @@ function noteHtml(n) {
     <div class="note-top">${avatar(n.from, 18)}<b>${esc(whoName(n.from))}</b>${icon('chevron-right')}${rcpHtml(n)}<span class="tm">${hm(when.getTime())}</span></div>
     ${re ? `<p class="note-q">${esc(whoName(re.from))}: ${esc(re.body)}</p>` : ''}
     <p class="note-body">${linkify(n.body)}</p>
+    ${thumbs(shotsOf('noteId', n.noteId))}
     <div class="note-foot"><span class="id">#${n.noteId}</span>${n.taskId && S.tasks.has(n.taskId) ? `<button class="btn small quiet" type="button" data-sel="${n.taskId}">${icon('chevron-right')}<span>作業 #${n.taskId} から</span></button>` : ''}<button class="btn small quiet" type="button" data-nreply="${n.noteId}">${icon('reply')}<span>返信</span></button>${addable.length ? `<button class="btn small quiet" type="button" data-naddopen="${n.noteId}">${icon('user-plus')}<span>宛先を追加</span></button>` : ''}</div>
     ${addable.length ? `<div class="note-add" data-naddbox="${n.noteId}" hidden><select class="f-sel" aria-label="追加する宛先">${addable.map((a) => `<option value="${esc(a.id)}">${esc(a.name)}</option>`).join('')}</select><button class="btn small primary" type="button" data-nadd="${n.noteId}"><span>追加する</span></button></div>` : ''}</article>`;
 }
@@ -860,6 +901,7 @@ function renderNote(t) {
       <div class="board" id="board" tabindex="0" aria-label="伝言の一覧" aria-live="polite"></div>
       <form class="compose" id="noteForm"><div class="pick" id="rcpPick" role="group" aria-label="宛先"></div><p class="note-q" id="noteReplyBox" hidden></p>
         <div class="f-field"><label for="noteText">伝言の本文</label><textarea class="f-ta" id="noteText" maxlength="1500" required placeholder="例: ○○さん、この件は先に△△を確認してください"></textarea></div>
+        <div class="attach" data-attach="note"><div class="attach-row"><button class="btn small" type="button" data-pick="note">${icon('paperclip')}<span>画像を添付</span></button><span class="f-help">スクリーンショットは、貼り付け(Ctrl+V)やドラッグでも追加できます。PNG・JPEG・WebP・GIF</span><input type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden data-file="note"></div><ul class="pending" id="pending-note" aria-live="polite"></ul></div>
         <div class="form-row"><button class="btn primary" id="noteSend" type="submit">${icon('send')}<span>伝言を書く</span></button><span class="form-status" id="noteStatus" role="status" aria-live="polite"></span></div></form>`;
   }
   if (!S.rcp.size && t.agent) S.rcp.add(t.agent);
@@ -868,7 +910,7 @@ function renderNote(t) {
   $('#rcpPick').innerHTML = rcpPick();
   let list = [...S.notes.values()].sort((a, b) => a.noteId - b.noteId);
   if (S.noteFilter === 'task') list = list.filter(mine); else if (S.noteFilter === 'user') list = list.filter((n) => n.toAll || n.to.includes('user')); else if (S.noteFilter === 'new') list = list.filter(noteUnread);
-  const sig = JSON.stringify([S.noteFilter, t.agent, list.map((n) => [n.noteId, n.to, n.deliveries.map((d) => d.status)]), noteSeen, S.agents.size]); if (sig === sigs.note) return; sigs.note = sig;
+  const sig = JSON.stringify([S.noteFilter, t.agent, list.map((n) => [n.noteId, n.to, n.deliveries.map((d) => d.status)]), noteSeen, S.agents.size, S.shots.size]); if (sig === sigs.note) return; sigs.note = sig;
   const board = $('#board'), near = board.scrollHeight - board.scrollTop - board.clientHeight < 80; let day = '', html = '';
   for (const n of list) { const d = new Date(ms(n.createdAt)), k = `${d.getMonth() + 1}月${d.getDate()}日`; if (k !== day) { day = k; html += `<p class="day">${k}</p>`; } html += noteHtml(n); }
   board.innerHTML = html || `<p class="empty-row" style="border:0">${S.noteFilter === 'all' ? 'まだ伝言はありません。下のフォームから書けます。' : '該当する伝言はありません。'}</p>`;
@@ -950,20 +992,21 @@ $('#soundBtn').addEventListener('click', () => { S.sound = !S.sound; store.set('
 document.addEventListener('submit', async (e) => {
   if (e.target.id === 'noteForm') {
     e.preventDefault(); const t = S.tasks.get(S.sel), box = $('#noteText'), body = box.value.trim(), st = $('#noteStatus'); if (!t || !body) return;
-    st.removeAttribute('data-err'); if (!S.rcp.size) { st.textContent = '宛先を1つ以上選んでください。'; st.setAttribute('data-err', ''); return; }
+    st.removeAttribute('data-err'); if (pendBusy('note')) { st.textContent = '画像をアップロード中です。少し待ってください。'; st.setAttribute('data-err', ''); return; } if (!S.rcp.size) { st.textContent = '宛先を1つ以上選んでください。'; st.setAttribute('data-err', ''); return; }
     const b = $('#noteSend'); b.disabled = true;
-    try { const j = await post({ to: S.rcp.has('all') ? ['all'] : [...S.rcp], body, taskId: t.id, replyTo: S.replyTo || undefined }, '/api/note'); if (j.note) S.notes.set(j.note.noteId, j.note); box.value = ''; S.replyTo = null; $('#noteReplyBox').hidden = true; st.textContent = '書きました。宛先のAIの次の応答で届きます。'; sigs.note = ''; renderComms(); const bd = $('#board'); bd.scrollTop = bd.scrollHeight; }
+    try { const j = await post({ to: S.rcp.has('all') ? ['all'] : [...S.rcp], body, taskId: t.id, replyTo: S.replyTo || undefined, shots: pendIds('note') }, '/api/note'); if (j.note) S.notes.set(j.note.noteId, j.note); box.value = ''; clearPend('note'); S.replyTo = null; $('#noteReplyBox').hidden = true; st.textContent = '書きました。宛先のAIの次の応答で届きます。'; sigs.note = ''; renderComms(); const bd = $('#board'); bd.scrollTop = bd.scrollHeight; }
     catch (err) { st.textContent = '送れませんでした: ' + err.message; st.setAttribute('data-err', ''); }
     b.disabled = false;
   } else if (e.target.id === 'rqForm') {
     e.preventDefault(); const st = $('#rqStatus'), v = (id) => $('#' + id).value.trim(); st.removeAttribute('data-err');
     if (!$('#rqTo').value) { st.textContent = '宛先のAIがいません。AIが接続すると選べます。'; st.setAttribute('data-err', ''); return; }
     if (!v('rqTitle') || !v('rqBody')) { st.textContent = '題名と「やってほしいこと」は必須です。'; st.setAttribute('data-err', ''); (v('rqTitle') ? $('#rqBody') : $('#rqTitle')).focus(); return; }
+    if (pendBusy('req')) { st.textContent = '画像をアップロード中です。少し待ってください。'; st.setAttribute('data-err', ''); return; }
     const dl = $('#rqDeadline').value, b = $('#rqSend'); b.disabled = true;
     try {
-      const j = await post({ to: $('#rqTo').value, title: v('rqTitle'), body: v('rqBody'), background: v('rqBackground'), acceptance: v('rqAcceptance'), constraints: v('rqConstraints'), deliverables: v('rqDeliverables'), references: v('rqReferences'), hints: v('rqHints'), confirm: v('rqConfirm'), deadline: dl ? `${dl.replace('T', ' ')} ${ZONE}` : '', urgency: ($('input[name="rqUrg"]:checked') || {}).value || 'normal' }, '/api/request');
+      const j = await post({ to: $('#rqTo').value, title: v('rqTitle'), body: v('rqBody'), background: v('rqBackground'), acceptance: v('rqAcceptance'), constraints: v('rqConstraints'), deliverables: v('rqDeliverables'), references: v('rqReferences'), hints: v('rqHints'), confirm: v('rqConfirm'), deadline: dl ? `${dl.replace('T', ' ')} ${ZONE}` : '', urgency: ($('input[name="rqUrg"]:checked') || {}).value || 'normal', shots: pendIds('req') }, '/api/request');
       if (j.directive) S.dirs.set(j.directive.directiveId, j.directive);
-      for (const id of REQ_FIELDS) $('#' + id).value = ''; $('input[name="rqUrg"][value="normal"]').checked = true;
+      clearPend('req'); for (const id of REQ_FIELDS) $('#' + id).value = ''; $('input[name="rqUrg"][value="normal"]').checked = true;
       st.textContent = `要求 #${j.directive.directiveId} を送りました。${j.targetTaskId ? `宛先の最新のタスク #${j.targetTaskId} に付きました。` : '宛先はまだタスクがないので、最初のタスクに付きます。'}`; sigs.req = ''; renderComms();
     } catch (err) { st.textContent = '送れませんでした: ' + err.message; st.setAttribute('data-err', ''); }
     b.disabled = false;
@@ -979,6 +1022,69 @@ document.addEventListener('keydown', (e) => {
   } else if (['1', '2', '3', '4'].includes(e.key) && !$('#task').hidden) setTab(TABS[Number(e.key) - 1]);
 });
 window.addEventListener('hashchange', () => { const h = hashState(); if (h.t && h.t !== S.sel && S.tasks.has(h.t)) select(h.t, { tab: h.tab, keep: true }); else if (h.tab && h.tab !== S.tab) setTab(h.tab); });
+
+/* ================= screenshots: attach, preview, enlarge ================= */
+const ATTACH_OK = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'], ATTACH_MAX = 1_400_000, ATTACH_N = 6;
+let pendUid = 0;
+const pendIds = (k) => S.pend[k].filter((x) => x.state === 'ok').map((x) => x.shotId);
+const pendBusy = (k) => S.pend[k].some((x) => x.state === 'uploading');
+function clearPend(k) { for (const x of S.pend[k]) URL.revokeObjectURL(x.url); S.pend[k] = []; renderPend(k); }
+function renderPend(k) {
+  const ul = $('#pending-' + k); if (!ul) return;
+  ul.innerHTML = S.pend[k].map((x) => `<li data-state="${x.state}"><img src="${x.url}" alt=""><span class="nm">${esc(x.name)}<small>${x.state === 'uploading' ? 'アップロード中' : x.state === 'ok' ? '添付済み' : esc(x.err || '失敗しました')}</small></span><button class="btn small quiet" type="button" data-unpend="${x.key}" data-k="${k}" aria-label="${esc(x.name)} を外す">${icon('x')}</button></li>`).join('');
+}
+// 大きい画像は、長辺2000px以内・1.4MB以内に縮めてから送る(スクリーンショットの文字が読める範囲)
+async function prepImage(file) {
+  if (ATTACH_OK.includes(file.type) && file.size <= ATTACH_MAX) return file;
+  if (file.type === 'image/gif') throw new Error('GIF は1.4MBまでです。');
+  let bmp; try { bmp = await createImageBitmap(file); } catch { throw new Error('この形式の画像は読み込めませんでした。'); }
+  const sc = Math.min(1, 2000 / Math.max(bmp.width, bmp.height)); let w = Math.round(bmp.width * sc), h = Math.round(bmp.height * sc);
+  for (let i = 0; i < 6; i++) {
+    const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(bmp, 0, 0, w, h);
+    for (const [t, q] of [['image/webp', 0.88], ['image/jpeg', 0.85]]) { const b = await new Promise((r) => c.toBlob(r, t, q)); if (b && b.type === t && b.size <= ATTACH_MAX) return b; }
+    w = Math.round(w * 0.8); h = Math.round(h * 0.8);
+  }
+  throw new Error('画像を小さくできませんでした。');
+}
+async function addFiles(k, files) {
+  for (const f of [...files]) {
+    if (!/^image\//.test(f.type)) continue;
+    if (S.pend[k].length >= ATTACH_N) { const st = $(k === 'note' ? '#noteStatus' : '#rqStatus'); if (st) { st.textContent = `1回に付けられるのは ${ATTACH_N} 枚までです。`; st.setAttribute('data-err', ''); } break; }
+    const item = { key: ++pendUid, name: f.name || '貼り付けた画像', url: URL.createObjectURL(f), state: 'uploading' }; S.pend[k].push(item); renderPend(k);
+    try {
+      const blob = await prepImage(f);
+      const r = await fetch(`/api/shot?taskId=${S.sel || ''}`, { method: 'POST', headers: { ...authHeaders(), 'content-type': blob.type || 'application/octet-stream' }, body: blob });
+      const j = await r.json().catch(() => ({})); if (!r.ok || j.error) throw new Error(j.error || 'http ' + r.status);
+      item.shotId = j.shot.shotId; item.state = 'ok';
+    } catch (e) { item.state = 'error'; item.err = e.message; }
+    renderPend(k);
+  }
+}
+const kindOf = (el) => (el && el.closest ? (el.closest('#noteForm') ? 'note' : el.closest('#rqForm') ? 'req' : null) : null);
+document.addEventListener('paste', (e) => { const k = kindOf(e.target); if (!k) return; const files = [...(e.clipboardData?.files || [])].filter((f) => /^image\//.test(f.type)); if (files.length) { e.preventDefault(); addFiles(k, files); } });
+for (const ev of ['dragenter', 'dragover']) document.addEventListener(ev, (e) => { const k = kindOf(e.target); if (k && [...(e.dataTransfer?.types || [])].includes('Files')) { e.preventDefault(); e.target.closest('#noteForm, #rqForm').setAttribute('data-drop', ''); } });
+document.addEventListener('dragleave', (e) => { const f = e.target.closest && e.target.closest('#noteForm, #rqForm'); if (f && !f.contains(e.relatedTarget)) f.removeAttribute('data-drop'); });
+document.addEventListener('drop', (e) => { const k = kindOf(e.target); if (!k) return; e.preventDefault(); e.target.closest('#noteForm, #rqForm').removeAttribute('data-drop'); addFiles(k, e.dataTransfer.files); });
+document.addEventListener('change', (e) => { if (e.target.dataset && e.target.dataset.file) { addFiles(e.target.dataset.file, e.target.files); e.target.value = ''; } });
+document.addEventListener('click', (e) => {
+  const pk = e.target.closest('[data-pick]'); if (pk) { $(`[data-file="${pk.dataset.pick}"]`).click(); return; }
+  const up = e.target.closest('[data-unpend]'); if (up) { const k = up.dataset.k, i = S.pend[k].findIndex((x) => String(x.key) === up.dataset.unpend); if (i >= 0) { URL.revokeObjectURL(S.pend[k][i].url); S.pend[k].splice(i, 1); renderPend(k); } return; }
+  const th = e.target.closest('[data-shot]'); if (th) openShot(Number(th.dataset.shot), th.dataset.group.split(',').map(Number), th);
+});
+let lbGroup = [], lbIdx = 0, lbOpener = null;
+function showShot() {
+  const s = S.shots.get(lbGroup[lbIdx]); if (!s) return;
+  $('#lbImg').src = shotSrc(s.shotId); $('#lbImg').alt = s.caption || 'スクリーンショット';
+  $('#lbCap').textContent = `${whoName(s.by)}${s.caption ? ' ' + s.caption : ''}`; $('#lbN').textContent = `${lbIdx + 1}/${lbGroup.length}`;
+  $('#lbPrev').hidden = $('#lbNext').hidden = lbGroup.length < 2;
+}
+function openShot(id, group, opener) { lbGroup = group; lbIdx = Math.max(0, group.indexOf(id)); lbOpener = opener || null; showShot(); const d = $('#lightbox'); if (!d.open) d.showModal(); }
+$('#lbPrev').addEventListener('click', () => { lbIdx = (lbIdx + lbGroup.length - 1) % lbGroup.length; showShot(); });
+$('#lbNext').addEventListener('click', () => { lbIdx = (lbIdx + 1) % lbGroup.length; showShot(); });
+$('#lbClose').addEventListener('click', () => $('#lightbox').close());
+$('#lightbox').addEventListener('click', (e) => { if (e.target === $('#lightbox')) $('#lightbox').close(); });
+$('#lightbox').addEventListener('keydown', (e) => { if (lbGroup.length > 1 && e.key === 'ArrowRight') { $('#lbNext').click(); } else if (lbGroup.length > 1 && e.key === 'ArrowLeft') { $('#lbPrev').click(); } });
+$('#lightbox').addEventListener('close', () => { $('#lbImg').removeAttribute('src'); if (lbOpener && lbOpener.isConnected) lbOpener.focus(); });
 
 /* ================= live clocks (once a second) ================= */
 setInterval(() => {

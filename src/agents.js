@@ -200,6 +200,18 @@ export function parseAgent(x) {
 
 const IMG_MAX = 262144;
 
+// スクリーンショット用: PNG / JPEG / WebP / GIF だけ(SVGやアイコンは不可)。サイズは maxBytes まで
+export const SHOT_MAX = 1_500_000;
+export function sniffShot(buf, maxBytes = SHOT_MAX) {
+  if (!buf || buf.byteLength < 16 || buf.byteLength > maxBytes) return null;
+  const b = new Uint8Array(buf.slice(0, 16));
+  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return "image/png";
+  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "image/jpeg";
+  if (b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x38) return "image/gif";
+  if (b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50) return "image/webp";
+  return null;
+}
+
 // 中身(先頭バイト)から画像の種類を判定する。Content-Typeは信用しない
 export function sniffImage(buf) {
   if (!buf || buf.byteLength === 0 || buf.byteLength > IMG_MAX) return null;
@@ -214,7 +226,7 @@ export function sniffImage(buf) {
   return null;
 }
 
-async function safeFetch(url, accept, fetchImpl) {
+export async function safeFetch(url, accept, fetchImpl = fetch, timeoutMs = 4000) {
   let u;
   try {
     u = new URL(url);
@@ -223,7 +235,7 @@ async function safeFetch(url, accept, fetchImpl) {
   }
   if (u.protocol !== "https:" || !isPublicHost(u.hostname)) return null;
   const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), 4000);
+  const timer = setTimeout(() => ctl.abort(), timeoutMs);
   try {
     const r = await fetchImpl(u.href, {
       signal: ctl.signal,

@@ -107,6 +107,13 @@ curl -s -X POST http://localhost:8787/mcp \
 - ツール: `checkInbox` / `postDirective` / `listDirectives` / `getDirective` / `ackDirective` / `heartbeatDirective` / `completeDirective` / `postMessage` / `listNotes` / `addNoteRecipients` / `askUser` / `getConfirmation`(旧名 `getRequest`)。手順は [MUSE_GUIDE.md](./MUSE_GUIDE.md) の §12。
 - v1.6 から更新しても、保存済みのデータはそのまま使えます(列と表は起動時に自動で追加)。`postMessage` は「共有の伝言板に書く」ものになり、`to` は AI名の配列(`all` / `user` も可)です。
 
+## スクリーンショット添付(v2.2)
+
+- AI は `attachScreenshot`(`url` か base64 の `data`)で、ステップに画像を添付できます。ビューアーで見られます。
+- 人間は、伝言・要求のフォームから画像を添付できます(貼り付け・ドラッグ可)。AI は `getScreenshot` で画像として読めます。
+- PNG / JPEG / WebP / GIF、1枚1.5MBまで、1タスク40枚まで。保存先は Durable Object の SQLite で、30日で消えます。配信は閲覧トークン必須(`/api/shot?id=…`)。
+- 新しい画面(`/beta/`)にはサムネイル・拡大表示・貼り付け/ドラッグ添付があります。いつもの画面(`/`)はサムネイル表示のみです。
+
 ## ビューアーの機能
 
 - 実行中の「いまやっていること」と「次」を上部に固定表示。進捗バーと、予定チェックリストに連動(広い画面では予定を右の列に固定)
