@@ -413,6 +413,7 @@ dialog::backdrop { background: color-mix(in oklab, var(--color-paper-3) 88%, tra
   <span class="conn" id="conn" data-state="connecting" role="status" aria-live="polite"></span>
   <button class="btn quiet top-lbl" id="inboxBtn" type="button" aria-expanded="false" aria-controls="inboxPop"><svg class="ic" aria-hidden="true"><use href="#i-inbox"/></svg><span>司令・要求</span><b class="badge-n" id="inboxCnt" hidden></b></button>
   <button class="btn quiet" id="soundBtn" type="button" aria-pressed="false" aria-label="通知音"><svg class="ic" aria-hidden="true"><use href="#i-volume-x"/></svg></button>
+  <a class="btn quiet" href="/wall" id="wallLink" aria-label="壁掛けモードを開く" title="壁掛けモード"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg></a>
   <a class="btn quiet top-lbl" href="/" title="いつもの画面へ"><svg class="ic" aria-hidden="true"><use href="#i-undo-2"/></svg><span>いつもの画面</span></a>
 </header>
 <section class="pop" id="inboxPop" aria-label="受信箱" hidden></section>
@@ -437,6 +438,7 @@ dialog::backdrop { background: color-mix(in oklab, var(--color-paper-3) 88%, tra
           <h1 id="tTitle"></h1>
           <p class="sum" id="tSummary"></p>
           <dl class="measures" id="measures"></dl>
+          <p style="margin-top:var(--space-sm)"><a class="btn small" id="replayLink" href="/replay" title="この作業の流れを、時間軸に沿って再生する"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg><span>リプレイ</span></a></p>
         </header>
         <section class="stop" id="stop" aria-label="停止命令" hidden>
           <span class="lbl"><svg class="ic" aria-hidden="true"><use href="#i-ban"/></svg>停止命令</span>
@@ -470,6 +472,7 @@ dialog::backdrop { background: color-mix(in oklab, var(--color-paper-3) 88%, tra
 </dialog>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+<script src="/notify.js" defer></script>
 <script>
 'use strict';
 /* ================= helpers ================= */
@@ -589,7 +592,7 @@ function connect() {
     backoff = 1000; lastPong = Date.now(); setConn('live'); clearInterval(pollTimer); pollTimer = 0; clearInterval(pingTimer);
     pingTimer = setInterval(() => { if (Date.now() - lastPong > 60000) { try { mine.close(); } catch {} return; } try { mine.send('ping'); } catch {} }, 25000);
   };
-  ws.onmessage = (e) => { if (e.data === 'pong') { lastPong = Date.now(); return; } try { const j = JSON.parse(e.data); handle(j, j.t === 'snapshot'); } catch (err) { console.error(err); } };
+  ws.onmessage = (e) => { if (e.data === 'pong') { lastPong = Date.now(); return; } try { const j = JSON.parse(e.data); handle(j, j.t === 'snapshot'); window.WLNotify && WLNotify.onMessage(j); } catch (err) { console.error(err); } };
   ws.onclose = () => {
     if (mine !== ws) return;
     clearInterval(pingTimer); if (S.conn !== 'denied') setConn('retry');
@@ -705,6 +708,7 @@ function renderTask() {
   $('#tTitle').textContent = t.title; $('#tSummary').textContent = t.summary || ''; $('#tSummary').hidden = !t.summary;
   document.title = `${t.title} - Workline beta`;
   const end = t.finishedAt || nowMs();
+  $('#replayLink').href = `/replay?task=${t.rootId ?? t.id}&play=1`;
   $('#measures').innerHTML = `<div><dt>開始 <span class="num">${ZONE}</span></dt><dd>${hms(t.startedAt)}</dd></div>
     <div><dt>経過</dt><dd><span data-live="${t.status === 'running' ? 'el' : 'fix'}" data-t0="${t.startedAt}" data-t1="${t.finishedAt || ''}">${clock(end - t.startedAt)}</span></dd></div>
     <div><dt>ステップ</dt><dd>${steps.length}<small> 件</small></dd></div>
@@ -1102,5 +1106,6 @@ applySound(); setConn('connecting'); applyTab();
 boot();
 
 </script>
+<script>addEventListener('load', () => { if (window.WLNotify) WLNotify.mount({ before: '#soundBtn', cls: 'btn quiet' }); });</script>
 </body>
 </html>

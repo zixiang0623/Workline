@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0a0907">
+<meta name="description" content="終わった作業を、時間軸に沿って巻き戻したり早送りしたりしながら見直せる Workline のリプレイ画面。">
+<title>Workline リプレイ</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://api.fontshare.com"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://api.fontshare.com/v2/css?f[]=switzer@400,500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+/* Hallmark · shape: app screen (playback) · theme: Rim, shared with /beta and /wall · states: loading, locked, error, picker, empty, playing, paused, ended
+ * signature: the lanes on a real-time axis, now scrubbable. The playhead is the only thing that moves; everything else is a pure function of the playhead time. */
+:root {
+  color-scheme: dark;
+  --space-2xs: 4px; --space-xs: 8px; --space-sm: 12px; --space-md: 16px; --space-lg: 24px; --space-xl: 40px;
+  --text-xs: 0.75rem; --text-sm: 0.875rem; --text-md: 1rem; --text-lg: 1.2rem; --text-xl: 1.44rem;
+  --color-error: oklch(72% 0.15 27); --color-success: oklch(76% 0.13 150); --color-warn: oklch(80% 0.13 85);
+  --color-paper: oklch(9% 0.008 75); --color-paper-2: oklch(12.5% 0.009 75); --color-paper-3: oklch(6.5% 0.007 75);
+  --color-ink: oklch(94% 0.010 80); --color-ink-2: oklch(84% 0.011 80); --color-muted: oklch(68% 0.012 80); --color-muted-2: oklch(50% 0.010 80);
+  --color-rule: oklch(25% 0.010 78); --color-rule-2: oklch(16% 0.009 78);
+  --color-accent: oklch(72% 0.17 45); --color-accent-ink: oklch(10% 0.02 45); --color-focus: oklch(78% 0.15 45);
+  --font-display: "Switzer", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --top-h: 56px; --hit: 44px;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; background: var(--color-paper); }
+body { color: var(--color-ink); font-family: var(--font-display); font-size: var(--text-md); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+[hidden] { display: none !important; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+a { color: inherit; }
+ul, ol { margin: 0; padding: 0; list-style: none; }
+h1, h2, h3 { margin: 0; font-weight: 500; letter-spacing: -0.02em; line-height: 1.2; }
+p { margin: 0; }
+.ic { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; display: block; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-xs); min-width: 36px; min-height: 36px; padding: 0 var(--space-sm); border: 1px solid var(--color-rule); background: transparent; color: var(--color-ink-2); font-size: var(--text-sm); cursor: pointer; text-decoration: none; transition: background-color 0.12s, border-color 0.12s, transform 0.12s; }
+.btn:hover { background: var(--color-paper-2); border-color: var(--color-muted-2); }
+.btn:active { transform: scale(0.97); }
+.btn[aria-pressed="true"] { color: var(--color-accent); border-color: var(--color-accent); }
+.btn.pri { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-ink); font-weight: 500; }
+.btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+.btn.big { min-width: 52px; min-height: 52px; }
+.btn.big .ic { width: 22px; height: 22px; }
+
+.app { height: 100dvh; display: grid; grid-template-rows: var(--top-h) minmax(0, 1fr); }
+.top { display: flex; align-items: center; gap: var(--space-sm); padding: 0 var(--space-md); border-bottom: 1px solid var(--color-rule); min-width: 0; }
+.top h1 { font-size: var(--text-md); white-space: nowrap; }
+.top .sel { flex: 1; min-width: 0; max-width: 40rem; min-height: 36px; padding: 0 var(--space-sm); border: 1px solid var(--color-rule); background: var(--color-paper-2); text-overflow: ellipsis; }
+.top .grow { flex: 1; }
+
+.body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(16rem, 24rem); grid-template-rows: minmax(0, 1fr) auto; min-height: 0; }
+.stage { grid-column: 1; grid-row: 1; min-height: 0; overflow: auto; padding: var(--space-md); display: grid; gap: var(--space-sm); align-content: start; grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)); }
+.log { grid-column: 2; grid-row: 1 / span 2; min-height: 0; display: flex; flex-direction: column; border-left: 1px solid var(--color-rule); background: var(--color-paper-3); }
+.log h2 { padding: var(--space-sm) var(--space-md); font-size: var(--text-sm); color: var(--color-muted); border-bottom: 1px solid var(--color-rule-2); }
+.log ol { flex: 1; min-height: 0; overflow-y: auto; padding: var(--space-xs) 0; scroll-behavior: auto; }
+.ev { display: grid; grid-template-columns: 2.9rem 16px minmax(0, 1fr); gap: var(--space-xs); align-items: start; padding: 6px var(--space-md); font-size: var(--text-sm); color: var(--color-muted); cursor: pointer; border: 0; background: none; width: 100%; text-align: left; }
+.ev:hover { background: var(--color-paper-2); }
+.ev .tm { font-family: var(--font-mono); font-size: var(--text-xs); padding-top: 2px; color: var(--color-muted-2); }
+.ev .ic { margin-top: 3px; color: var(--lc, var(--color-muted)); }
+.ev .tx { overflow-wrap: anywhere; color: var(--color-ink-2); }
+.ev .tx small { display: block; color: var(--color-muted); font-size: var(--text-xs); }
+.ev[data-k="ask"] .tx { color: var(--color-accent); }
+.ev[data-k="fail"] .tx { color: var(--color-error); }
+.ev[data-last="1"] { background: var(--color-paper-2); box-shadow: inset 2px 0 0 var(--color-accent); }
+.ev img { display: block; margin-top: 4px; max-width: 100%; max-height: 7rem; border: 1px solid var(--color-rule); }
+.log .none { padding: var(--space-lg) var(--space-md); color: var(--color-muted-2); font-size: var(--text-sm); }
+
+.lane { position: relative; display: flex; flex-direction: column; gap: var(--space-xs); padding: var(--space-md) var(--space-md) var(--space-md) calc(var(--space-md) + 4px); border: 1px solid var(--color-rule); background: var(--color-paper-2); min-width: 0; overflow: hidden; }
+.lane::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--lc); }
+.lane[data-st="pending"] { opacity: 0.45; }
+.lane[data-st="done"]::before, .lane[data-st="cancelled"]::before { background: var(--color-muted-2); } .lane[data-st="failed"]::before { background: var(--color-error); }
+.lane[data-ask="1"] { border-color: var(--color-accent); }
+.lw { display: flex; align-items: center; gap: var(--space-sm); min-width: 0; }
+.av { flex: none; width: 36px; height: 36px; display: grid; place-items: center; background: var(--color-paper-3); border: 1px solid var(--color-rule); font-weight: 500; overflow: hidden; }
+.av img { width: 100%; height: 100%; object-fit: cover; }
+.lw .n { flex: 1; min-width: 0; } .lw .n b { display: block; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lw .n span { display: block; font-size: var(--text-xs); color: var(--color-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lw .s { font-size: var(--text-xs); color: var(--color-muted); white-space: nowrap; }
+.lane[data-st="running"] .lw .s { color: var(--color-ink-2); }
+.lane .nowt { display: flex; align-items: flex-start; gap: var(--space-xs); font-size: clamp(1.2rem, 2.4vw, 2.2rem); font-weight: 500; letter-spacing: -0.02em; line-height: 1.3; overflow-wrap: anywhere; min-height: 2.6em; }
+.lane .nowt .ic { margin-top: 0.3em; width: 1em; height: 1em; color: var(--lc); }
+.lane[data-st="done"] .nowt, .lane[data-st="pending"] .nowt { color: var(--color-muted); }
+.lane .cnt { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-muted); display: flex; justify-content: space-between; }
+.lane .ask { display: flex; gap: var(--space-xs); padding: var(--space-xs) var(--space-sm); background: var(--color-accent); color: var(--color-accent-ink); font-size: var(--text-sm); font-weight: 500; }
+.lane .ask .ic { margin-top: 3px; }
+
+.dock { grid-column: 1; grid-row: 2; border-top: 1px solid var(--color-rule); background: var(--color-paper); padding: var(--space-sm) var(--space-md) max(var(--space-md), env(safe-area-inset-bottom)); display: grid; gap: var(--space-sm); }
+.track { position: relative; height: var(--th, 120px); border: 1px solid var(--color-rule); background: var(--color-paper-3); cursor: ew-resize; touch-action: none; user-select: none; -webkit-user-select: none; }
+.track canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.track .head { position: absolute; top: 0; bottom: 0; left: 0; width: 2px; margin-left: -1px; background: var(--color-accent); pointer-events: none; will-change: transform; }
+.track .head::before { content: ""; position: absolute; top: 0; left: -5px; width: 12px; height: 8px; background: var(--color-accent); clip-path: polygon(0 0, 100% 0, 50% 100%); }
+.track:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.tip { position: absolute; z-index: 5; pointer-events: none; max-width: 22rem; padding: 4px 8px; border: 1px solid var(--color-rule); background: var(--color-paper-2); font-size: var(--text-xs); color: var(--color-ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ctls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-xs); }
+.ctls .time { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-ink-2); min-width: 9.5em; }
+.ctls .time small { color: var(--color-muted); }
+.ctls .grow { flex: 1; }
+.speed { display: inline-flex; border: 1px solid var(--color-rule); }
+.speed button { min-width: 40px; min-height: 36px; padding: 0 8px; border: 0; background: none; font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-muted); cursor: pointer; }
+.speed button + button { border-left: 1px solid var(--color-rule); }
+.speed button[aria-pressed="true"] { background: var(--color-accent); color: var(--color-accent-ink); }
+.speed button:hover:not([aria-pressed="true"]) { background: var(--color-paper-2); }
+
+.state { grid-row: 2; display: grid; place-content: center; justify-items: center; gap: var(--space-md); padding: var(--space-xl) var(--space-md); text-align: center; }
+.state h2 { font-size: var(--text-xl); } .state p { color: var(--color-muted); max-width: 44ch; }
+.state input { width: min(24rem, 86vw); min-height: 44px; padding: 0 var(--space-md); border: 1px solid var(--color-rule); background: var(--color-paper-3); }
+.picker { width: min(46rem, 94vw); border-top: 1px solid var(--color-rule); text-align: left; }
+.picker a { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px var(--space-md); padding: var(--space-sm) var(--space-xs); border-bottom: 1px solid var(--color-rule); text-decoration: none; }
+.picker a:hover { background: var(--color-paper-2); }
+.picker .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-ink-2); }
+.picker .m { font-size: var(--text-xs); color: var(--color-muted); } .picker .d { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-muted); text-align: right; }
+.picker a[data-st="failed"] .m b { color: var(--color-error); font-weight: 400; }
+
+@media (max-width: 62rem) {
+  .body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto minmax(0, 14rem); }
+  .log { grid-column: 1; grid-row: 3; border-left: 0; border-top: 1px solid var(--color-rule); }
+  .stage { grid-template-columns: minmax(0, 1fr); }
+  .top h1 { display: none; }
+}
+@media (max-width: 30rem) { .ctls .time small { display: none; } .ctls .time { min-width: 0; } .speed button { min-width: 34px; padding: 0 5px; } }
+@media (prefers-reduced-motion: reduce) { .btn { transition: none; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <a class="btn" id="back" href="/" aria-label="ビューアーへ戻る" title="ビューアーへ戻る"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></a>
+    <h1>リプレイ</h1>
+    <select class="sel" id="sel" aria-label="リプレイするセッション" hidden></select>
+    <span class="grow"></span>
+    <button class="btn" id="bLink" type="button" aria-label="いまの位置のリンクをコピー" title="いまの位置のリンクをコピー" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span id="linkT">リンク</span></button>
+    <button class="btn" id="bReload" type="button" aria-label="最新の記録を読み込み直す" title="最新の記録を読み込み直す"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></button>
+  </header>
+  <div class="body" id="body" hidden>
+    <section class="stage" id="stage" aria-label="その時点の各AIの様子"></section>
+    <aside class="log"><h2>出来事の記録</h2><ol id="log" aria-label="ここまでの出来事"></ol></aside>
+    <section class="dock" aria-label="再生の操作">
+      <div class="track" id="track" role="slider" tabindex="0" aria-label="再生位置" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><canvas id="cv"></canvas><div class="head" id="head"></div><div class="tip" id="tip" hidden></div></div>
+      <div class="ctls">
+        <button class="btn" id="bStart" type="button" aria-label="最初へ" title="最初へ (Home)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.971 4.285A2 2 0 0 1 21 6v12a2 2 0 0 1-3.029 1.715l-9.997-5.998a2 2 0 0 1-.003-3.432z"/><path d="M3 20V4"/></svg></button>
+        <button class="btn" id="bPrev" type="button" aria-label="ひとつ前の出来事へ" title="ひとつ前の出来事 (←)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+        <button class="btn pri big" id="bPlay" type="button" aria-label="再生" title="再生 / 一時停止 (Space)"><svg class="ic" id="icPlay" viewBox="0 0 24 24" aria-hidden="true"></svg></button>
+        <button class="btn" id="bNext" type="button" aria-label="つぎの出来事へ" title="つぎの出来事 (→)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+        <button class="btn" id="bEnd" type="button" aria-label="最後へ" title="最後へ (End)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4v16"/><path d="M6.029 4.285A2 2 0 0 0 3 6v12a2 2 0 0 0 3.029 1.715l9.997-5.998a2 2 0 0 0 .003-3.432z"/></svg></button>
+        <span class="time" id="time" aria-live="off"></span>
+        <span class="grow"></span>
+        <button class="btn" id="bSkip" type="button" aria-pressed="true" title="何も起きていない間を早送りする (C)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 17 5-5-5-5"/><path d="m13 17 5-5-5-5"/></svg><span>待ち時間を詰める</span></button>
+        <div class="speed" id="speed" role="group" aria-label="再生速度"></div>
+      </div>
+    </section>
+  </div>
+  <section class="state" id="state"><h2>読み込んでいます…</h2></section>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+<script defer>
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const store = { get(k, d) { try { const v = localStorage.getItem('workline.' + k); return v === null ? d : v; } catch { return d; } }, set(k, v) { try { localStorage.setItem('workline.' + k, v); } catch {} } };
+const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const motion = () => !reduced() && typeof window.gsap !== 'undefined';
+
+const IC = {
+  plan: '<path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/>',
+  think: '<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>',
+  search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  read: '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+  write: '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
+  run: '<path d="m4 17 6-6-6-6"/><path d="M12 19h8"/>',
+  web: '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
+  check: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+  fix: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"/>',
+  wait: '<path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="10"/>',
+  note: '<path d="M21 9a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 15 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"/><path d="M15 3v5a1 1 0 0 0 1 1h5"/>',
+  ask: '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
+  msg: '<path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/>',
+  flag: '<path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/>',
+  send: '<path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>',
+  image: '<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',
+  play: '<path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/>',
+  pause: '<rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/>',
+  redo: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+};
+const ic = (k) => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${IC[k] || IC.note}</svg>`;
+const KL = { plan: '計画', think: '考える', search: '検索', read: '読む', write: '編集', run: '実行', web: '通信', check: '確認', fix: '修正', wait: '待機', note: 'メモ' };
+const ST = { running: '作業中', done: '完了', failed: '失敗', cancelled: '中断', pending: '開始前' };
+const COLORS = ['oklch(72% 0.17 45)', 'oklch(74% 0.12 250)', 'oklch(76% 0.13 150)', 'oklch(78% 0.13 330)', 'oklch(80% 0.12 90)', 'oklch(72% 0.12 200)'];
+const colorOf = (id) => { let h = 0; for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return COLORS[h % COLORS.length]; };
+const p2 = (n) => String(n).padStart(2, '0');
+const fmt = (ms) => { const s = Math.max(0, Math.round(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60); return (h ? h + ':' + p2(m) : p2(m)) + ':' + p2(s % 60); };
+const wallClock = (ms) => { const d = new Date(ms); return `${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}`; };
+const tms = (v) => (typeof v === 'number' ? v : v ? Date.parse(v) : NaN);
+
+const S = { token: store.get('token', ''), snap: null, root: null, tasks: [], steps: [], events: [], agents: [], lanes: new Map(), t0: 0, t1: 1, T: 0, playing: false, speed: Number(store.get('replay.speed', '4')), skip: store.get('replay.skip', '1') === '1', shown: 0, laneKey: '' };
+const SPEEDS = [1, 2, 4, 8, 16, 32];
+
+/* ---------- load ---------- */
+const url = new URL(location.href);
+const qt = url.searchParams.get('token'); if (qt) { S.token = qt; store.set('token', qt); url.searchParams.delete('token'); history.replaceState(null, '', url.pathname + url.search + url.hash); }
+async function fetchSnap() {
+  const r = await fetch('/api/snapshot', { cache: 'no-store', headers: S.token ? { authorization: 'Bearer ' + S.token } : {} });
+  if (r.status === 401 || r.status === 403) { const e = new Error('denied'); e.denied = true; throw e; }
+  if (!r.ok) throw new Error('http ' + r.status);
+  return r.json();
+}
+function showState(h, p, extra = '') { $('#body').hidden = true; const s = $('#state'); s.hidden = false; s.innerHTML = `<h2>${esc(h)}</h2>${p ? `<p>${esc(p)}</p>` : ''}${extra}`; }
+async function load(keepPos) {
+  try { S.snap = await fetchSnap(); } catch (e) {
+    if (e.denied) {
+      showState('閲覧トークンが必要です', 'ビューアーと同じトークンを入れると、リプレイを見られます。', `<form id="tokForm" style="display:grid;gap:12px;justify-items:center"><input id="tokIn" type="password" autocomplete="off" aria-label="閲覧トークン" placeholder="閲覧トークン"><button class="btn pri" type="submit" style="min-width:12rem;min-height:44px">表示する</button></form>`);
+      $('#tokForm').addEventListener('submit', (ev) => { ev.preventDefault(); S.token = $('#tokIn').value.trim(); store.set('token', S.token); load(); }); $('#tokIn').focus(); return;
+    }
+    showState('読み込めませんでした', '通信を確認して、右上の更新ボタンをもう一度押してください。'); return;
+  }
+  const roots = S.snap.tasks.filter((t) => t.parentId == null).sort((a, b) => b.startedAt - a.startedAt);
+  fillSelect(roots);
+  const id = Number(url.searchParams.get('task'));
+  if (!id) return picker(roots);
+  const root = roots.find((t) => t.id === id);
+  if (!root) return showState('このセッションは読み込めません', '直近20件より前の記録は、リプレイの対象外です。', `<a class="btn" href="/replay">一覧から選ぶ</a>`);
+  build(root, keepPos);
+}
+function fillSelect(roots) {
+  const sel = $('#sel'); sel.hidden = !roots.length;
+  sel.innerHTML = `<option value="">セッションを選ぶ…</option>` + roots.map((t) => `<option value="${t.id}" ${t.id === Number(url.searchParams.get('task')) ? 'selected' : ''}>#${t.id} ${esc(t.title)} · ${esc(ST[t.status] || t.status)}</option>`).join('');
+}
+$('#sel').addEventListener('change', (e) => { if (e.target.value) location.href = `/replay?task=${e.target.value}&play=1`; });
+function picker(roots) {
+  S.playing = false;
+  const agentN = (id) => (S.snap.agents.find((a) => a.id === id) || {}).name || id || 'AI';
+  if (!roots.length) return showState('リプレイできる記録がありません', 'AIの作業が記録されると、ここから巻き戻して見られます。');
+  showState('リプレイするセッションを選んでください', '直近のセッションを新しい順に並べています。', `<nav class="picker" aria-label="セッション一覧">${roots.map((t) => `<a href="/replay?task=${t.id}&play=1" data-st="${esc(t.status)}"><span class="t">${esc(t.title)}</span><span class="d">${fmt((t.finishedAt || t.updatedAt) - t.startedAt)}</span><span class="m">${esc(agentN(t.agent))} · <b>${esc(ST[t.status] || t.status)}</b> · ${new Date(t.startedAt).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span><span class="m" style="text-align:right">${(t.steps || []).length} ステップ</span></a>`).join('')}</nav>`);
+}
+
+/* ---------- build the event model for one session ---------- */
+function build(root, keepPos) {
+  const snap = S.snap, now = snap.serverTime || Date.now();
+  S.root = root;
+  const tree = snap.tasks.filter((t) => (t.rootId ?? t.id) === root.id), ids = new Set(tree.map((t) => t.id));
+  const agentOf = (id) => id || root.agent || 'AI';
+  const aName = (id) => (snap.agents.find((a) => a.id === id) || {}).name || id || 'AI';
+  const ev = [], steps = [];
+  for (const t of tree) {
+    ev.push({ at: t.startedAt, k: 'start', agent: agentOf(t.agent), text: t.parentId == null ? `「${t.title}」を始めました` : `子タスク「${t.title}」を始めました`, icon: 'flag' });
+    if (t.status !== 'running' && t.finishedAt) ev.push({ at: t.finishedAt, k: t.status === 'failed' ? 'fail' : 'end', agent: agentOf(t.agent), text: `${t.parentId == null ? '' : '子タスク '}${{ done: '完了しました', failed: '失敗しました', cancelled: '中断されました' }[t.status] || '終わりました'}`, sub: t.summary || t.result || '', icon: 'flag' });
+    for (const s of t.steps || []) {
+      steps.push({ ...s, agent: agentOf(s.agent || t.agent), taskId: t.id });
+      ev.push({ at: s.createdAt, k: 'step', agent: agentOf(s.agent || t.agent), text: s.title, kind: s.kind, icon: s.kind, label: KL[s.kind] || '' });
+      if (s.endedAt && s.status === 'failed') ev.push({ at: s.endedAt, k: 'fail', agent: agentOf(s.agent || t.agent), text: `失敗: ${s.title}`, icon: 'fix' });
+    }
+  }
+  for (const a of snap.approvals || []) {
+    if (!ids.has(a.taskId)) continue;
+    ev.push({ at: a.createdAt, k: 'ask', agent: agentOf(a.from), text: `確認待ち: ${a.question}`, sub: (a.options || []).join(' / '), icon: 'ask' });
+    if (a.answeredAt) ev.push({ at: a.answeredAt, k: 'answer', agent: 'user', text: `回答: ${a.answer || '(回答)'}`, sub: a.comment || '', icon: 'msg' });
+  }
+  for (const n of snap.notes || []) { const at = tms(n.createdAt); if (n.taskId != null && ids.has(n.taskId) && at) ev.push({ at, k: 'note', agent: n.from, text: n.body, icon: 'msg', who: n.from === 'user' ? 'あなた' : aName(n.from) }); }
+  for (const d of snap.directives || []) {
+    if (!(ids.has(d.taskId) || ids.has(d.childTaskId) || d.rootTaskId === root.id)) continue;
+    const at = tms(d.createdAt); if (at) ev.push({ at, k: 'dir', agent: d.from, text: `${d.kind === 'request' ? '要求' : '司令'}: ${d.title}`, sub: `${aName(d.from)} → ${aName(d.to)}`, icon: 'send' });
+  }
+  for (const sh of snap.shots || []) { const at = tms(sh.createdAt); if (at && sh.taskId != null && ids.has(sh.taskId)) ev.push({ at, k: 'shot', agent: sh.by, text: sh.caption || 'スクリーンショット', icon: 'image', shot: sh.shotId }); }
+  ev.sort((a, b) => a.at - b.at);
+  S.tasks = tree; S.steps = steps; S.events = ev;
+  const agents = [...new Set([...tree.map((t) => t.agent), ...steps.map((s) => s.agent)].filter(Boolean))];
+  S.agents = agents.length ? agents : [root.agent || 'AI'];
+  S.t0 = Math.min(root.startedAt, ...(ev.length ? [ev[0].at] : [root.startedAt]));
+  const running = tree.some((t) => t.status === 'running');
+  S.t1 = Math.max(S.t0 + 1000, ...ev.map((e) => e.at), ...tree.map((t) => t.finishedAt || 0), running ? now : 0);
+  S.running = running;
+  // 一瞬で記録されたステップ(開始と終了がほぼ同時)は、同じAIの次のステップが始まるまで「やっていた」ものとして、帯の長さを決める
+  for (const id of S.agents) {
+    const mine = steps.filter((x) => x.agent === id).sort((a, b) => a.createdAt - b.createdAt || a.id - b.id);
+    const taskEnd = Math.max(0, ...tree.filter((t) => t.agent === id && t.status !== 'running').map((t) => t.finishedAt || 0));
+    mine.forEach((x, i) => {
+      const own = x.endedAt && x.endedAt - x.createdAt >= 1500 ? x.endedAt : null;
+      const nx = mine[i + 1] ? mine[i + 1].createdAt : taskEnd || (running ? S.t1 : x.endedAt || x.updatedAt || x.createdAt);
+      x.visEnd = Math.max(x.createdAt + 300, own || Math.min(nx, x.createdAt + 10 * 60000));
+    });
+  }
+  const at = Number(url.searchParams.get('at'));
+  const keep = keepPos ? S.T : null;
+  S.T = keep != null ? Math.min(keep, S.t1) : url.searchParams.has('at') && Number.isFinite(at) ? S.t0 + Math.min(Math.max(0, at * 1000), S.t1 - S.t0) : S.t0;
+  S.shown = 0; S.laneKey = ''; S.lanes.clear(); $('#stage').innerHTML = ''; $('#log').innerHTML = '';
+  $('#state').hidden = true; $('#body').hidden = false; $('#bLink').hidden = false;
+  $('#back').href = `/#t=${root.id}`;
+  document.title = `リプレイ · ${root.title} · Workline`;
+  sizeTrack(); paint(true);
+  const auto = url.searchParams.get('play') === '1' && !url.searchParams.has('at') && !keepPos;
+  if (auto && S.events.length) play(true); else setPlaying(false);
+}
+
+/* ---------- state at time T ---------- */
+function laneAt(agent, T) {
+  const mine = S.steps.filter((s) => s.agent === agent && s.createdAt <= T).sort((a, b) => a.createdAt - b.createdAt || a.id - b.id);
+  const tasks = S.tasks.filter((t) => t.agent === agent);
+  const started = tasks.filter((t) => t.startedAt <= T), ended = started.length && started.every((t) => t.status !== 'running' && t.finishedAt && t.finishedAt <= T);
+  let st = 'pending';
+  if (started.length) st = ended ? (started.some((t) => t.status === 'failed') ? 'failed' : started.every((t) => t.status === 'cancelled') ? 'cancelled' : 'done') : 'running';
+  const runningStep = [...mine].reverse().find((s) => T < s.visEnd);
+  const cur = runningStep || mine[mine.length - 1] || null;
+  const ask = (S.snap.approvals || []).filter((a) => a.createdAt <= T && !(a.answeredAt && a.answeredAt <= T) && (a.from === agent || tasks.some((t) => t.id === a.taskId))).pop();
+  return { st, cur, active: !!runningStep, n: mine.length, total: S.steps.filter((s) => s.agent === agent).length, ask, task: started[started.length - 1] || tasks[0] };
+}
+const agentRow = (id) => S.snap.agents.find((a) => a.id === id) || { id, name: id };
+
+/* ---------- paint ---------- */
+let lastLog = -1;
+function paint(force) {
+  const T = S.T, span = S.t1 - S.t0;
+  $('#head').style.transform = `translateX(${(((T - S.t0) / span) * trackW()).toFixed(1)}px)`;
+  $('#time').innerHTML = `${fmt(T - S.t0)} / ${fmt(span)} <small>${wallClock(T)}</small>`;
+  const tr = $('#track'); tr.setAttribute('aria-valuenow', Math.round(((T - S.t0) / span) * 100)); tr.setAttribute('aria-valuetext', `${fmt(T - S.t0)}(全体 ${fmt(span)})`);
+  drawTrack();
+  paintLanes(force); paintLog(force);
+}
+function paintLanes(force) {
+  const stage = $('#stage'), T = S.T, key = S.agents.join('|');
+  if (S.laneKey !== key) { S.laneKey = key; stage.innerHTML = ''; S.lanes.clear(); for (const id of S.agents) { const el = document.createElement('article'); el.className = 'lane'; el.style.setProperty('--lc', colorOf(id)); el.innerHTML = `<div class="lw"><div class="av"></div><div class="n"><b></b><span></span></div><div class="s"></div></div><div class="nowt"></div><div class="ask" hidden>${ic('ask')}<span></span></div><div class="cnt"><span class="c1"></span><span class="c2"></span></div>`; stage.appendChild(el); const a = agentRow(id), av = $('.av', el); av.textContent = (a.name || '?').slice(0, 1).toUpperCase(); if (a.hasIcon) { const img = new Image(); img.alt = ''; img.src = `/api/icon?agent=${encodeURIComponent(a.id)}${S.token ? '&token=' + encodeURIComponent(S.token) : ''}`; img.onload = () => { av.textContent = ''; av.appendChild(img); }; } $('.n b', el).textContent = a.name || id; $('.n span', el).textContent = [a.model].filter(Boolean).join(' · '); S.lanes.set(id, { el, sig: '' }); } }
+  for (const [id, l] of S.lanes) {
+    const m = laneAt(id, T), el = l.el, sig = `${m.st}|${m.cur && m.cur.id}|${m.active}|${m.n}|${m.ask && m.ask.requestId}`;
+    if (sig === l.sig && !force) continue;
+    const swap = l.sig && l.cur !== (m.cur && m.cur.id); l.sig = sig; l.cur = m.cur && m.cur.id;
+    el.dataset.st = m.st; el.dataset.ask = m.ask ? '1' : '0';
+    $('.s', el).textContent = ST[m.st];
+    const nt = $('.nowt', el);
+    nt.innerHTML = m.cur ? `${ic(m.cur.kind)}<span>${m.active ? '' : '<small style="color:var(--color-muted)">直前: </small>'}${esc(m.cur.title)}</span>` : `<span style="color:var(--color-muted)">${m.st === 'pending' ? 'まだ始まっていません' : '—'}</span>`;
+    if (swap && playing() && motion()) gsap.fromTo(nt, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.3, ease: 'expo.out', clearProps: 'all' });
+    const ab = $('.ask', el); ab.hidden = !m.ask; if (m.ask) $('span', ab).textContent = '確認待ち: ' + m.ask.question;
+    $('.c1', el).textContent = `${m.n} / ${m.total} ステップ`; $('.c2', el).textContent = m.task ? `#${m.task.agentNumber || '00'}` : '';
+  }
+}
+function paintLog(force) {
+  const T = S.T, ev = S.events; let n = 0; { let lo = 0, hi = ev.length; while (lo < hi) { const mid = (lo + hi) >> 1; if (ev[mid].at <= T) lo = mid + 1; else hi = mid; } n = lo; }
+  if (n === lastLog && !force) return;
+  const ol = $('#log'); const stick = ol.scrollTop + ol.clientHeight >= ol.scrollHeight - 40 || force || n < lastLog;
+  const from = Math.max(0, n - 300);
+  const item = (e, i) => `<li><button class="ev" type="button" data-i="${i}" data-k="${e.k}" style="--lc:${colorOf(e.agent)}" aria-label="この時点へ移動"><span class="tm">${fmt(e.at - S.t0)}</span>${ic(e.icon)}<span class="tx">${e.who ? `<small>${esc(e.who)}</small>` : ''}${e.label ? `<small>${esc(agentRow(e.agent).name || e.agent)} · ${esc(e.label)}</small>` : ''}${esc(e.text)}${e.sub ? `<small>${esc(e.sub)}</small>` : ''}${e.shot ? `<img alt="" loading="lazy" src="/api/shot?id=${e.shot}${S.token ? '&token=' + encodeURIComponent(S.token) : ''}">` : ''}</span></button></li>`;
+  if (force || n < lastLog || lastLog < 0 || n - lastLog > 40 || from > 0) {
+    ol.innerHTML = n ? ev.slice(from, n).map((e, j) => item(e, from + j)).join('') : `<li class="none">まだ何も起きていません。再生を押すか、下のバーをなぞってください。</li>`;
+  } else {
+    const add = ev.slice(lastLog, n); ol.querySelector('.none')?.remove();
+    ol.insertAdjacentHTML('beforeend', add.map((e, j) => item(e, lastLog + j)).join(''));
+    if (playing() && motion()) for (const li of [...ol.children].slice(-add.length)) gsap.from(li, { x: -10, opacity: 0, duration: 0.35, ease: 'expo.out', clearProps: 'all' });
+  }
+  ol.querySelectorAll('[data-last]').forEach((b) => b.removeAttribute('data-last')); const lb = ol.querySelector('li:last-child .ev'); if (lb) lb.dataset.last = '1';
+  lastLog = n; if (stick) ol.scrollTop = ol.scrollHeight;
+}
+$('#log').addEventListener('click', (e) => { const b = e.target.closest('.ev'); if (!b) return; const ev = S.events[Number(b.dataset.i)]; if (ev) { setPlaying(false); seek(ev.at); } });
+
+/* ---------- timeline canvas ---------- */
+const cv = $('#cv'), track = $('#track'); let dpr = 1, W = 0, H = 0;
+const trackW = () => W || track.clientWidth;
+function sizeTrack() {
+  const rows = S.agents.length, rowH = 22, ruler = 22;
+  track.style.setProperty('--th', Math.min(260, Math.max(96, ruler + rows * (rowH + 6) + 10)) + 'px');
+  dpr = Math.min(2, window.devicePixelRatio || 1); W = track.clientWidth; H = track.clientHeight; cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+}
+function drawTrack() {
+  const g = cv.getContext('2d'); if (!g || !W) return; g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+  const cs = getComputedStyle(document.documentElement), rule = cs.getPropertyValue('--color-rule').trim(), muted = cs.getPropertyValue('--color-muted-2').trim(), err = cs.getPropertyValue('--color-error').trim(), ink = cs.getPropertyValue('--color-ink-2').trim();
+  const span = S.t1 - S.t0, x = (t) => ((t - S.t0) / span) * W, ruler = 22, rowH = 22, gap = 6;
+  g.font = '11px "Geist Mono", ui-monospace, monospace'; g.textBaseline = 'middle';
+  const nice = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600, 7200, 14400].map((s) => s * 1000); const step = nice.find((n) => span / n <= Math.max(3, W / 90)) || nice[nice.length - 1];
+  g.strokeStyle = rule; g.fillStyle = muted; g.lineWidth = 1;
+  for (let t = 0; t <= span + 1; t += step) { const px = Math.round(x(S.t0 + t)) + 0.5; g.beginPath(); g.moveTo(px, ruler - 5); g.lineTo(px, H); g.stroke(); g.fillText(fmt(t), Math.min(px + 4, W - 48), ruler / 2); }
+  S.agents.forEach((id, i) => {
+    const y = ruler + i * (rowH + gap) + 4, col = colorOf(id);
+    g.fillStyle = 'rgba(255,255,255,0.03)'; g.fillRect(0, y, W, rowH);
+    for (const s of S.steps) {
+      if (s.agent !== id) continue;
+      const a = x(s.createdAt), b = Math.max(a + 3, x(s.visEnd)), live = s.createdAt <= S.T && S.T < s.visEnd;
+      g.globalAlpha = s.createdAt > S.T ? 0.28 : live ? 1 : 0.6; g.fillStyle = s.status === 'failed' ? err : col; g.fillRect(a, y + 2, Math.max(2, b - a - 2), rowH - 4);
+    }
+    g.globalAlpha = 1;
+    for (const t of S.tasks) { if (t.agent !== id) continue; g.fillStyle = col; g.fillRect(x(t.startedAt), y, 2, rowH); if (t.status !== 'running' && t.finishedAt) { g.fillStyle = t.status === 'failed' ? err : muted; g.fillRect(x(t.finishedAt) - 2, y, 2, rowH); } }
+  });
+  for (const e of S.events) if (e.k === 'ask') { const px = x(e.at); g.fillStyle = cs.getPropertyValue('--color-accent').trim(); g.beginPath(); g.moveTo(px, H - 2); g.lineTo(px - 4, H - 10); g.lineTo(px + 4, H - 10); g.closePath(); g.fill(); }
+  g.fillStyle = ink;
+}
+addEventListener('resize', () => { if (!S.root) return; sizeTrack(); paint(false); });
+
+/* ---------- scrubbing ---------- */
+let drag = false;
+const posToTime = (clientX) => { const r = track.getBoundingClientRect(); return S.t0 + Math.min(1, Math.max(0, (clientX - r.left) / r.width)) * (S.t1 - S.t0); };
+track.addEventListener('pointerdown', (e) => { drag = true; wasPlaying = S.playing; setPlaying(false); track.setPointerCapture(e.pointerId); seek(posToTime(e.clientX)); });
+let wasPlaying = false;
+track.addEventListener('pointermove', (e) => {
+  if (drag) { seek(posToTime(e.clientX)); return; }
+  const r = track.getBoundingClientRect(), t = posToTime(e.clientX), row = Math.floor((e.clientY - r.top - 26) / 28), id = S.agents[row];
+  const hit = id && S.steps.find((s) => s.agent === id && s.createdAt <= t && t < s.visEnd);
+  const tip = $('#tip'); if (hit) { tip.hidden = false; tip.textContent = `${KL[hit.kind] || ''} · ${hit.title}`; tip.style.left = Math.min(r.width - tip.offsetWidth - 4, Math.max(4, e.clientX - r.left + 10)) + 'px'; tip.style.top = Math.max(2, e.clientY - r.top - 30) + 'px'; } else tip.hidden = true;
+});
+track.addEventListener('pointerleave', () => { $('#tip').hidden = true; });
+const endDrag = () => { if (!drag) return; drag = false; if (wasPlaying && S.T < S.t1) play(); };
+track.addEventListener('pointerup', endDrag); track.addEventListener('pointercancel', endDrag);
+function seek(t) { S.T = Math.min(S.t1, Math.max(S.t0, t)); paint(false); syncUrl(); }
+const nextEvent = () => S.events.find((e) => e.at > S.T + 1), prevEvent = () => [...S.events].reverse().find((e) => e.at < S.T - 400);
+
+/* ---------- playback ---------- */
+const playing = () => S.playing;
+let raf = 0, last = 0;
+function setPlaying(on) {
+  S.playing = on; cancelAnimationFrame(raf); last = 0;
+  $('#icPlay').innerHTML = on ? IC.pause : IC.play; $('#bPlay').setAttribute('aria-label', on ? '一時停止' : S.T >= S.t1 ? 'もう一度再生' : '再生');
+  if (on) raf = requestAnimationFrame(tick); else syncUrl();
+}
+function play(fromStart) { if (fromStart || S.T >= S.t1) S.T = S.t0; setPlaying(true); }
+function tick(ts) {
+  if (!S.playing) return;
+  const dt = last ? Math.min(100, ts - last) : 0; last = ts;
+  let rate = S.speed;
+  if (S.skip) { const nx = nextEvent(); const gap = nx ? nx.at - S.T : S.t1 - S.T; if (gap > 4000 * S.speed) rate = Math.max(rate, gap); } // 何も起きていない間は、約1秒で飛ばす
+  S.T = Math.min(S.t1, S.T + dt * rate);
+  paint(false);
+  if (S.T >= S.t1) { setPlaying(false); $('#bPlay').setAttribute('aria-label', 'もう一度再生'); return; }
+  raf = requestAnimationFrame(tick);
+}
+$('#bPlay').addEventListener('click', () => (S.playing ? setPlaying(false) : play()));
+$('#bStart').addEventListener('click', () => { setPlaying(false); seek(S.t0); });
+$('#bEnd').addEventListener('click', () => { setPlaying(false); seek(S.t1); });
+$('#bNext').addEventListener('click', () => { const e = nextEvent(); setPlaying(false); seek(e ? e.at : S.t1); });
+$('#bPrev').addEventListener('click', () => { const e = prevEvent(); setPlaying(false); seek(e ? e.at : S.t0); });
+function paintSpeed() { $('#speed').innerHTML = SPEEDS.map((v) => `<button type="button" data-v="${v}" aria-pressed="${v === S.speed}">${v}×</button>`).join(''); $('#bSkip').setAttribute('aria-pressed', S.skip); }
+$('#speed').addEventListener('click', (e) => { const b = e.target.closest('[data-v]'); if (!b) return; S.speed = Number(b.dataset.v); store.set('replay.speed', S.speed); paintSpeed(); });
+$('#bSkip').addEventListener('click', () => { S.skip = !S.skip; store.set('replay.skip', S.skip ? '1' : '0'); paintSpeed(); });
+$('#bReload').addEventListener('click', () => { const was = S.playing; setPlaying(false); load(true).then(() => { if (was && S.root) play(); }); });
+function syncUrl() { if (!S.root) return; const u = new URL(location.href); u.searchParams.set('task', S.root.id); u.searchParams.set('at', Math.round((S.T - S.t0) / 1000)); u.searchParams.delete('play'); history.replaceState(null, '', u.pathname + u.search); }
+$('#bLink').addEventListener('click', async () => { const u = new URL(location.href); u.searchParams.delete('token'); let ok = false; try { await navigator.clipboard.writeText(u.href); ok = true; } catch {} $('#linkT').textContent = ok ? 'コピーしました' : 'URLを選んでコピー'; setTimeout(() => { $('#linkT').textContent = 'リンク'; }, 1800); });
+addEventListener('keydown', (e) => {
+  if (!S.root || e.target.closest('input, select, textarea') || e.metaKey || e.ctrlKey || e.altKey) return;
+  const onTrack = e.target === track;
+  if (e.key === ' ' && !e.target.closest('button')) { e.preventDefault(); S.playing ? setPlaying(false) : play(); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); setPlaying(false); if (onTrack) seek(S.T - (e.shiftKey ? 10000 : 1000)); else $('#bPrev').click(); }
+  else if (e.key === 'ArrowRight') { e.preventDefault(); setPlaying(false); if (onTrack) seek(S.T + (e.shiftKey ? 10000 : 1000)); else $('#bNext').click(); }
+  else if (e.key === 'Home') { e.preventDefault(); $('#bStart').click(); } else if (e.key === 'End') { e.preventDefault(); $('#bEnd').click(); }
+  else if (e.key === ']' || e.key === '[') { const i = SPEEDS.indexOf(S.speed) + (e.key === ']' ? 1 : -1); if (SPEEDS[i]) { S.speed = SPEEDS[i]; store.set('replay.speed', S.speed); paintSpeed(); } }
+  else if (e.key === 'c' || e.key === 'C') $('#bSkip').click();
+});
+paintSpeed(); $('#icPlay').innerHTML = IC.play;
+load();
+</script>
+</body>
+</html>

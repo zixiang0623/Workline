@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0a0907">
+<meta name="description" content="Workline 壁掛けモード。いまAIが何をしているかを、離れた場所からでも読める大きさで常時表示します(閲覧専用)。">
+<title>Workline 壁掛け</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://api.fontshare.com"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://api.fontshare.com/v2/css?f[]=switzer@400,500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+/* Hallmark · shape: app screen (wall display) · theme: Rim, shared with /beta · states: loading, locked, error, empty (clock), full · reads at 3 m: the one thing each lane says is the size of the page */
+:root {
+  color-scheme: dark;
+  --space-2xs: 4px; --space-xs: 8px; --space-sm: 12px; --space-md: 16px; --space-lg: 24px; --space-xl: 40px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --color-error: oklch(72% 0.15 27); --color-success: oklch(76% 0.13 150); --color-warn: oklch(80% 0.13 85);
+  --color-paper: oklch(9% 0.008 75); --color-paper-2: oklch(12.5% 0.009 75); --color-paper-3: oklch(6.5% 0.007 75);
+  --color-ink: oklch(94% 0.010 80); --color-ink-2: oklch(84% 0.011 80); --color-muted: oklch(68% 0.012 80); --color-muted-2: oklch(50% 0.010 80);
+  --color-rule: oklch(25% 0.010 78); --color-rule-2: oklch(16% 0.009 78);
+  --color-accent: oklch(72% 0.17 45); --color-accent-ink: oklch(10% 0.02 45); --color-focus: oklch(78% 0.15 45);
+  --font-display: "Switzer", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --gap: clamp(8px, 1.2vmin, 16px);
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; overflow: hidden; background: var(--color-paper); }
+body { color: var(--color-ink); font-family: var(--font-display); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; cursor: default; }
+body.idle { cursor: none; }
+[hidden] { display: none !important; }
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.ic { width: 1em; height: 1em; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* ---- frame ---- */
+.wall { position: fixed; inset: 0; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; gap: var(--gap); padding: max(var(--gap), env(safe-area-inset-top)) max(var(--gap), env(safe-area-inset-right)) max(var(--gap), env(safe-area-inset-bottom)) max(var(--gap), env(safe-area-inset-left)); }
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-xs) var(--space-md); min-height: 44px; }
+.brand { display: flex; align-items: baseline; gap: var(--space-xs); font-size: 1.05rem; font-weight: 500; letter-spacing: -0.02em; }
+.brand small { font-size: 0.75rem; font-weight: 400; color: var(--color-muted); letter-spacing: 0; }
+.conn { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8125rem; color: var(--color-muted); }
+.dot { width: 8px; height: 8px; background: var(--color-muted-2); }
+.conn[data-s="live"] .dot { background: var(--color-success); }
+.conn[data-s="retry"] .dot, .conn[data-s="connecting"] .dot { background: var(--color-warn); }
+.conn[data-s="error"] .dot, .conn[data-s="denied"] .dot { background: var(--color-error); }
+.grow { flex: 1; }
+.clock { font-family: var(--font-mono); font-size: clamp(1.1rem, 2.4vmin, 1.6rem); color: var(--color-ink-2); }
+.pill { white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 var(--space-md); border: 1px solid var(--color-rule); font-size: 0.9375rem; color: var(--color-ink-2); }
+.pill b { font-family: var(--font-mono); font-weight: 400; color: var(--color-ink); }
+.pill.ask { border-color: var(--color-accent); background: var(--color-accent); color: var(--color-accent-ink); font-weight: 500; }
+.pill.ask b { color: inherit; }
+.ctl { display: flex; gap: var(--space-xs); transition: opacity 0.4s; }
+body.idle .ctl:not(:focus-within) { opacity: 0; pointer-events: none; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 44px; min-height: 44px; padding: 0 var(--space-md); border: 1px solid var(--color-rule); background: transparent; color: var(--color-ink-2); cursor: pointer; text-decoration: none; transition: background-color 0.12s, border-color 0.12s, transform 0.12s; }
+.btn:hover { background: var(--color-paper-2); border-color: var(--color-muted-2); }
+.btn:active { transform: scale(0.97); }
+.btn[aria-pressed="true"] { color: var(--color-accent); border-color: var(--color-accent); }
+.btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+.btn .ic { width: 18px; height: 18px; }
+
+/* ---- lanes grid ---- */
+.grid { display: grid; gap: var(--gap); min-height: 0; grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr)); grid-template-rows: repeat(var(--rows, 1), minmax(0, 1fr)); }
+.lane { position: relative; container-type: size; display: flex; flex-direction: column; gap: 2cqh; min-height: 0; padding: clamp(12px, 3cqmin, 36px); border: 1px solid var(--color-rule); background: var(--color-paper-2); overflow: hidden; }
+.lane::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--lc, var(--color-accent)); }
+.lane[data-st="done"], .lane[data-st="failed"], .lane[data-st="cancelled"] { background: var(--color-paper); }
+.lane[data-st="done"]::before, .lane[data-st="cancelled"]::before { background: var(--color-muted-2); }
+.lane[data-st="failed"]::before { background: var(--color-error); }
+.lane[data-ask="1"] { border-color: var(--color-accent); }
+.who { display: flex; align-items: center; gap: 1.6cqmin; min-width: 0; }
+.av { flex: none; width: clamp(28px, 7cqmin, 64px); height: clamp(28px, 7cqmin, 64px); display: grid; place-items: center; background: var(--color-paper-3); border: 1px solid var(--color-rule); font-weight: 500; overflow: hidden; }
+.av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.who-t { min-width: 0; flex: 1; }
+.who-n { font-size: clamp(0.875rem, 3.4cqmin, 1.5rem); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.who-m { font-size: clamp(0.6875rem, 2.4cqmin, 1rem); color: var(--color-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st { flex: none; display: inline-flex; align-items: center; gap: 0.8cqmin; font-size: clamp(0.75rem, 2.6cqmin, 1.1rem); color: var(--color-muted); }
+.st .dot { width: 0.8em; height: 0.8em; background: var(--lc, var(--color-accent)); }
+.lane[data-st="running"] .st { color: var(--color-ink-2); }
+.lane[data-st="running"] .st .dot { animation: beat 1.6s ease-in-out infinite; }
+.lane[data-st="done"] .st .dot { background: var(--color-muted-2); } .lane[data-st="failed"] .st .dot { background: var(--color-error); } .lane[data-st="cancelled"] .st .dot { background: var(--color-muted-2); }
+.lane[data-stale="1"] .st { color: var(--color-warn); } .lane[data-stale="1"] .st .dot { background: var(--color-warn); animation: none; }
+@keyframes beat { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+.title { font-size: clamp(1rem, 4.2cqmin, 2rem); font-weight: 500; letter-spacing: -0.02em; line-height: 1.25; color: var(--color-ink-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.now { position: relative; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 1cqmin; overflow: hidden; }
+.now-l { font-size: clamp(0.6875rem, 2.4cqmin, 1rem); color: var(--color-muted); letter-spacing: 0.04em; }
+.now-t { font-size: clamp(1.25rem, 8.5cqmin, 4.5rem); font-weight: 500; letter-spacing: -0.03em; line-height: 1.15; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; text-wrap: balance; }
+.lane[data-st="done"] .now-t, .lane[data-st="cancelled"] .now-t { color: var(--color-muted); }
+.next { font-size: clamp(0.75rem, 2.8cqmin, 1.2rem); color: var(--color-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.next b { font-weight: 500; color: var(--color-ink-2); }
+.prog { height: clamp(4px, 1cqmin, 10px); background: var(--color-rule-2); }
+.prog i { display: block; height: 100%; width: 0; background: var(--lc, var(--color-accent)); transform-origin: left; }
+.meta { display: flex; justify-content: space-between; gap: var(--space-md); font-family: var(--font-mono); font-size: clamp(0.6875rem, 2.4cqmin, 1rem); color: var(--color-muted); }
+.steps { display: flex; flex-direction: column; gap: 0.8cqmin; min-height: 0; margin: 0; padding: 0; list-style: none; overflow: hidden; }
+.steps li { display: flex; align-items: center; gap: 1.2cqmin; font-size: clamp(0.6875rem, 2.5cqmin, 1.05rem); color: var(--color-muted); min-width: 0; }
+.steps li .ic { width: 1.1em; height: 1.1em; }
+.steps li span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.steps li[data-s="running"] { color: var(--color-ink); }
+.steps li[data-s="failed"] { color: var(--color-error); }
+@container (max-height: 360px) { .steps, .next { display: none; } }
+@container (max-height: 260px) { .title { display: none; } }
+.ask-b { display: flex; align-items: flex-start; gap: 1.4cqmin; padding: 1.6cqmin 2cqmin; background: var(--color-accent); color: var(--color-accent-ink); font-size: clamp(0.8125rem, 3cqmin, 1.4rem); font-weight: 500; line-height: 1.35; }
+.ask-b .ic { margin-top: 0.15em; width: 1.2em; height: 1.2em; }
+.ask-b span { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+
+/* ---- empty / state ---- */
+.empty { display: grid; place-content: center; justify-items: center; gap: var(--space-lg); text-align: center; padding: var(--space-lg); }
+.empty .big { font-family: var(--font-mono); font-size: clamp(3rem, 20vmin, 14rem); letter-spacing: -0.04em; line-height: 1; color: var(--color-ink); }
+.empty p { color: var(--color-muted); font-size: clamp(0.9375rem, 2.6vmin, 1.5rem); max-width: 40ch; }
+.recent { width: min(60ch, 90vw); margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; border-top: 1px solid var(--color-rule); }
+.recent li { display: flex; align-items: baseline; gap: var(--space-md); padding: var(--space-sm) 0; border-bottom: 1px solid var(--color-rule); text-align: left; font-size: clamp(0.8125rem, 2.2vmin, 1.2rem); }
+.recent li .t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--color-ink-2); }
+.recent li .m { font-family: var(--font-mono); font-size: 0.8em; color: var(--color-muted); }
+.recent li .s { font-size: 0.8em; color: var(--color-muted); }
+.recent li[data-st="failed"] .s { color: var(--color-error); }
+.form { display: grid; gap: var(--space-md); justify-items: center; }
+.form input { width: min(24rem, 86vw); min-height: 48px; padding: 0 var(--space-md); border: 1px solid var(--color-rule); background: var(--color-paper-3); }
+
+/* ---- ticker ---- */
+.tick { display: flex; align-items: center; gap: var(--space-sm); min-height: 28px; font-size: clamp(0.8125rem, 2vmin, 1.1rem); color: var(--color-muted); overflow: hidden; }
+.tick .ic { color: var(--color-muted-2); }
+.tick span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tick b { font-weight: 500; color: var(--color-ink-2); }
+
+@media (max-width: 40rem) { .brand small { display: none; } .pill { min-height: 32px; padding: 0 10px; font-size: 0.8125rem; } .clock { font-size: 1rem; } .ctl .btn { min-width: 40px; min-height: 40px; padding: 0 10px; } .grid { grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: none !important; grid-auto-rows: minmax(21rem, 1fr); overflow-y: auto; } body, html { overflow: auto; } .wall { position: static; min-height: 100dvh; } }
+@media (prefers-reduced-motion: reduce) { .lane[data-st="running"] .st .dot { animation: none; } .btn, .ctl { transition: none; } }
+</style>
+</head>
+<body>
+<h1 class="visually-hidden" style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)">Workline 壁掛けモード</h1>
+<div class="wall" id="wall">
+  <header class="bar">
+    <div class="brand"><span>Workline</span><small>壁掛け</small></div>
+    <span class="conn" id="conn" data-s="connecting" role="status" aria-live="polite"><i class="dot"></i><span id="connT">接続中</span></span>
+    <span class="grow"></span>
+    <span class="pill" id="pRun" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></svg><span>作業中 <b id="nRun">0</b></span></span>
+    <span class="pill ask" id="pAsk" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg><span>確認待ち <b id="nAsk">0</b></span></span>
+    <time class="clock" id="clock" aria-label="現在時刻"></time>
+    <div class="ctl" id="ctl">
+      <button class="btn" id="bAwake" type="button" aria-pressed="false" title="画面をつけたままにする (W)" aria-label="画面をつけたままにする"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
+      <button class="btn" id="bFull" type="button" title="全画面 (F)" aria-label="全画面にする"><svg class="ic" id="icFull" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
+      <a class="btn" href="/" title="ビューアーへ戻る" aria-label="ビューアーへ戻る"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></a>
+    </div>
+  </header>
+  <main class="grid" id="grid" aria-live="off"></main>
+  <footer class="tick" id="tick" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 9a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 15 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"/><path d="M15 3v5a1 1 0 0 0 1 1h5"/></svg><span id="tickT"></span></footer>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+<script src="/notify.js" defer></script>
+<script defer>
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const store = { get(k, d) { try { const v = localStorage.getItem('workline.' + k); return v === null ? d : v; } catch { return d; } }, set(k, v) { try { localStorage.setItem('workline.' + k, v); } catch {} } };
+const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const motion = () => !reduced() && typeof window.gsap !== 'undefined';
+
+/* Lucide のパス(ステップの種類) */
+const IC = {
+  plan: '<path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/>',
+  think: '<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>',
+  search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  read: '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+  write: '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
+  run: '<path d="m4 17 6-6-6-6"/><path d="M12 19h8"/>',
+  web: '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
+  check: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+  fix: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"/>',
+  wait: '<path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="10"/>',
+  note: '<path d="M21 9a2.4 2.4 0 0 0-.706-1.706l-3.588-3.588A2.4 2.4 0 0 0 15 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z"/><path d="M15 3v5a1 1 0 0 0 1 1h5"/>',
+  ask: '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
+};
+const KL = { plan: '計画', think: '考える', search: '検索', read: '読む', write: '編集', run: '実行', web: '通信', check: '確認', fix: '修正', wait: '待機', note: 'メモ' };
+const ic = (k) => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${IC[k] || IC.note}</svg>`;
+const ST = { running: '作業中', done: '完了', failed: '失敗', cancelled: '中断' };
+
+/* ---------- state ---------- */
+const S = { token: store.get('token', ''), offset: 0, tasks: new Map(), agents: new Map(), approvals: new Map(), notes: [], conn: 'connecting', booted: false, lanes: new Map(), awake: store.get('wall.awake', '0') === '1' };
+const nowMs = () => Date.now() + S.offset;
+const STALE_MS = 150000;
+const RECENT_MS = 6 * 3600000;
+const LANE_COLORS = ['oklch(72% 0.17 45)', 'oklch(74% 0.12 250)', 'oklch(76% 0.13 150)', 'oklch(78% 0.13 330)', 'oklch(80% 0.12 90)', 'oklch(72% 0.12 200)'];
+const colorOf = (id) => { let h = 0; for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return LANE_COLORS[h % LANE_COLORS.length]; };
+const fmtDur = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60; return h ? `${h}:${String(m).padStart(2, '0')}:${String(ss).padStart(2, '0')}` : `${String(m).padStart(2, '0')}:${String(ss).padStart(2, '0')}`; };
+const agentName = (id) => (S.agents.get(id) || {}).name || id || 'AI';
+
+function upsertTask(raw) {
+  const { steps, ...rest } = raw;
+  const t = S.tasks.get(raw.id) || { steps: new Map() };
+  Object.assign(t, rest);
+  for (const s of steps || []) t.steps.set(s.id, s);
+  S.tasks.set(t.id, t); return t;
+}
+function handle(m) {
+  if (m.t === 'purged') { S.tasks.clear(); S.approvals.clear(); S.notes = []; for (const [, l] of S.lanes) l.el.remove(); S.lanes.clear(); render(); return; }
+  if (m.t === 'snapshot') {
+    S.offset = m.serverTime - Date.now();
+    for (const a of m.agents || []) S.agents.set(a.id, a);
+    S.tasks.clear(); for (const raw of [...(m.tasks || [])].reverse()) upsertTask({ ...raw, steps: raw.steps });
+    S.approvals = new Map((m.approvals || []).map((a) => [a.requestId, a]));
+    S.notes = (m.notes || []).slice();
+    render(); return;
+  }
+  if (m.t === 'patch' && m.task) {
+    if (m.agent) S.agents.set(m.agent.id, m.agent);
+    upsertTask({ ...m.task, steps: m.steps || [] }); render(); return;
+  }
+  if (m.t === 'approval' && m.approval) { S.approvals.set(m.approval.requestId, m.approval); render(); return; }
+  if (m.t === 'note' && m.note) { S.notes = [m.note, ...S.notes.filter((n) => n.noteId !== m.note.noteId)].slice(0, 150); renderTick(); return; }
+}
+
+/* ---------- connection ---------- */
+let ws, retry = 0, pingT = 0, pollT = 0, lastPong = 0;
+function setConn(s) { S.conn = s; const c = $('#conn'); c.dataset.s = s; $('#connT').textContent = { live: 'ライブ', connecting: '接続中', retry: '再接続中', error: '接続できません', denied: '閲覧にはトークンが必要です' }[s] || s; }
+async function fetchSnapshot() {
+  const r = await fetch('/api/snapshot', { cache: 'no-store', headers: S.token ? { authorization: 'Bearer ' + S.token } : {} });
+  if (r.status === 401 || r.status === 403) { const e = new Error('denied'); e.denied = true; throw e; }
+  if (!r.ok) throw new Error('http ' + r.status);
+  return r.json();
+}
+async function boot() {
+  setConn('connecting');
+  try { handle(await fetchSnapshot()); S.booted = true; connect(); }
+  catch (e) {
+    if (e.denied) { setConn('denied'); showLocked(); return; }
+    setConn(S.booted ? 'retry' : 'error'); if (!S.booted) showMsg('接続できませんでした', '通信が戻ると、自動でつなぎ直します。');
+    setTimeout(boot, Math.min(2000 * 2 ** retry++, 15000));
+  }
+}
+function connect() {
+  try { ws && ws.close(); } catch {}
+  const q = S.token ? `?token=${encodeURIComponent(S.token)}` : '';
+  ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws${q}`);
+  const mine = ws;
+  ws.onopen = () => { retry = 0; lastPong = Date.now(); setConn('live'); clearInterval(pollT); clearInterval(pingT); pingT = setInterval(() => { if (Date.now() - lastPong > 60000) { try { mine.close(); } catch {} return; } try { mine.send('ping'); } catch {} }, 25000); };
+  ws.onmessage = (e) => { if (e.data === 'pong') { lastPong = Date.now(); return; } try { const j = JSON.parse(e.data); handle(j); window.WLNotify && WLNotify.onMessage(j); } catch (err) { console.error(err); } };
+  ws.onclose = () => {
+    if (mine !== ws) return;
+    clearInterval(pingT); setConn('retry');
+    clearInterval(pollT); pollT = setInterval(async () => { try { handle(await fetchSnapshot()); } catch {} }, 5000); // つながるまでは、5秒ごとに取りに行く
+    setTimeout(connect, Math.min(1000 * 2 ** retry++, 15000));
+  };
+}
+
+/* ---------- render ---------- */
+const grid = $('#grid');
+function pickTask(agentId) {
+  let best = null;
+  for (const t of S.tasks.values()) {
+    if (t.agent !== agentId) continue;
+    const running = t.status === 'running';
+    if (!running && nowMs() - (t.finishedAt || t.updatedAt) > RECENT_MS) continue;
+    if (!best || (running && best.status !== 'running') || (running === (best.status === 'running') && t.updatedAt > best.updatedAt)) best = t;
+  }
+  return best;
+}
+function laneModels() {
+  const ids = new Set([...S.tasks.values()].map((t) => t.agent).filter(Boolean));
+  const out = [];
+  for (const id of ids) { const t = pickTask(id); if (t) out.push({ id, t }); }
+  out.sort((a, b) => (b.t.status === 'running') - (a.t.status === 'running') || b.t.updatedAt - a.t.updatedAt);
+  return out;
+}
+function pendingFor(agentId, taskId) {
+  let q = null;
+  for (const a of S.approvals.values()) if (a.status === 'pending' && (a.from === agentId || a.taskId === taskId)) q = !q || a.createdAt > q.createdAt ? a : q;
+  return q;
+}
+function laneEl(id) {
+  const el = document.createElement('article'); el.className = 'lane'; el.dataset.agent = id; el.style.setProperty('--lc', colorOf(id));
+  el.innerHTML = `<div class="who"><div class="av"></div><div class="who-t"><div class="who-n"></div><div class="who-m mono"></div></div><div class="st"><i class="dot"></i><span class="st-t"></span></div></div>
+    <div class="title"></div>
+    <div class="now"><div class="now-l">いま</div><div class="now-t"></div></div>
+    <div class="next"></div>
+    <div class="ask-b" hidden>${ic('ask')}<span></span></div>
+    <ul class="steps"></ul>
+    <div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="100"><i></i></div>
+    <div class="meta"><span class="m-steps"></span><span class="m-time"></span></div>`;
+  return el;
+}
+function paintLane(l, { id, t }) {
+  const el = l.el, a = S.agents.get(id) || { id, name: id }, running = t.status === 'running';
+  const stale = running && nowMs() - t.updatedAt > STALE_MS;
+  el.dataset.st = t.status; el.dataset.stale = stale ? '1' : '0';
+  const av = $('.av', el); const key = a.id + '|' + (a.hasIcon ? 1 : 0);
+  if (av.dataset.k !== key) { av.dataset.k = key; av.textContent = (a.name || '?').slice(0, 1).toUpperCase(); if (a.hasIcon) { const img = new Image(); img.alt = ''; img.src = `/api/icon?agent=${encodeURIComponent(a.id)}${S.token ? '&token=' + encodeURIComponent(S.token) : ''}`; img.onload = () => { av.textContent = ''; av.appendChild(img); }; } }
+  $('.who-n', el).textContent = a.name || id;
+  $('.who-m', el).textContent = [a.model || t.model, t.agentNumber ? '#' + t.agentNumber : ''].filter(Boolean).join(' · ');
+  $('.st-t', el).textContent = stale ? '応答なし?' : ST[t.status] || t.status;
+  $('.title', el).textContent = t.title || '';
+  const nowTxt = running ? (t.now || '作業を続けています') : (t.status === 'done' ? (t.summary || t.result || '完了しました') : (t.result || t.summary || ST[t.status]));
+  const nt = $('.now-t', el);
+  if (nt.textContent !== nowTxt) {
+    if (motion() && nt.textContent) gsap.fromTo(nt, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.5, ease: 'expo.out', clearProps: 'opacity,transform' });
+    nt.textContent = nowTxt;
+  }
+  $('.now-l', el).textContent = running ? 'いま' : ST[t.status];
+  const nx = $('.next', el); nx.hidden = !(running && t.next); nx.innerHTML = t.next ? `<b>次</b> ${esc(t.next)}` : '';
+  const q = pendingFor(id, t.id), ab = $('.ask-b', el), wasAsk = !ab.hidden;
+  ab.hidden = !q; el.dataset.ask = q ? '1' : '0';
+  if (q) { $('span', ab).textContent = '確認待ち: ' + q.question; if (!wasAsk && motion()) gsap.fromTo(ab, { y: -10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: 'expo.out', clearProps: 'all' }); }
+  const steps = [...t.steps.values()].sort((x, y) => x.id - y.id), last = steps.slice(-4);
+  const ul = $('.steps', el), sig = last.map((s) => s.id + s.status + s.title).join('|');
+  if (ul.dataset.sig !== sig) {
+    const had = ul.dataset.sig ? new Set(ul.dataset.sig.split('|').map((x) => x)) : null; ul.dataset.sig = sig;
+    ul.innerHTML = last.map((s) => `<li data-s="${esc(s.status)}" data-id="${s.id}">${ic(s.kind)}<span>${esc(KL[s.kind] || '')} · ${esc(s.title)}</span></li>`).join('');
+    const nl = ul.lastElementChild; if (nl && had && motion()) gsap.fromTo(nl, { x: -12, opacity: 0 }, { x: 0, opacity: 1, duration: 0.4, ease: 'expo.out', clearProps: 'all' });
+  }
+  const pc = Math.round(Math.min(100, Math.max(0, running ? t.progress || 0 : t.status === 'done' ? 100 : t.progress || 0)));
+  const bar = $('.prog i', el), pb = $('.prog', el); pb.setAttribute('aria-valuenow', pc);
+  if (l.pc !== pc) { l.pc = pc; if (motion()) gsap.to(bar, { width: pc + '%', duration: 0.8, ease: 'expo.out' }); else bar.style.width = pc + '%'; }
+  $('.m-steps', el).textContent = `${steps.length} ステップ · ${pc}%`;
+  l.since = t.startedAt; l.until = running ? 0 : t.finishedAt || t.updatedAt; tickTime(l);
+}
+function tickTime(l) { $('.m-time', l.el).textContent = fmtDur((l.until || nowMs()) - l.since); }
+function layout(n) {
+  const w = grid.clientWidth || innerWidth, h = grid.clientHeight || innerHeight;
+  let best = [1, n], score = -1;
+  for (let c = 1; c <= n; c++) { const r = Math.ceil(n / c), cw = w / c, ch = h / r, s = Math.min(cw / 1.5, ch) * Math.min(1, n / (c * r) + 0.4); if (s > score) { score = s; best = [c, r]; } } // 1枚あたりが、できるだけ大きく見える割り方
+  grid.style.setProperty('--cols', best[0]); grid.style.setProperty('--rows', best[1]);
+  const rest = n % best[0]; // 最後の段が余るときは、最後の1枚が空きを埋める
+  [...grid.children].forEach((el, i) => { el.style.gridColumn = rest && i === n - 1 ? `span ${best[0] - rest + 1}` : ''; });
+}
+let raf = 0;
+function render() { if (raf) return; raf = requestAnimationFrame(() => { raf = 0; draw(); }); }
+function draw() {
+  const models = laneModels(), seen = new Set();
+  grid.querySelectorAll('.empty, .form').forEach((e) => e.remove());
+  for (const m of models) {
+    seen.add(m.id);
+    let l = S.lanes.get(m.id);
+    if (!l) { l = { el: laneEl(m.id), pc: -1 }; S.lanes.set(m.id, l); grid.appendChild(l.el); if (motion() && S.booted) gsap.from(l.el, { opacity: 0, scale: 0.97, duration: 0.5, ease: 'expo.out', clearProps: 'all' }); }
+    paintLane(l, m);
+  }
+  for (const [id, l] of S.lanes) if (!seen.has(id)) { l.el.remove(); S.lanes.delete(id); }
+  models.forEach((m, i) => { const el = S.lanes.get(m.id).el; if (grid.children[i] !== el) grid.insertBefore(el, grid.children[i] || null); });
+  if (!models.length) drawEmpty(); else layout(models.length);
+  const run = [...S.tasks.values()].filter((t) => t.status === 'running').length, ask = [...S.approvals.values()].filter((a) => a.status === 'pending').length;
+  $('#pRun').hidden = !run; $('#nRun').textContent = run; $('#pAsk').hidden = !ask; $('#nAsk').textContent = ask;
+  document.title = (ask ? `(${ask}) ` : '') + 'Workline 壁掛け';
+  renderTick();
+}
+function drawEmpty() {
+  grid.style.setProperty('--cols', 1); grid.style.setProperty('--rows', 1);
+  const done = [...S.tasks.values()].filter((t) => t.parentId == null).sort((a, b) => (b.finishedAt || b.updatedAt) - (a.finishedAt || a.updatedAt)).slice(0, 4);
+  const d = document.createElement('section'); d.className = 'empty';
+  d.innerHTML = `<div class="big" id="bigClock">${clockStr(true)}</div><p>${S.booted ? 'いま作業中のAIはいません。作業が始まると、ここに大きく表示されます。' : '読み込んでいます…'}</p>${done.length ? `<ul class="recent">${done.map((t) => `<li data-st="${esc(t.status)}"><span class="t">${esc(t.title)}</span><span class="m">${esc(agentName(t.agent))}</span><span class="s">${esc(ST[t.status] || t.status)}</span></li>`).join('')}</ul>` : ''}`;
+  grid.appendChild(d);
+}
+function showMsg(h, p) { grid.innerHTML = ''; S.lanes.clear(); const d = document.createElement('section'); d.className = 'empty'; d.innerHTML = `<h2 style="margin:0;font-size:clamp(1.4rem,4vmin,2.4rem);font-weight:500">${esc(h)}</h2><p>${esc(p)}</p>`; grid.appendChild(d); }
+function showLocked() {
+  grid.innerHTML = ''; S.lanes.clear();
+  const d = document.createElement('section'); d.className = 'empty';
+  d.innerHTML = `<h2 style="margin:0;font-size:clamp(1.4rem,4vmin,2.4rem);font-weight:500">閲覧トークンが必要です</h2><p>ビューアーと同じトークンを入れると、この画面にも表示されます。</p><form class="form" id="tokForm"><input id="tokIn" type="password" autocomplete="off" aria-label="閲覧トークン" placeholder="閲覧トークン"><button class="btn" type="submit" style="min-width:12rem">表示する</button></form>`;
+  grid.appendChild(d);
+  $('#tokForm').addEventListener('submit', (e) => { e.preventDefault(); S.token = $('#tokIn').value.trim(); store.set('token', S.token); boot(); });
+  $('#tokIn').focus();
+}
+function renderTick() {
+  const n = S.notes.find((x) => x.from !== 'user'), t = $('#tick');
+  t.hidden = !n; if (n) $('#tickT').innerHTML = `<b>${esc(agentName(n.from))}</b> ${esc(String(n.body).replace(/\s+/g, ' ').slice(0, 160))}`;
+}
+
+/* ---------- clock, timers, burn-in shift ---------- */
+const clockStr = (sec) => { const d = new Date(), p = (n) => String(n).padStart(2, '0'); return `${p(d.getHours())}:${p(d.getMinutes())}${sec ? '' : ':' + p(d.getSeconds())}`; };
+setInterval(() => {
+  $('#clock').textContent = clockStr(false); const b = $('#bigClock'); if (b) b.textContent = clockStr(true);
+  for (const [, l] of S.lanes) tickTime(l);
+  for (const [id, l] of S.lanes) { const t = pickTask(id); if (t && t.status === 'running') { const stale = nowMs() - t.updatedAt > STALE_MS; if ((l.el.dataset.stale === '1') !== stale) render(); } }
+}, 1000);
+$('#clock').textContent = clockStr(false);
+setInterval(() => { const dx = Math.round((Math.random() - 0.5) * 12), dy = Math.round((Math.random() - 0.5) * 12); $('#wall').style.transform = `translate(${dx}px, ${dy}px)`; }, 180000); // 焼き付き防止に、3分ごとに数pxずらす
+let idleT = 0; const wake = () => { document.body.classList.remove('idle'); clearTimeout(idleT); idleT = setTimeout(() => document.body.classList.add('idle'), 4000); };
+['pointermove', 'pointerdown', 'keydown', 'touchstart'].forEach((e) => addEventListener(e, wake, { passive: true })); wake();
+addEventListener('resize', () => { if (S.lanes.size) layout(S.lanes.size); });
+
+/* ---------- fullscreen, wake lock ---------- */
+const fsOn = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+async function toggleFull() { try { if (fsOn()) await (document.exitFullscreen || document.webkitExitFullscreen).call(document); else await (document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen).call(document.documentElement); } catch {} }
+document.addEventListener('fullscreenchange', () => { $('#bFull').setAttribute('aria-label', fsOn() ? '全画面を終了' : '全画面にする'); setTimeout(() => S.lanes.size && layout(S.lanes.size), 100); });
+$('#bFull').addEventListener('click', toggleFull); if (!document.documentElement.requestFullscreen && !document.documentElement.webkitRequestFullscreen) $('#bFull').hidden = true;
+let lock = null;
+async function setAwake(on) {
+  S.awake = on; store.set('wall.awake', on ? '1' : '0');
+  try { if (on && 'wakeLock' in navigator) { lock = await navigator.wakeLock.request('screen'); lock.addEventListener('release', () => { lock = null; }); } else if (lock) { await lock.release(); lock = null; } } catch { S.awake = false; }
+  $('#bAwake').setAttribute('aria-pressed', S.awake ? 'true' : 'false');
+}
+if (!('wakeLock' in navigator)) $('#bAwake').hidden = true;
+$('#bAwake').addEventListener('click', () => setAwake(!S.awake));
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.awake && !lock) setAwake(true); });
+addEventListener('keydown', (e) => { if (e.target.closest('input')) return; if (e.key === 'f' || e.key === 'F') toggleFull(); else if (e.key === 'w' || e.key === 'W') setAwake(!S.awake); });
+
+addEventListener('DOMContentLoaded', () => { if (window.WLNotify) WLNotify.mount({ before: '#bAwake', cls: 'btn' }); });
+addEventListener('load', () => { if (window.WLNotify && !document.getElementById('wlnBtn')) WLNotify.mount({ before: '#bAwake', cls: 'btn' }); });
+const u = new URL(location.href); const qt = u.searchParams.get('token'); if (qt) { S.token = qt; store.set('token', qt); u.searchParams.delete('token'); history.replaceState(null, '', u.pathname + u.search + u.hash); }
+if (S.awake) setAwake(true);
+draw(); boot();
+</script>
+</body>
+</html>

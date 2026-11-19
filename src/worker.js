@@ -2,8 +2,9 @@
 // 構成: Worker(ルーティング/MCP) + Durable Object "Board"(SQLite保存 + WebSocket配信)
 import { DurableObject } from "cloudflare:workers";
 import { SHOT_MAX, findIcon, parseAgent, safeFetch, slugify, sniffShot } from "./agents.js";
+import { publicKey, pushEnabled, sendPush, validEndpoint } from "./push.js";
 
-const VERSION = "2.2.0";
+const VERSION = "2.3.0";
 const ALIASES = { getRequest: "getConfirmation" }; // 旧名(askUser の結果取得)。人間からの「要求」とは別物
 const PROTOCOLS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 
@@ -32,6 +33,11 @@ const SNAPSHOT_TASKS = 20; // 新しい方から、ルートタスクを20件(�
 const SNAPSHOT_STEPS = 400;
 const RISKS = ["low", "medium", "high", "destructive"];
 const LIMIT_BODY = 6000;
+// v2.3: 通知(Web Push)の種類。購読ごとに、どれを受け取るかを選べる
+const PUSH_CATS = ["approval", "note", "done", "failed"];
+const PUSH_DEFAULT = { approval: true, note: true, done: true, failed: true };
+const PUSH_MAX_SUBS = 20;
+const LOG_TABLES = ["steps", "tasks", "agents", "directives", "messages", "approvals", "notes", "shots"]; // 全リセットで捨てる表(通知の購読は含めない)
 
 const INSTRUCTIONS = `Workline は、人間が別画面でリアルタイムに眺めている「AIの作業ログ」です。
 あなた(AI)がいま何をしているかを、できるだけ細かく、その場で送ってください。
@@ -635,6 +641,32 @@ async function handlePurge(request, env, url) {
   }
 }
 
+// 通知(Web Push)。GET: この端末の状態 / POST: action = subscribe | unsubscribe | prefs | test
+async function handlePush(request, env, url) {
+  if (!canRead(request, url, env)) return json({ error: "unauthorized" }, 401);
+  if (request.method === "GET") return json(await board(env).pushStatus(url.searchParams.get("endpoint") || ""));
+  if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: { allow: "GET, POST" } });
+  if (!originOk(request, env)) return json({ error: "forbidden origin" }, 403);
+  let b;
+  try {
+    b = await request.json();
+  } catch {
+    return json({ error: "bad request" }, 400);
+  }
+  try {
+    const bd = board(env);
+    switch (b.action) {
+      case "subscribe": return json(await bd.pushSubscribe(b, url.origin, (request.headers.get("user-agent") || "").slice(0, 160)));
+      case "unsubscribe": return json(await bd.pushUnsubscribe(String(b.endpoint || "")));
+      case "prefs": return json(await bd.pushPrefs(String(b.endpoint || ""), b.prefs));
+      case "test": return json(await bd.pushTest(String(b.endpoint || "")));
+      default: return json({ error: "unknown action" }, 400);
+    }
+  } catch (e) {
+    return json({ error: String(e?.message || e) }, 400);
+  }
+}
+
 // ビューアーから人間が送るもの(from は常に "user")の共通の入口: POST のみ・同一オリジン・閲覧トークン
 async function userPost(request, env, url, run) {
   if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: { allow: "POST" } });
@@ -796,6 +828,7 @@ export default {
       if (path === "/api/request") return await handleRequest(request, env, url);
       if (path === "/api/note") return await handleNote(request, env, url);
       if (path === "/api/purge") return await handlePurge(request, env, url);
+      if (path === "/api/push") return await handlePush(request, env, url);
       if (path === "/api/health") return json({ ok: true, name: "workline", version: VERSION });
     } catch (e) {
       return json({ error: String(e?.message || e) }, 500);
@@ -888,6 +921,14 @@ export class Board extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     this.sql = ctx.storage.sql;
+    this.initSchema();
+    this.initPushSchema();
+    // クライアントの "ping" に、DOを起こさず "pong" を返す(接続維持と死活確認)
+    ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair("ping", "pong"));
+  }
+
+  // ログ側の表。全リセットのときは、これを全部捨ててもう一度作る(AUTOINCREMENT の番号も 1 からに戻る)
+  initSchema() {
     this.sql.exec(`CREATE TABLE IF NOT EXISTS tasks (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
@@ -985,8 +1026,14 @@ export class Board extends DurableObject {
       } catch {}
     }
     try { this.sql.exec("CREATE INDEX IF NOT EXISTS messages_note ON messages (note_id)"); } catch {}
-    // クライアントの "ping" に、DOを起こさず "pong" を返す(接続維持と死活確認)
-    ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair("ping", "pong"));
+  }
+
+  // 通知の購読は、ログではなく「端末の設定」なので、全リセットでも残す
+  initPushSchema() {
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS push_subs (
+      endpoint TEXT PRIMARY KEY, p256dh TEXT NOT NULL, auth TEXT NOT NULL, prefs TEXT NOT NULL DEFAULT '{}',
+      origin TEXT NOT NULL DEFAULT '', ua TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL, last_ok INTEGER, fail INTEGER NOT NULL DEFAULT 0
+    )`);
   }
 
   /* --- WebSocket --- */
@@ -1428,6 +1475,88 @@ export class Board extends DurableObject {
     return { ok: true, directive: dirOut(n) };
   }
 
+  /* --- 通知(Web Push) v2.3 --- */
+
+  prefsOf(r) {
+    const p = parseJson(r.prefs, {}), out = { ...PUSH_DEFAULT };
+    for (const k of PUSH_CATS) if (typeof p[k] === "boolean") out[k] = p[k];
+    return out;
+  }
+  agentLabel(id) {
+    if (!id) return "AI";
+    const r = this.sql.exec("SELECT name FROM agents WHERE id = ?", id).toArray()[0];
+    return r ? r.name : id;
+  }
+  pushStatus(endpoint) {
+    const r = endpoint ? this.sql.exec("SELECT * FROM push_subs WHERE endpoint = ?", endpoint).toArray()[0] : null;
+    return { enabled: pushEnabled(this.env), publicKey: publicKey(this.env), subscribed: !!r, prefs: r ? this.prefsOf(r) : { ...PUSH_DEFAULT }, devices: this.sql.exec("SELECT COUNT(*) AS n FROM push_subs").one().n };
+  }
+  pushSubscribe(b, origin, ua) {
+    if (!pushEnabled(this.env)) throw new Error("このサーバーには通知の鍵(VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY)が設定されていません。");
+    const sub = b && b.subscription, keys = (sub && sub.keys) || {};
+    if (!sub || !validEndpoint(sub.endpoint)) throw new Error("この購読の送り先には通知を送れません。");
+    if (typeof keys.p256dh !== "string" || typeof keys.auth !== "string" || keys.p256dh.length > 120 || keys.auth.length > 40) throw new Error("購読の鍵が正しくありません。");
+    const prefs = {};
+    for (const k of PUSH_CATS) if (b.prefs && typeof b.prefs[k] === "boolean") prefs[k] = b.prefs[k];
+    const exists = this.sql.exec("SELECT 1 FROM push_subs WHERE endpoint = ?", sub.endpoint).toArray().length;
+    if (!exists) {
+      const n = this.sql.exec("SELECT COUNT(*) AS n FROM push_subs").one().n;
+      if (n >= PUSH_MAX_SUBS) this.sql.exec("DELETE FROM push_subs WHERE endpoint IN (SELECT endpoint FROM push_subs ORDER BY COALESCE(last_ok, created_at) LIMIT ?)", n - PUSH_MAX_SUBS + 1);
+    }
+    this.sql.exec(
+      `INSERT INTO push_subs (endpoint, p256dh, auth, prefs, origin, ua, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(endpoint) DO UPDATE SET p256dh = excluded.p256dh, auth = excluded.auth, origin = excluded.origin, ua = excluded.ua, fail = 0,
+         prefs = CASE WHEN ? THEN excluded.prefs ELSE push_subs.prefs END`,
+      sub.endpoint, keys.p256dh, keys.auth, JSON.stringify(prefs), origin, ua, Date.now(), Object.keys(prefs).length ? 1 : 0,
+    );
+    return { ok: true, ...this.pushStatus(sub.endpoint) };
+  }
+  pushUnsubscribe(endpoint) {
+    this.sql.exec("DELETE FROM push_subs WHERE endpoint = ?", endpoint);
+    return { ok: true, ...this.pushStatus("") };
+  }
+  pushPrefs(endpoint, prefs) {
+    const r = this.sql.exec("SELECT * FROM push_subs WHERE endpoint = ?", endpoint).toArray()[0];
+    if (!r) throw new Error("この端末は通知に登録されていません。");
+    const cur = this.prefsOf(r);
+    for (const k of PUSH_CATS) if (prefs && typeof prefs[k] === "boolean") cur[k] = prefs[k];
+    this.sql.exec("UPDATE push_subs SET prefs = ? WHERE endpoint = ?", JSON.stringify(cur), endpoint);
+    return { ok: true, ...this.pushStatus(endpoint) };
+  }
+  async pushTest(endpoint) {
+    const r = this.sql.exec("SELECT * FROM push_subs WHERE endpoint = ?", endpoint).toArray()[0];
+    if (!r) throw new Error("この端末は通知に登録されていません。");
+    const res = await this.pushOne(r, { kind: "test", title: "Workline のテスト通知", body: "この通知が見えていれば、設定は完了です。", tag: "workline-test", url: "/" }, { urgency: "high", ttl: 60 });
+    if (!res.ok) throw new Error(res.gone ? "この端末の購読は失効していました。もう一度、通知をオンにしてください。" : `通知を送れませんでした(${res.status || res.error || "通信エラー"})。`);
+    return { ok: true };
+  }
+  async pushOne(r, payload, opt = {}) {
+    try {
+      const res = await sendPush(this.env, { endpoint: r.endpoint, p256dh: r.p256dh, auth: r.auth, origin: r.origin }, payload, opt);
+      if (res.gone) this.sql.exec("DELETE FROM push_subs WHERE endpoint = ?", r.endpoint);
+      else if (res.ok) this.sql.exec("UPDATE push_subs SET last_ok = ?, fail = 0 WHERE endpoint = ?", Date.now(), r.endpoint);
+      else this.pushFailed(r);
+      return res;
+    } catch (e) {
+      this.pushFailed(r);
+      return { ok: false, status: 0, error: String(e?.message || e) };
+    }
+  }
+  pushFailed(r) {
+    this.sql.exec("UPDATE push_subs SET fail = fail + 1 WHERE endpoint = ?", r.endpoint);
+    this.sql.exec("DELETE FROM push_subs WHERE endpoint = ? AND fail >= 8", r.endpoint); // 8回続けて届かない端末は外す
+  }
+  // イベントの種類(PUSH_CATS)ごとに、その通知を受け取る設定の端末へ送る。送信は待たない(失敗しても作業の記録には影響しない)
+  notify(kind, msg) {
+    try {
+      if (!pushEnabled(this.env)) return;
+      const rows = this.sql.exec("SELECT * FROM push_subs").toArray().filter((r) => this.prefsOf(r)[kind] !== false);
+      if (!rows.length) return;
+      const job = Promise.allSettled(rows.map((r) => this.pushOne(r, { kind, url: "/", ...msg }, { urgency: msg.urgency || "normal", topic: msg.tag })));
+      this.ctx.waitUntil(job);
+    } catch {}
+  }
+
   /* --- 承認待ち(v1.6) --- */
 
   // 期限切れの承認と、リース切れの指令を、画面にも反映するための1分ごとの見張り(待っているものがあるときだけ)
@@ -1464,6 +1593,7 @@ export class Board extends DurableObject {
       task.id, from, question, JSON.stringify(options), risk, now, now + minutes * 60000,
     ).one();
     this.broadcast({ t: "approval", approval: approvalOut(r) });
+    this.notify("approval", { title: `確認待ち: ${clip(question, 60)}`, body: `${this.agentLabel(from)} が回答を待っています(${{ low: "低", medium: "中", high: "高", destructive: "取り消せない" }[risk]}リスク)`, tag: `approval-${r.id}`, taskId: task.id, url: `/#t=${task.id}`, urgency: "high" });
     return { requestId: r.id, status: "pending", options, risk, expiresAt: iso(r.expires_at), note: "回答はツール応答の inbox に届きます。答えが来るまで、その操作はしないでください。時間切れは拒否として扱われます。" };
   }
   getRequest(a) {
@@ -1569,6 +1699,7 @@ export class Board extends DurableObject {
     const delivered = this.deliverNote(row, targets);
     const out = this.noteOf(row);
     this.broadcast({ t: "note", note: out });
+    if (from !== "user" && (all || toIds.includes("user"))) this.notify("note", { title: `${this.agentLabel(from)} からの伝言`, body: clip(text, 120), tag: `note-${row.id}`, taskId: taskId ?? null, url: taskId ? `/#t=${taskId}` : "/", urgency: "normal" });
     return { row, out, delivered };
   }
 
@@ -2030,6 +2161,10 @@ export class Board extends DurableObject {
     this.broadcast({ t: "stop-cleared", taskId: task.id });
     for (const r of this.sql.exec("UPDATE approvals SET status = 'cancelled', answered_at = ? WHERE task_id = ? AND status = 'pending' RETURNING *", now, task.id).toArray()) this.broadcast({ t: "approval", approval: approvalOut(r) });
     this.broadcast({ t: "patch", task: this.getTask(task.id), steps: closed });
+    if (task.parentId == null && task.status === "running") {
+      const label = { done: "完了", failed: "失敗", cancelled: "中断" }[status], sum = clip(pick(a, "summary", "result"), 100);
+      this.notify(status === "done" ? "done" : "failed", { title: `${label}: ${clip(task.title, 60)}`, body: `${this.agentLabel(task.agent)}${sum ? " · " + sum : ""}`, tag: `task-${task.id}`, taskId: task.id, url: `/#t=${task.id}`, urgency: status === "done" ? "normal" : "high" });
+    }
     return { ok: true, taskId: task.id, status, ...(task.warn ? { warning: task.warn } : {}) };
   }
 
@@ -2069,26 +2204,26 @@ export class Board extends DurableObject {
       steps: n("steps"),
       notes: n("notes"),
       shots: n("shots"),
+      pushSubs: n("push_subs"),
       agents: this.sql.exec("SELECT id, name FROM agents ORDER BY name").toArray(),
     };
   }
 
   // names は、画面でなぞったAIの id 一覧。いま残っているAIと完全に一致しなければ消さない
-  purgeAll(names) {
+  // v2.3: 「消す」ではなく「完全リセット」。ログの表を全部捨てて作り直すので、AUTOINCREMENT の番号(タスク・ステップ・司令・伝言など)もすべて 1 から振り直される。通知の購読(端末の設定)だけは残す
+  async purgeAll(names) {
     const now = this.sql.exec("SELECT id FROM agents").toArray().map((r) => r.id).sort();
     const given = [...new Set((Array.isArray(names) ? names : []).map(String))].sort();
     if (JSON.stringify(now) !== JSON.stringify(given)) return { ok: false, step: "names" };
     const info = this.purgeInfo();
-    this.sql.exec("DELETE FROM steps");
-    this.sql.exec("DELETE FROM directives");
-    this.sql.exec("DELETE FROM messages");
-    this.sql.exec("DELETE FROM notes");
-    this.sql.exec("DELETE FROM shots");
-    this.sql.exec("DELETE FROM approvals");
-    this.sql.exec("DELETE FROM tasks");
-    this.sql.exec("DELETE FROM agents"); // 保存済みのアイコン画像も一緒に消える
+    this.ctx.storage.transactionSync(() => {
+      for (const t of LOG_TABLES) this.sql.exec(`DROP TABLE IF EXISTS ${t}`); // 表ごと捨てると、sqlite_sequence の番号の記録も一緒に消える
+      this.sql.exec(`DELETE FROM sqlite_sequence WHERE name IN (${LOG_TABLES.map(() => "?").join(",")})`, ...LOG_TABLES); // 念のため(記録が残っていないことを保証する)
+      this.initSchema();
+    });
+    await this.ctx.storage.deleteAlarm(); // 見張りの予約も捨てる(待っているものはもう無い)
     this.broadcast({ t: "purged" });
-    return { ok: true, tasks: info.tasks, steps: info.steps, agents: info.agents.length };
+    return { ok: true, reset: true, tasks: info.tasks, steps: info.steps, agents: info.agents.length, nextTaskId: 1, pushKept: this.sql.exec("SELECT COUNT(*) AS n FROM push_subs").one().n };
   }
 
   prune() {

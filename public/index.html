@@ -697,6 +697,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
   <div class="conn" id="conn" role="status" data-state="connecting"></div>
   <button class="icon-btn" id="orderBtn" type="button" aria-label="新しいステップを上に表示" title="新しい順に表示"><svg class="ic" aria-hidden="true"><use href="#i-arrow-up-narrow-wide"/></svg></button>
   <button class="icon-btn" id="soundBtn" type="button" aria-pressed="false" aria-label="通知音" title="新しいステップで小さな音を鳴らす"><svg class="ic" aria-hidden="true"><use href="#i-volume-x"/></svg></button>
+  <a class="icon-btn" href="/wall" id="wallLink" aria-label="壁掛けモードを開く" title="壁掛けモード(いまの作業を大きく常時表示)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg></a>
 </header>
 
 <div class="shell">
@@ -787,6 +788,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
 <div class="scrim" id="scrim" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+<script src="/notify.js" defer></script>
 <script>
 window.addEventListener('DOMContentLoaded', () => {
 'use strict';
@@ -953,7 +955,7 @@ function connect() {
   };
   ws.onmessage = (e) => {
     if (e.data === 'pong') { lastPong = Date.now(); return; }
-    try { const j = JSON.parse(e.data); handle(j, j.t === 'snapshot'); } catch (err) { console.error(err); }
+    try { const j = JSON.parse(e.data); handle(j, j.t === 'snapshot'); window.WLNotify && WLNotify.onMessage(j); } catch (err) { console.error(err); }
   };
   ws.onclose = () => {
     if (mine !== ws) return;
@@ -1221,7 +1223,8 @@ function renderHead(t) {
       <div><dt>${run ? '経過' : '所要時間'}</dt><dd class="num live" data-kind="elapsed" data-t0="${t.startedAt}" data-t1="${end}">${clock((end || nowMs()) - t.startedAt)}</dd></div>
       <div><dt>ステップ</dt><dd class="num">${t.steps.size}件</dd></div>
       <div><dt>最終更新</dt><dd class="num">${run ? `<span class="live" data-kind="ago" data-t0="${t.updatedAt}">${clock(nowMs() - t.updatedAt)}前</span>` : hms(t.updatedAt)}</dd></div>
-    </dl>`;
+    </dl>
+    <div class="head-links"><a class="btn small" href="/replay?task=${t.rootId}&play=1" title="この作業の流れを、時間軸に沿って再生する"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg><span>リプレイ</span></a></div>`;
 }
 el.head.addEventListener('click', (e) => {
   const g = e.target.closest('[data-goto]'); if (!g) return;
@@ -1560,9 +1563,9 @@ function renderWiz() {
 
   if (st === 'confirm') {
     html = !W.info ? `<p>読み込み中…</p>${err}${act(cancel, false, '続ける')}`
-      : `<div class="wiz-warn">${icon('triangle-alert')}<span>保存されているログを、すべて消します。元に戻せません。</span></div>
+      : `<div class="wiz-warn">${icon('triangle-alert')}<span>保存されているログを、すべて消します。タスク・ステップ・伝言などの番号も、1番から数え直す完全リセットです。元に戻せません。</span></div>
          <dl class="wiz-count"><div><dt>タスク</dt><dd>${W.info.tasks}</dd></div><div><dt>ステップ</dt><dd>${W.info.steps}</dd></div><div><dt>AI</dt><dd>${W.info.agents.length}</dd></div></dl>
-         ${W.info.enabled ? '<p>このあと、4つの確認があります。途中でやめても、何も消えません。</p>' : '<p class="field-error">閲覧用パスワード(VIEW_TOKEN か MCP_TOKEN)が未設定のため、消去できません。Cloudflareのシークレットに設定してください。</p>'}
+         ${W.info.enabled ? '<p>このあと、4つの確認があります。途中でやめても、何も消えません。通知の登録(端末の設定)は残ります。</p>' : '<p class="field-error">閲覧用パスワード(VIEW_TOKEN か MCP_TOKEN)が未設定のため、消去できません。Cloudflareのシークレットに設定してください。</p>'}
          ${err}${act(cancel, W.info.enabled, '続ける')}`;
   } else if (st === 'human') {
     html = `<p>人間であることを確認します。次の計算の答えを入力してください。</p>
@@ -1598,7 +1601,7 @@ function renderWiz() {
     };
   } else {
     const r = W.result || {};
-    html = `<div class="wiz-warn" style="color:var(--color-success);border-color:var(--color-success);background:var(--color-paper-2)">${icon('shield-check')}<span>すべてのログを消去しました。</span></div>
+    html = `<div class="wiz-warn" style="color:var(--color-success);border-color:var(--color-success);background:var(--color-paper-2)">${icon('shield-check')}<span>すべてのログを消去し、番号を1番に戻しました。</span></div>
       <dl class="wiz-count"><div><dt>タスク</dt><dd>${r.tasks ?? 0}</dd></div><div><dt>ステップ</dt><dd>${r.steps ?? 0}</dd></div><div><dt>AI</dt><dd>${r.agents ?? 0}</dd></div></dl>
       <div class="wiz-actions"><span></span><button class="btn" type="button" data-wiz="cancel">閉じる</button></div>`;
   }
@@ -2324,5 +2327,6 @@ $('#lightbox').addEventListener('close', () => { $('#lbImg').removeAttribute('sr
 
 });
 </script>
+<script>addEventListener('load', () => { if (window.WLNotify) WLNotify.mount({ before: '#soundBtn', cls: 'icon-btn' }); });</script>
 </body>
 </html>
