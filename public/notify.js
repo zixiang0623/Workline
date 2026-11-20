@@ -193,8 +193,32 @@
 .wln-t[aria-disabled="true"]{opacity:.55;cursor:not-allowed}
 .wln-msg{display:flex;gap:8px;align-items:flex-start;font-size:.8125rem;line-height:1.55;padding:10px 12px;border:1px solid var(--color-rule,#3a342c)}
 .wln-msg[data-err]{color:var(--color-error,#f08a7a);border-color:currentColor}
+.wln-x{min-height:36px;padding:0 10px}
+/* 本体と同じ部品を持つ画面(--radius-ctl がある画面)だけ、本体のダイアログ・ボタンと同じ見た目にする。/beta はそのまま */
+[data-wln="app"] .wln-ic{stroke-width:2}
+.wln-dlg[data-wln="app"]{border:var(--rule-hair,1px) solid var(--color-rule);border-radius:var(--radius-card);background:var(--color-paper);color:var(--color-ink);box-shadow:var(--shadow-sheet)}
+.wln-dlg[data-wln="app"]::backdrop{background:var(--color-scrim)}
+.wln-dlg[data-wln="app"] .wln-head{padding:var(--space-md) var(--space-lg);border-bottom:0}
+.wln-dlg[data-wln="app"] .wln-head h2{font-size:var(--text-lg);font-weight:700}
+.wln-dlg[data-wln="app"] .wln-body{padding:0 var(--space-lg) var(--space-lg)}
+.wln-dlg[data-wln="app"] .wln-sec>h3{font-size:var(--text-xs);color:var(--color-muted)}
+.wln-dlg[data-wln="app"] .wln-state{font-size:var(--text-md)}
+.wln-dlg[data-wln="app"] .wln-p{font-size:var(--text-xs);color:var(--color-muted)}
+.wln-dlg[data-wln="app"] .wln-b{border:var(--rule-hair,1px) solid var(--color-rule);border-radius:var(--radius-ctl);background:var(--color-paper);color:var(--color-ink);font-size:var(--text-sm);font-weight:400;transition:background var(--dur-micro),transform var(--dur-micro) var(--ease-out)}
+.wln-dlg[data-wln="app"] .wln-b:hover{background:var(--color-paper-3)}
+.wln-dlg[data-wln="app"] .wln-b.pri{background:var(--color-accent);border-color:var(--color-accent);color:var(--color-accent-ink)}
+.wln-dlg[data-wln="app"] .wln-b.pri:hover{background:color-mix(in oklab,var(--color-accent) 88%,var(--color-ink))}
+.wln-dlg[data-wln="app"] .wln-x{width:40px;min-height:40px;padding:0;border:0;background:transparent;color:var(--color-ink-2)}
+.wln-dlg[data-wln="app"] .wln-x:hover{background:var(--color-paper-3);color:var(--color-ink)}
+.wln-dlg[data-wln="app"] .wln-t{border:var(--rule-hair,1px) solid var(--color-rule);border-radius:var(--radius-ctl);background:var(--color-paper)}
+.wln-dlg[data-wln="app"] .wln-t .bx{border-radius:6px;border-color:var(--color-muted)}
+.wln-dlg[data-wln="app"] .wln-t b{font-size:var(--text-sm)}
+.wln-dlg[data-wln="app"] .wln-msg{border-radius:var(--radius-ctl);background:var(--color-paper-2);font-size:var(--text-sm)}
+.wln-dlg[data-wln="app"] .wln-msg[data-err]{background:var(--color-error-soft);border-color:var(--color-error);color:var(--color-error)}
+.wln-btn[data-wln="app"][data-on="1"]{box-shadow:inset 0 0 0 var(--rule-hair,1px) var(--color-accent)}
 @media (prefers-reduced-motion:reduce){.wln-b{transition:none}}
 `;
+  const isApp = () => !!getComputedStyle(document.documentElement).getPropertyValue('--radius-ctl').trim();
   function ensureCss() { if (document.getElementById('wln-css')) return; const s = document.createElement('style'); s.id = 'wln-css'; s.textContent = CSS; document.head.appendChild(s); }
 
   function paintBtn() {
@@ -228,8 +252,8 @@
   function buildDlg() {
     if (N.dlg) return;
     ensureCss();
-    const d = document.createElement('dialog'); d.className = 'wln-dlg'; d.setAttribute('aria-labelledby', 'wlnTitle');
-    d.innerHTML = `<div class="wln-head"><h2 id="wlnTitle">${svg('bell')}<span>通知</span></h2><button class="wln-b" type="button" data-act="close" aria-label="閉じる" style="min-height:36px;padding:0 10px">${svg('x')}</button></div><div class="wln-body"></div>`;
+    const d = document.createElement('dialog'); d.className = 'wln-dlg'; if (isApp()) d.dataset.wln = 'app'; d.setAttribute('aria-labelledby', 'wlnTitle');
+    d.innerHTML = `<div class="wln-head"><h2 id="wlnTitle">${svg('bell')}<span>通知</span></h2><button class="wln-b wln-x" type="button" data-act="close" aria-label="閉じる">${svg('x')}</button></div><div class="wln-body"></div>`;
     d.addEventListener('click', (e) => {
       const a = e.target.closest('[data-act]');
       if (a) { const k = a.dataset.act; if (k === 'close') d.close(); else if (k === 'on') enable(); else if (k === 'off') disable(); else if (k === 'test') test(); else if (k === 'install') install(); return; }
@@ -243,7 +267,7 @@
   function mount({ before, after, cls = 'btn quiet' } = {}) {
     ensureCss();
     if (N.btn) return N.btn;
-    const b = document.createElement('button'); b.type = 'button'; b.className = cls + ' wln-btn'; b.id = 'wlnBtn'; b.addEventListener('click', open);
+    const b = document.createElement('button'); b.type = 'button'; b.className = cls + ' wln-btn'; b.id = 'wlnBtn'; if (isApp()) b.dataset.wln = 'app'; b.addEventListener('click', open);
     N.btn = b; paintBtn();
     const ref = document.querySelector(before || after || '');
     if (ref) ref.parentNode.insertBefore(b, before ? ref : ref.nextSibling); else (document.querySelector('header') || document.body).appendChild(b);
