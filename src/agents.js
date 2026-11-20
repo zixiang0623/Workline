@@ -7,6 +7,7 @@ const KNOWN_DOMAINS = {
   muse: "muse.ai",
   claude: "claude.ai",
   chatgpt: "chatgpt.com",
+  hark: "hark.com",
   gpt: "chatgpt.com",
   codex: "chatgpt.com",
   gemini: "gemini.google.com",
