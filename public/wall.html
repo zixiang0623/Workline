@@ -380,7 +380,9 @@ function laneModels() {
   const ids = new Set([...S.tasks.values()].map((t) => t.agent).filter(Boolean));
   const out = [];
   for (const id of ids) { const t = pickTask(id); if (t) out.push({ id, t }); }
-  out.sort((a, b) => (b.t.status === 'running') - (a.t.status === 'running') || b.t.updatedAt - a.t.updatedAt);
+  // 並び順: タスクIDが若い順 → エージェント番号が若い順
+  const no = (t) => Number(t.agentNo ?? t.agentNumber) || 0;
+  out.sort((a, b) => a.t.id - b.t.id || no(a.t) - no(b.t));
   return out;
 }
 function pendingFor(agentId, taskId) {
