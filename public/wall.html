@@ -366,10 +366,12 @@ function connect() {
 
 /* ---------- render ---------- */
 const grid = $('#grid');
-function pickTask(agentId) {
+const agentNo = (t) => Number(t.agentNo ?? t.agentNumber) || 0;
+// 1枚のカード = 「AI」+「エージェント番号」。同じAIでも 02 と 09 がいれば、2枚とも出す
+function pickTask(agentId, no) {
   let best = null;
   for (const t of S.tasks.values()) {
-    if (t.agent !== agentId) continue;
+    if (t.agent !== agentId || agentNo(t) !== no) continue;
     const running = t.status === 'running';
     if (!running && nowMs() - (t.finishedAt || t.updatedAt) > RECENT_MS) continue;
     if (!best || (running && best.status !== 'running') || (running === (best.status === 'running') && t.updatedAt > best.updatedAt)) best = t;
@@ -377,17 +379,17 @@ function pickTask(agentId) {
   return best;
 }
 function laneModels() {
-  const ids = new Set([...S.tasks.values()].map((t) => t.agent).filter(Boolean));
+  const keys = new Map();
+  for (const t of S.tasks.values()) if (t.agent) keys.set(t.agent + '#' + agentNo(t), { agent: t.agent, no: agentNo(t) });
   const out = [];
-  for (const id of ids) { const t = pickTask(id); if (t) out.push({ id, t }); }
+  for (const [id, k] of keys) { const t = pickTask(k.agent, k.no); if (t) out.push({ id, agent: k.agent, no: k.no, t }); }
   // 並び順: タスクIDが若い順 → エージェント番号が若い順
-  const no = (t) => Number(t.agentNo ?? t.agentNumber) || 0;
-  out.sort((a, b) => a.t.id - b.t.id || no(a.t) - no(b.t));
+  out.sort((a, b) => a.t.id - b.t.id || a.no - b.no);
   return out;
 }
 function pendingFor(agentId, taskId) {
   let q = null;
-  for (const a of S.approvals.values()) if (a.status === 'pending' && (a.from === agentId || a.taskId === taskId)) q = !q || a.createdAt > q.createdAt ? a : q;
+  for (const a of S.approvals.values()) if (a.status === 'pending' && (a.taskId === taskId || (a.taskId == null && a.from === agentId))) q = !q || a.createdAt > q.createdAt ? a : q;
   return q;
 }
 function laneEl(id) {
@@ -402,7 +404,7 @@ function laneEl(id) {
     <div class="meta"><span class="m-steps"></span><span class="m-time"></span></div>`;
   return el;
 }
-function paintLane(l, { id, t }) {
+function paintLane(l, { agent: id, t }) {
   const el = l.el, a = S.agents.get(id) || { id, name: id }, running = t.status === 'running';
   const stale = running && nowMs() - t.updatedAt > STALE_MS;
   el.dataset.st = t.status; el.dataset.stale = stale ? '1' : '0';
@@ -454,7 +456,7 @@ function draw() {
   for (const m of models) {
     seen.add(m.id);
     let l = S.lanes.get(m.id);
-    if (!l) { l = { el: laneEl(m.id), pc: -1 }; S.lanes.set(m.id, l); grid.appendChild(l.el); if (motion() && S.booted) gsap.from(l.el, { opacity: 0, scale: 0.97, duration: 0.5, ease: 'expo.out', clearProps: 'all' }); }
+    if (!l) { l = { el: laneEl(m.agent), pc: -1, agent: m.agent, no: m.no }; S.lanes.set(m.id, l); grid.appendChild(l.el); if (motion() && S.booted) gsap.from(l.el, { opacity: 0, scale: 0.97, duration: 0.5, ease: 'expo.out', clearProps: 'all' }); }
     paintLane(l, m);
   }
   for (const [id, l] of S.lanes) if (!seen.has(id)) { l.el.remove(); S.lanes.delete(id); }
@@ -491,7 +493,7 @@ const clockStr = (sec) => { const d = new Date(), p = (n) => String(n).padStart(
 setInterval(() => {
   $('#clock').textContent = clockStr(false); const b = $('#bigClock'); if (b) b.textContent = clockStr(true);
   for (const [, l] of S.lanes) tickTime(l);
-  for (const [id, l] of S.lanes) { const t = pickTask(id); if (t && t.status === 'running') { const stale = nowMs() - t.updatedAt > STALE_MS; if ((l.el.dataset.stale === '1') !== stale) render(); } }
+  for (const [id, l] of S.lanes) { const t = pickTask(l.agent, l.no); if (t && t.status === 'running') { const stale = nowMs() - t.updatedAt > STALE_MS; if ((l.el.dataset.stale === '1') !== stale) render(); } }
 }, 1000);
 $('#clock').textContent = clockStr(false);
 setInterval(() => { const dx = Math.round((Math.random() - 0.5) * 12), dy = Math.round((Math.random() - 0.5) * 12); $('#wall').style.transform = `translate(${dx}px, ${dy}px)`; }, 180000); // 焼き付き防止に、3分ごとに数pxずらす
