@@ -497,12 +497,7 @@ setInterval(() => {
   for (const [id, l] of S.lanes) { const t = S.tasks.get(l.taskId); if (t && t.status === 'running') { const stale = nowMs() - t.updatedAt > STALE_MS; if ((l.el.dataset.stale === '1') !== stale) render(); } }
 }, 1000);
 $('#clock').textContent = clockStr(false);
-// 焼き付き防止に、3分ごとに数pxずらす。ただし余白が左右非対称に見えるので、全画面/アプリ表示の広い画面(壁掛け用途)でだけ行う
-const canShift = () => innerWidth > 640 && (fsOn() || matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches);
-const shiftWall = () => { const w = $('#wall'); if (!canShift()) { w.style.transform = ''; return; } const dx = Math.round((Math.random() - 0.5) * 12), dy = Math.round((Math.random() - 0.5) * 12); w.style.transform = `translate(${dx}px, ${dy}px)`; };
-setInterval(shiftWall, 180000);
-['resize', 'fullscreenchange'].forEach((e) => addEventListener(e, () => { if (!canShift()) $('#wall').style.transform = ''; }));
-
+setInterval(() => { const dx = Math.round((Math.random() - 0.5) * 12), dy = Math.round((Math.random() - 0.5) * 12); $('#wall').style.transform = `translate(${dx}px, ${dy}px)`; }, 180000); // 焼き付き防止に、3分ごとに数pxずらす
 let idleT = 0; const wake = () => { document.body.classList.remove('idle'); clearTimeout(idleT); idleT = setTimeout(() => document.body.classList.add('idle'), 4000); };
 ['pointermove', 'pointerdown', 'keydown', 'touchstart'].forEach((e) => addEventListener(e, wake, { passive: true })); wake();
 addEventListener('resize', () => { if (S.lanes.size) layout(S.lanes.size); });
