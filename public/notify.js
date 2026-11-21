@@ -267,7 +267,7 @@
   function mount({ before, after, cls = 'btn quiet' } = {}) {
     ensureCss();
     if (N.btn) return N.btn;
-    const b = document.createElement('button'); b.type = 'button'; b.className = cls + ' wln-btn'; b.id = 'wlnBtn'; if (isApp()) b.dataset.wln = 'app'; b.addEventListener('click', open);
+    const b = document.createElement('button'); b.type = 'button'; b.className = cls + ' wln-btn'; b.id = 'wlnBtn'; b.dataset.label = '通知'; if (isApp()) b.dataset.wln = 'app'; b.addEventListener('click', open);
     N.btn = b; paintBtn();
     const ref = document.querySelector(before || after || '');
     if (ref) ref.parentNode.insertBefore(b, before ? ref : ref.nextSibling); else (document.querySelector('header') || document.body).appendChild(b);

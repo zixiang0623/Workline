@@ -96,6 +96,18 @@ button, input { font: inherit; color: inherit; }
 .brand { display: flex; align-items: center; gap: var(--space-xs); font-weight: 700; font-size: var(--text-md); letter-spacing: 0; }
 .brand .ic { width: 20px; height: 20px; color: var(--color-accent); }
 .bar-spacer { flex: 1; }
+/* 通知・サウンド・壁掛け: 広い画面ではそのまま並べ、狭い画面では「…」メニューにまとめる */
+.bar-more, .more-panel { display: contents; }
+.bar-more .more-toggle { display: none; }
+@media (max-width: 40rem) {
+  .bar-more { display: block; position: relative; }
+  .bar-more .more-toggle { display: inline-grid; }
+  .more-panel { display: none; position: absolute; top: calc(100% + var(--space-xs)); right: 0; z-index: var(--z-raised, 5); min-width: 13rem; flex-direction: column; gap: var(--space-3xs); padding: var(--space-xs); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); background: var(--color-paper); box-shadow: var(--shadow-sheet); }
+  .bar-more[data-open] .more-panel { display: flex; }
+  .bar-more[data-open] .more-toggle { background: var(--color-paper-3); color: var(--color-ink); }
+  .more-panel .icon-btn { display: flex; align-items: center; justify-content: flex-start; gap: var(--space-sm); width: 100%; padding: 0 var(--space-sm); text-decoration: none; }
+  .more-panel .icon-btn::after { content: attr(data-label); font-size: var(--text-sm); color: var(--color-ink); }
+}
 .conn { display: inline-flex; align-items: center; gap: var(--space-xs); font-size: var(--text-sm); color: var(--color-muted); padding-inline: var(--space-xs); }
 .conn[data-state="live"] { color: var(--color-accent); }
 .conn[data-state="retry"], .conn[data-state="denied"] { color: var(--color-warn); }
@@ -697,8 +709,13 @@ dialog.lb::backdrop { background: var(--color-scrim); }
   <div class="runs" id="runs" hidden></div>
   <div class="conn" id="conn" role="status" data-state="connecting"></div>
   <button class="icon-btn" id="orderBtn" type="button" aria-label="新しいステップを上に表示" title="新しい順に表示"><svg class="ic" aria-hidden="true"><use href="#i-arrow-up-narrow-wide"/></svg></button>
-  <button class="icon-btn" id="soundBtn" type="button" aria-pressed="false" aria-label="通知音" title="新しいステップで小さな音を鳴らす"><svg class="ic" aria-hidden="true"><use href="#i-volume-x"/></svg></button>
-  <a class="icon-btn" href="/wall" id="wallLink" aria-label="壁掛けモードを開く" title="壁掛けモード(いまの作業を大きく常時表示)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg></a>
+  <div class="bar-more" id="barMore">
+    <button class="icon-btn more-toggle" id="moreBtn" type="button" aria-label="その他のメニュー" aria-haspopup="true" aria-expanded="false" aria-controls="morePanel"><svg class="ic" aria-hidden="true"><use href="#i-ellipsis"/></svg></button>
+    <div class="more-panel" id="morePanel">
+    <button class="icon-btn" id="soundBtn" data-label="通知音" type="button" aria-pressed="false" aria-label="通知音" title="新しいステップで小さな音を鳴らす"><svg class="ic" aria-hidden="true"><use href="#i-volume-x"/></svg></button>
+    <a class="icon-btn" href="/wall" id="wallLink" data-label="壁掛けモード" aria-label="壁掛けモードを開く" title="壁掛けモード(いまの作業を大きく常時表示)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg></a>
+    </div>
+  </div>
 </header>
 
 <div class="shell">
@@ -2329,5 +2346,16 @@ $('#lightbox').addEventListener('close', () => { $('#lbImg').removeAttribute('sr
 });
 </script>
 <script>addEventListener('load', () => { if (window.WLNotify) WLNotify.mount({ before: '#soundBtn', cls: 'icon-btn' }); });</script>
+<script>
+(() => {
+  const box = document.getElementById('barMore'), btn = document.getElementById('moreBtn');
+  if (!box || !btn) return;
+  const set = (on) => { box.toggleAttribute('data-open', on); btn.setAttribute('aria-expanded', String(on)); };
+  btn.addEventListener('click', (e) => { e.stopPropagation(); set(!box.hasAttribute('data-open')); });
+  document.addEventListener('click', (e) => { if (!box.contains(e.target)) set(false); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && box.hasAttribute('data-open')) { set(false); btn.focus(); } });
+  box.addEventListener('click', (e) => { if (e.target.closest('.more-panel .icon-btn')) setTimeout(() => set(false), 0); });
+})();
+</script>
 </body>
 </html>
