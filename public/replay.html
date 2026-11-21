@@ -240,7 +240,8 @@ a.btn, a.icon-btn { text-decoration: none; }
 .speed .chip { min-width: 38px; padding: 0 var(--space-xs); justify-content: center; font-family: var(--font-data); }
 
 /* ---- states + the session list ---- */
-.app > .state { grid-row: 2; width: calc(100% - var(--space-xl) * 2); max-width: 44rem; margin-inline: var(--space-xl); padding-bottom: var(--space-2xl); overflow: auto; }
+/* overflow:auto clips the focus ring of the first/last control, so keep 6px of room inside the box and take it back from the margin */
+.app > .state { --gut: 6px; grid-row: 2; width: calc(100% - (var(--space-xl) - var(--gut)) * 2); max-width: calc(44rem + var(--gut) * 2); margin-inline: calc(var(--space-xl) - var(--gut)); padding: var(--gut) var(--gut) var(--space-2xl); overflow: auto; }
 .state .ic.spin { color: var(--color-accent); }
 .state > a.btn { margin-top: var(--space-xs); }
 .state form .btn { align-self: flex-start; margin-top: var(--space-xs); }
@@ -267,7 +268,7 @@ a.btn, a.icon-btn { text-decoration: none; }
   .page-t { display: none; }
   .bar .sel { max-width: none; }
   .bar .sel:not([hidden]) ~ .bar-spacer { display: none; }
-  .app > .state { width: calc(100% - var(--space-md) * 2); margin-inline: var(--space-md); }
+  .app > .state { width: calc(100% - (var(--space-md) - var(--gut)) * 2); margin-inline: calc(var(--space-md) - var(--gut)); }
 }
 @media (max-width: 40rem) {
   .brand span { display: none; }
