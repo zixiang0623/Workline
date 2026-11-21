@@ -367,22 +367,23 @@ function connect() {
 /* ---------- render ---------- */
 const grid = $('#grid');
 const agentNo = (t) => Number(t.agentNo ?? t.agentNumber) || 0;
-// 1枚のカード = 「AI」+「エージェント番号」。同じAIでも 02 と 09 がいれば、2枚とも出す
-function pickTask(agentId, no) {
-  let best = null;
+// カードの単位: 「AI + エージェント番号」ごとに、作業中のタスクを全部出す(同じエージェントが2つ作業中なら2枚)。作業中が無ければ、直近のタスクを1枚
+function pickTasks(agentId, no) {
+  const run = [], idle = [];
   for (const t of S.tasks.values()) {
     if (t.agent !== agentId || agentNo(t) !== no) continue;
-    const running = t.status === 'running';
-    if (!running && nowMs() - (t.finishedAt || t.updatedAt) > RECENT_MS) continue;
-    if (!best || (running && best.status !== 'running') || (running === (best.status === 'running') && t.updatedAt > best.updatedAt)) best = t;
+    if (t.status === 'running') run.push(t);
+    else if (nowMs() - (t.finishedAt || t.updatedAt) <= RECENT_MS) idle.push(t);
   }
-  return best;
+  if (run.length) return run;
+  idle.sort((x, y) => (y.finishedAt || y.updatedAt) - (x.finishedAt || x.updatedAt));
+  return idle.slice(0, 1);
 }
 function laneModels() {
-  const keys = new Map();
-  for (const t of S.tasks.values()) if (t.agent) keys.set(t.agent + '#' + agentNo(t), { agent: t.agent, no: agentNo(t) });
+  const groups = new Map();
+  for (const t of S.tasks.values()) if (t.agent) groups.set(t.agent + '#' + agentNo(t), { agent: t.agent, no: agentNo(t) });
   const out = [];
-  for (const [id, k] of keys) { const t = pickTask(k.agent, k.no); if (t) out.push({ id, agent: k.agent, no: k.no, t }); }
+  for (const [gk, k] of groups) for (const t of pickTasks(k.agent, k.no)) out.push({ id: gk + '#' + t.id, agent: k.agent, no: k.no, t });
   // 並び順: タスクIDが若い順 → エージェント番号が若い順
   out.sort((a, b) => a.t.id - b.t.id || a.no - b.no);
   return out;
@@ -456,7 +457,7 @@ function draw() {
   for (const m of models) {
     seen.add(m.id);
     let l = S.lanes.get(m.id);
-    if (!l) { l = { el: laneEl(m.agent), pc: -1, agent: m.agent, no: m.no }; S.lanes.set(m.id, l); grid.appendChild(l.el); if (motion() && S.booted) gsap.from(l.el, { opacity: 0, scale: 0.97, duration: 0.5, ease: 'expo.out', clearProps: 'all' }); }
+    if (!l) { l = { el: laneEl(m.agent), pc: -1, agent: m.agent, no: m.no, taskId: m.t.id }; S.lanes.set(m.id, l); grid.appendChild(l.el); if (motion() && S.booted) gsap.from(l.el, { opacity: 0, scale: 0.97, duration: 0.5, ease: 'expo.out', clearProps: 'all' }); }
     paintLane(l, m);
   }
   for (const [id, l] of S.lanes) if (!seen.has(id)) { l.el.remove(); S.lanes.delete(id); }
@@ -493,7 +494,7 @@ const clockStr = (sec) => { const d = new Date(), p = (n) => String(n).padStart(
 setInterval(() => {
   $('#clock').textContent = clockStr(false); const b = $('#bigClock'); if (b) b.textContent = clockStr(true);
   for (const [, l] of S.lanes) tickTime(l);
-  for (const [id, l] of S.lanes) { const t = pickTask(l.agent, l.no); if (t && t.status === 'running') { const stale = nowMs() - t.updatedAt > STALE_MS; if ((l.el.dataset.stale === '1') !== stale) render(); } }
+  for (const [id, l] of S.lanes) { const t = S.tasks.get(l.taskId); if (t && t.status === 'running') { const stale = nowMs() - t.updatedAt > STALE_MS; if ((l.el.dataset.stale === '1') !== stale) render(); } }
 }, 1000);
 $('#clock').textContent = clockStr(false);
 setInterval(() => { const dx = Math.round((Math.random() - 0.5) * 12), dy = Math.round((Math.random() - 0.5) * 12); $('#wall').style.transform = `translate(${dx}px, ${dy}px)`; }, 180000); // 焼き付き防止に、3分ごとに数pxずらす
