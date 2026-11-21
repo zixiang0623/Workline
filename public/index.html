@@ -939,7 +939,7 @@ function puff(dur, gain = 0.05, { hp = 0, lp = 0, delay = 0 } = {}) {
     node.connect(g); g.connect(master); src.start(t); src.stop(t + dur + 0.03);
   } catch {}
 }
-const sfx = {
+const synth = {
   // each kind of step has its own little sound, so you can tell what the AI is doing without looking
   step(kind) {
     if (!gate('step', 140)) return;
@@ -968,14 +968,61 @@ const sfx = {
   stop() { if (!gate('stop', 300)) return; for (let i = 0; i < 3; i++) { beep(880, 0.11, 'square', 0.03, i * 0.2); beep(620, 0.11, 'square', 0.03, i * 0.2 + 0.1); } },
   online() { beep(523, 0.1, 'sine', 0.03); beep(784, 0.18, 'sine', 0.03, 0.09); },
   offline() { beep(440, 0.12, 'sine', 0.03, 0, 330); beep(294, 0.22, 'sine', 0.03, 0.1); },
-  tap(on) { if (!gate('tap', 45)) return; beep(on === false ? 760 : 1180, 0.03, 'sine', 0.014); },
+  tap(on) { beep(on === false ? 760 : 1180, 0.03, 'sine', 0.014); },
 };
+/* ---- recorded-and-rebuilt sounds made with earshot (public/sfx/*.mp3). If a file is missing or cannot be decoded, the synthesized sound above plays instead ---- */
+const bufs = {};
+let samplesLoading = null;
+function loadSamples() {
+  if (samplesLoading) return samplesLoading;
+  samplesLoading = (async () => {
+    try {
+      const c = audio(), spec = await (await fetch('/sfx/spec.json')).json();
+      await Promise.all(spec.sounds.map(async (e) => {
+        try { const r = await fetch(`/sfx/${e.name}.mp3`); if (!r.ok) return; bufs[e.name] = await c.decodeAudioData(await r.arrayBuffer()); } catch {}
+      }));
+    } catch {}
+  })();
+  return samplesLoading;
+}
+// g: level, v: random variation of speed (so repeated sounds do not repeat exactly)
+function play(name, g = 0.6, v = 0) {
+  const b = bufs[name]; if (!b || !S.sound) return false;
+  try {
+    const c = audio(), src = c.createBufferSource(), gn = c.createGain();
+    src.buffer = b; if (v) src.playbackRate.value = 1 + (Math.random() * 2 - 1) * v;
+    gn.gain.value = g; src.connect(gn); gn.connect(master); src.start();
+    return true;
+  } catch { return false; }
+}
+const STEP_SAMPLE = { plan: 'step_plan', think: 'step_think', search: 'step_search', read: 'step_read', write: 'step_write', run: 'step_run', web: 'step_web', check: 'step_check', fix: 'step_fix', wait: 'step_wait' };
+const SAMPLE = {
+  step: (kind) => ['step', 0.5, 0.05, STEP_SAMPLE[kind] || 'step_think'],
+  start: () => ['start', 0.7], done: () => ['done', 0.8], fail: () => ['fail', 0.8], cancel: () => ['cancel', 0.6],
+  ask: () => ['ask', 0.85], answered: (st) => [st === 'answered' || st === 'approved' ? 'answered' : 'toggle_off', 0.7],
+  note: () => ['note', 0.75], knock: () => ['directive', 0.75], stop: () => ['stop', 0.85],
+  online: () => ['online', 0.6], offline: () => ['offline', 0.6],
+  tap: (on) => [on === null ? 'tap' : on ? 'toggle_on' : 'toggle_off', 0.5, 0.04],
+};
+const GATE = { step: 140, tap: 45, stop: 300 };
+const sfx = {};
+for (const k of Object.keys(synth)) {
+  sfx[k] = (...a) => {
+    if (!S.sound) return;
+    if (GATE[k] && !gate(k, GATE[k])) return;
+    loadSamples();
+    const m = SAMPLE[k] && SAMPLE[k](...a);
+    const name = m && (k === 'step' ? m[3] : m[0]);
+    if (m && play(name, m[1], m[2] || 0)) return;
+    lastAt[k] = 0; synth[k](...a);   // not loaded (yet) or no sample for it: the synthesized one
+  };
+}
 // a soft tick for any press on a button, tab or row (toggles sound different when switched off)
 document.addEventListener('click', (e) => {
   if (!S.sound) return;
   const b = e.target.closest && e.target.closest('button, a.btn, a.icon-btn, [role="tab"], .tab, .chip, .trow, summary');
   if (!b || b.disabled || b.id === 'soundBtn') return;
-  sfx.tap(b.hasAttribute('aria-pressed') ? b.getAttribute('aria-pressed') === 'true' : true);
+  sfx.tap(b.hasAttribute('aria-pressed') ? b.getAttribute('aria-pressed') === 'true' : null);
 });
 
 /* ================= connection ================= */
@@ -1521,6 +1568,7 @@ function applyOrder() {
 }
 el.order.addEventListener('click', () => { S.newestFirst = !S.newestFirst; store.set('order', S.newestFirst ? 'new' : 'old'); applyOrder(); });
 function applySound() {
+  if (S.sound) loadSamples();
   el.sound.setAttribute('aria-pressed', String(S.sound));
   el.sound.innerHTML = icon(S.sound ? 'volume-2' : 'volume-x');
   el.sound.setAttribute('aria-label', S.sound ? '通知音をオフにする' : '通知音をオンにする');
