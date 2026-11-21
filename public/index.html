@@ -663,6 +663,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
 <symbol id="i-circle-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="m15 9-6 6" /> <path d="m9 9 6 6" /></symbol>
 <symbol id="i-circle-dashed" viewBox="0 0 24 24"><path d="M10.1 2.182a10 10 0 0 1 3.8 0" /> <path d="M13.9 21.818a10 10 0 0 1-3.8 0" /> <path d="M17.609 3.721a10 10 0 0 1 2.69 2.7" /> <path d="M2.182 13.9a10 10 0 0 1 0-3.8" /> <path d="M20.279 17.609a10 10 0 0 1-2.7 2.69" /> <path d="M21.818 10.1a10 10 0 0 1 0 3.8" /> <path d="M3.721 6.391a10 10 0 0 1 2.7-2.69" /> <path d="M6.391 20.279a10 10 0 0 1-2.69-2.7" /></symbol>
 <symbol id="i-circle-minus" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="M8 12h8" /></symbol>
+<symbol id="i-audio-lines" viewBox="0 0 24 24"><path d="M2 10v3" /> <path d="M6 6v11" /> <path d="M10 3v18" /> <path d="M14 8v7" /> <path d="M18 5v13" /> <path d="M22 10v3" /></symbol>
 <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /> <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></symbol>
 <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol>
 <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></symbol>
@@ -732,6 +733,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
       <button class="btn small" id="refreshIcons" type="button"><svg class="ic" aria-hidden="true"><use href="#i-refresh-cw"/></svg><span>更新</span></button>
       <p class="rail-note" id="iconStat" role="status" aria-live="polite" hidden></p>
       <button class="btn small" id="copyEndpoint" type="button" data-copy-endpoint><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg><span>MCPのURLをコピー</span></button>
+      <button class="btn small" id="sfxMode" type="button"><svg class="ic" aria-hidden="true"><use href="#i-audio-lines"/></svg><span id="sfxModeT"></span></button>
       <button class="btn small danger" id="openPurge" type="button"><svg class="ic" aria-hidden="true"><use href="#i-trash-2"/></svg><span>ログをすべて消去…</span></button>
     </div>
   </aside>
@@ -848,7 +850,7 @@ const FINISH_TEXT = { done: '作業が完了しました', failed: '作業が失
 /* ================= state ================= */
 const S = {
   tasks: new Map(), sel: null, maxId: 0, follow: true, agents: new Map(), filter: '', fsig: '', mode: store.get('mode', 'tree'), scope: store.get('scope', 'self'), fold: new Map(), rsig: '', ssig: '', chips: '',
-  newestFirst: store.get('order', 'new') === 'new', sound: store.get('sound', '0') === '1',
+  newestFirst: store.get('order', 'new') === 'new', sound: store.get('sound', '0') === '1', sfx: store.get('sfx', 'beep') === 'earshot' ? 'earshot' : 'beep',
   conn: 'connecting', offset: 0, auth: null, token: store.get('token', ''), planOpen: true,
   sig: '', expanded: new Set(), lastNow: '', lastProgress: 0, rows: new Map(), stepEls: new Map(), booted: false,
 };
@@ -939,7 +941,7 @@ function puff(dur, gain = 0.05, { hp = 0, lp = 0, delay = 0 } = {}) {
     node.connect(g); g.connect(master); src.start(t); src.stop(t + dur + 0.03);
   } catch {}
 }
-const sfx = {
+const synth = {
   // each kind of step has its own little sound, so you can tell what the AI is doing without looking
   step(kind) {
     if (!gate('step', 140)) return;
@@ -968,14 +970,63 @@ const sfx = {
   stop() { if (!gate('stop', 300)) return; for (let i = 0; i < 3; i++) { beep(880, 0.11, 'square', 0.03, i * 0.2); beep(620, 0.11, 'square', 0.03, i * 0.2 + 0.1); } },
   online() { beep(523, 0.1, 'sine', 0.03); beep(784, 0.18, 'sine', 0.03, 0.09); },
   offline() { beep(440, 0.12, 'sine', 0.03, 0, 330); beep(294, 0.22, 'sine', 0.03, 0.1); },
-  tap(on) { if (!gate('tap', 45)) return; beep(on === false ? 760 : 1180, 0.03, 'sine', 0.014); },
+  tap(on) { beep(on === false ? 760 : 1180, 0.03, 'sine', 0.014); },
 };
+/* ---- recorded-and-rebuilt sounds made with earshot (public/sfx/*.mp3). If a file is missing or cannot be decoded, the synthesized sound above plays instead ---- */
+const bufs = {};
+let samplesLoading = null;
+function loadSamples() {
+  if (samplesLoading) return samplesLoading;
+  samplesLoading = (async () => {
+    try {
+      const c = audio(), spec = await (await fetch('/sfx/spec.json')).json();
+      await Promise.all(spec.sounds.map(async (e) => {
+        try { const r = await fetch(`/sfx/${e.name}.mp3`); if (!r.ok) return; bufs[e.name] = await c.decodeAudioData(await r.arrayBuffer()); } catch {}
+      }));
+    } catch {}
+  })();
+  return samplesLoading;
+}
+// g: level, v: random variation of speed (so repeated sounds do not repeat exactly)
+function play(name, g = 0.6, v = 0) {
+  const b = bufs[name]; if (!b || !S.sound) return false;
+  try {
+    const c = audio(), src = c.createBufferSource(), gn = c.createGain();
+    src.buffer = b; if (v) src.playbackRate.value = 1 + (Math.random() * 2 - 1) * v;
+    gn.gain.value = g; src.connect(gn); gn.connect(master); src.start();
+    return true;
+  } catch { return false; }
+}
+const STEP_SAMPLE = { plan: 'step_plan', think: 'step_think', search: 'step_search', read: 'step_read', write: 'step_write', run: 'step_run', web: 'step_web', check: 'step_check', fix: 'step_fix', wait: 'step_wait' };
+const SAMPLE = {
+  step: (kind) => ['step', 0.5, 0.05, STEP_SAMPLE[kind] || 'step_think'],
+  start: () => ['start', 0.7], done: () => ['done', 0.8], fail: () => ['fail', 0.8], cancel: () => ['cancel', 0.6],
+  ask: () => ['ask', 0.85], answered: (st) => [st === 'answered' || st === 'approved' ? 'answered' : 'toggle_off', 0.7],
+  note: () => ['note', 0.75], knock: () => ['directive', 0.75], stop: () => ['stop', 0.85],
+  online: () => ['online', 0.6], offline: () => ['offline', 0.6],
+  tap: (on) => [on === null ? 'tap' : on ? 'toggle_on' : 'toggle_off', 0.5, 0.04],
+};
+const GATE = { step: 140, tap: 45, stop: 300 };
+const sfx = {};
+for (const k of Object.keys(synth)) {
+  sfx[k] = (...a) => {
+    if (!S.sound) return;
+    if (GATE[k] && !gate(k, GATE[k])) return;
+    if (S.sfx === 'earshot') {   // Earshot: the files in /sfx. Beep: the synthesized sounds below
+      loadSamples();
+      const m = SAMPLE[k] && SAMPLE[k](...a);
+      const name = m && (k === 'step' ? m[3] : m[0]);
+      if (m && play(name, m[1], m[2] || 0)) return;
+    }
+    lastAt[k] = 0; synth[k](...a);   // Beep mode, or the sample is not loaded (yet): the synthesized one
+  };
+}
 // a soft tick for any press on a button, tab or row (toggles sound different when switched off)
 document.addEventListener('click', (e) => {
   if (!S.sound) return;
   const b = e.target.closest && e.target.closest('button, a.btn, a.icon-btn, [role="tab"], .tab, .chip, .trow, summary');
-  if (!b || b.disabled || b.id === 'soundBtn') return;
-  sfx.tap(b.hasAttribute('aria-pressed') ? b.getAttribute('aria-pressed') === 'true' : true);
+  if (!b || b.disabled || b.id === 'soundBtn' || b.id === 'sfxMode') return;
+  sfx.tap(b.hasAttribute('aria-pressed') ? b.getAttribute('aria-pressed') === 'true' : null);
 });
 
 /* ================= connection ================= */
@@ -1521,10 +1572,23 @@ function applyOrder() {
 }
 el.order.addEventListener('click', () => { S.newestFirst = !S.newestFirst; store.set('order', S.newestFirst ? 'new' : 'old'); applyOrder(); });
 function applySound() {
+  if (S.sound && S.sfx === 'earshot') loadSamples();
   el.sound.setAttribute('aria-pressed', String(S.sound));
   el.sound.innerHTML = icon(S.sound ? 'volume-2' : 'volume-x');
   el.sound.setAttribute('aria-label', S.sound ? '通知音をオフにする' : '通知音をオンにする');
 }
+// 効果音の種類: Beep(コードで作った合成音) / Earshot(public/sfx のファイル)。押すと切り替わり、新しい方の音を1回鳴らす
+function applySfxMode() {
+  const e = S.sfx === 'earshot', b = document.getElementById('sfxMode');
+  document.getElementById('sfxModeT').textContent = '効果音: ' + (e ? 'Earshot' : 'Beep');
+  b.title = (e ? 'Beep' : 'Earshot') + ' に切り替える'; b.setAttribute('aria-label', '効果音の種類: ' + (e ? 'Earshot' : 'Beep') + '。押すと' + (e ? 'Beep' : 'Earshot') + 'に切り替え');
+}
+document.getElementById('sfxMode').addEventListener('click', async () => {
+  S.sfx = S.sfx === 'earshot' ? 'beep' : 'earshot'; store.set('sfx', S.sfx); applySfxMode();
+  if (S.sfx === 'earshot') await loadSamples();
+  const was = S.sound; S.sound = true; sfx.done(); S.sound = was;   // 音がオフでも、切り替えた音を1回だけ聞かせる
+});
+applySfxMode();
 el.sound.addEventListener('click', () => { S.sound = !S.sound; store.set('sound', S.sound ? '1' : '0'); applySound(); if (S.sound) sfx.done(); });
 addEventListener('hashchange', () => {
   const id = Number((location.hash.match(/t=(\d+)/) || [])[1]);
