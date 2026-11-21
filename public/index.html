@@ -904,29 +904,85 @@ const el = {
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const motion = () => !reduced && !!window.gsap;
 
-/* ================= sound (small synthesized ticks, off by default) ================= */
-let actx = null, lastTick = 0;
+/* ================= sound (synthesized with Web Audio, no files; off by default, one switch for everything) ================= */
+let actx = null, master = null, noiseBuf = null;
+const lastAt = {};
+const gate = (key, ms) => { const n = performance.now(); if (n - (lastAt[key] || 0) < ms) return false; lastAt[key] = n; return true; };
+function audio() {
+  actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+  if (actx.state === 'suspended') actx.resume();
+  if (!master) { master = actx.createGain(); master.gain.value = 0.9; const comp = actx.createDynamicsCompressor(); master.connect(comp); comp.connect(actx.destination); }
+  return actx;
+}
+// a pitched blip: freq -> (optionally glides to) `to`, with a short attack and an exponential tail
 function beep(freq, dur, type = 'sine', gain = 0.035, delay = 0, to = 0) {
   if (!S.sound) return;
   try {
-    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
-    const t = actx.currentTime + delay, o = actx.createOscillator(), g = actx.createGain();
+    const c = audio(), t = c.currentTime + delay, o = c.createOscillator(), g = c.createGain();
     o.type = type; o.frequency.setValueAtTime(freq, t);
     if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur);
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g).connect(actx.destination); o.start(t); o.stop(t + dur + 0.03);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.03);
+  } catch {}
+}
+// a short burst of filtered noise: paper, keys, knocks
+function puff(dur, gain = 0.05, { hp = 0, lp = 0, delay = 0 } = {}) {
+  if (!S.sound) return;
+  try {
+    const c = audio(), t = c.currentTime + delay;
+    if (!noiseBuf) { noiseBuf = c.createBuffer(1, c.sampleRate * 0.5, c.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+    const src = c.createBufferSource(), g = c.createGain(); src.buffer = noiseBuf;
+    let node = src;
+    if (hp) { const f = c.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp; node.connect(f); node = f; }
+    if (lp) { const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lp; node.connect(f); node = f; }
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    node.connect(g); g.connect(master); src.start(t); src.stop(t + dur + 0.03);
   } catch {}
 }
 const sfx = {
-  step() { const n = performance.now(); if (n - lastTick < 140) return; lastTick = n; beep(520, 0.09, 'sine', 0.035, 0, 360); },
-  done() { beep(659, 0.18, 'sine', 0.04); beep(988, 0.3, 'sine', 0.035, 0.09); },
-  fail() { beep(190, 0.32, 'triangle', 0.05, 0, 130); },
+  // each kind of step has its own little sound, so you can tell what the AI is doing without looking
+  step(kind) {
+    if (!gate('step', 140)) return;
+    switch (kind) {
+      case 'plan': beep(440, 0.08, 'triangle', 0.035); beep(587, 0.12, 'triangle', 0.035, 0.07); break;
+      case 'think': beep(330, 0.2, 'sine', 0.03, 0, 392); break;
+      case 'search': beep(700, 0.05, 'square', 0.012); beep(930, 0.05, 'square', 0.012, 0.06); break;
+      case 'read': puff(0.07, 0.05, { hp: 1800 }); puff(0.05, 0.035, { hp: 2600, delay: 0.09 }); break;
+      case 'write': for (let i = 0; i < 3; i++) puff(0.025, 0.07, { hp: 3000, lp: 7000, delay: i * 0.055 }); beep(1400, 0.03, 'square', 0.008, 0.17); break;
+      case 'run': beep(160, 0.16, 'sawtooth', 0.02, 0, 420); break;
+      case 'web': beep(880, 0.07, 'sine', 0.03); beep(660, 0.1, 'sine', 0.03, 0.08); break;
+      case 'check': beep(784, 0.08, 'triangle', 0.035); beep(1175, 0.16, 'triangle', 0.03, 0.08); break;
+      case 'fix': beep(300, 0.04, 'square', 0.018); beep(300, 0.04, 'square', 0.018, 0.07); beep(400, 0.07, 'square', 0.018, 0.14); break;
+      case 'wait': beep(220, 0.3, 'sine', 0.022); break;
+      default: beep(520, 0.09, 'sine', 0.035, 0, 360);
+    }
+  },
+  start() { beep(392, 0.1, 'triangle', 0.035); beep(523, 0.1, 'triangle', 0.035, 0.09); beep(659, 0.2, 'triangle', 0.035, 0.18); },
+  done() { beep(659, 0.16, 'sine', 0.04); beep(784, 0.16, 'sine', 0.038, 0.1); beep(1047, 0.4, 'sine', 0.036, 0.2); beep(2093, 0.25, 'sine', 0.01, 0.24); },
+  fail() { beep(247, 0.2, 'triangle', 0.05); beep(185, 0.4, 'triangle', 0.05, 0.16, 120); },
+  cancel() { beep(330, 0.14, 'triangle', 0.04, 0, 262); beep(262, 0.2, 'triangle', 0.035, 0.12); },
+  ask() { for (let i = 0; i < 2; i++) { beep(880, 0.45, 'sine', 0.045, i * 0.28); beep(1760, 0.3, 'sine', 0.012, i * 0.28); } },
+  answered(status) { if (status === 'answered' || status === 'approved') { beep(587, 0.1, 'triangle', 0.035); beep(880, 0.2, 'triangle', 0.035, 0.09); } else beep(300, 0.18, 'triangle', 0.03, 0, 220); },
+  note() { beep(660, 0.14, 'triangle', 0.04); beep(990, 0.22, 'triangle', 0.03, 0.09); },
+  knock() { puff(0.07, 0.12, { lp: 500 }); puff(0.07, 0.12, { lp: 500, delay: 0.13 }); beep(130, 0.1, 'sine', 0.05, 0, 90); },
+  stop() { if (!gate('stop', 300)) return; for (let i = 0; i < 3; i++) { beep(880, 0.11, 'square', 0.03, i * 0.2); beep(620, 0.11, 'square', 0.03, i * 0.2 + 0.1); } },
+  online() { beep(523, 0.1, 'sine', 0.03); beep(784, 0.18, 'sine', 0.03, 0.09); },
+  offline() { beep(440, 0.12, 'sine', 0.03, 0, 330); beep(294, 0.22, 'sine', 0.03, 0.1); },
+  tap(on) { if (!gate('tap', 45)) return; beep(on === false ? 760 : 1180, 0.03, 'sine', 0.014); },
 };
+// a soft tick for any press on a button, tab or row (toggles sound different when switched off)
+document.addEventListener('click', (e) => {
+  if (!S.sound) return;
+  const b = e.target.closest && e.target.closest('button, a.btn, a.icon-btn, [role="tab"], .tab, .chip, .trow, summary');
+  if (!b || b.disabled || b.id === 'soundBtn') return;
+  sfx.tap(b.hasAttribute('aria-pressed') ? b.getAttribute('aria-pressed') === 'true' : true);
+});
 
 /* ================= connection ================= */
 const CONN = { live: ['wifi', 'ライブ'], connecting: ['loader-circle', '接続中'], retry: ['wifi-off', '再接続中'], denied: ['lock', 'トークンが必要'] };
 function setConn(s) {
-  S.conn = s; el.conn.dataset.state = s;
+  const was = S.conn; S.conn = s;
+  if (S.sound && was !== s) { if (s === 'live' && (was === 'retry' || was === 'error')) sfx.online(); else if ((s === 'retry' || s === 'error') && was === 'live') sfx.offline(); } el.conn.dataset.state = s;
   el.conn.innerHTML = `${icon(CONN[s][0], s === 'connecting' ? 'spin' : '')}<span>${CONN[s][1]}</span>`;
 }
 
@@ -1057,9 +1113,11 @@ function handle(msg, quiet = false) {
   }
   renderRow(t);
   if (S.sound) {
-    if (prevStatus === 'running' && t.status === 'done') sfx.done();
-    else if (prevStatus === 'running' && (t.status === 'failed' || t.status === 'cancelled')) sfx.fail();
-    else if (fresh.length) sfx.step();
+    if (!prevStatus && t.status === 'running') sfx.start();
+    else if (prevStatus === 'running' && t.status === 'done') sfx.done();
+    else if (prevStatus === 'running' && t.status === 'failed') sfx.fail();
+    else if (prevStatus === 'running' && t.status === 'cancelled') sfx.cancel();
+    else if (fresh.length) sfx.step(((msg.steps || []).find((x) => x.id === fresh[fresh.length - 1]) || {}).kind);
   }
   renderFilter();
   if ((isRoot(t) && matches(t) && t.id > wasLatest && S.follow) || S.sel === null) { select(t.id, { keepFollow: true }); return; }
@@ -1754,6 +1812,14 @@ const whoAv = (id, size = 18) => (id === 'user' ? `<span class="av" data-t="0" s
 let noteSeen = Number(store.get('note-seen', '0')) || 0;
 
 function commsHandle(m) {
+  if (S.sound) {
+    try {
+      if (m.t === 'approval') { const prev = S.approvals.get(m.approval.requestId); if (!prev && m.approval.status === 'pending') sfx.ask(); else if (prev && prev.status === 'pending' && m.approval.status !== 'pending') sfx.answered(m.approval.status); }
+      else if (m.t === 'note' && !S.notes.has(m.note.noteId) && m.note.from !== 'user') sfx.note();
+      else if (m.t === 'directive' && !S.dirs.has(m.directive.directiveId) && (m.directive.from || m.directive.by) !== 'user') sfx.knock();
+      else if (m.t === 'message' && m.message.control && !S.msgs.has(m.message.messageId)) sfx.stop();
+    } catch {}
+  }
   if (m.t === 'shot') { S.shots.set(m.shot.shotId, m.shot); const box = m.shot.stepId != null && document.querySelector(`.step[data-id="${m.shot.stepId}"] [data-shots]`); if (box) box.innerHTML = shotsHtml(m.shot.stepId); noteSig = dirSig = reqSig = ''; commsRender(); return true; }
   if (m.t === 'purged') { S.shots.clear(); S.dirs.clear(); S.msgs.clear(); S.notes.clear(); noteSeen = 0; store.set('note-seen', '0'); return false; }
   if (m.t === 'directive') S.dirs.set(m.directive.directiveId, m.directive);
