@@ -579,9 +579,9 @@ dialog.lb::backdrop { background: var(--color-scrim); }
 .stopbar-note { flex: 1 1 12rem; font-size: var(--text-xs); color: var(--color-muted); }
 .stopbar[data-stop] .stopbar-note { color: var(--color-warn); }
 .tabs-wrap { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 0 var(--space-md); margin-bottom: var(--space-md); border-bottom: var(--rule-hair) solid var(--color-rule); }
-.tabs { display: flex; min-width: 0; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.tabs { display: flex; min-width: 0; max-width: 100%; margin-bottom: -1px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; }
 .tabs::-webkit-scrollbar { display: none; }
-.tab { position: relative; flex: none; display: inline-flex; align-items: center; gap: var(--space-xs); min-height: 46px; padding: 0 var(--space-md); border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; border-radius: var(--radius-ctl) var(--radius-ctl) 0 0; background: transparent; color: var(--color-ink-2); font-weight: 500; cursor: pointer; transition: background var(--dur-micro), color var(--dur-micro); }
+.tab { position: relative; flex: none; display: inline-flex; align-items: center; gap: var(--space-xs); min-height: 46px; padding: 0 var(--space-md); border: 0; border-bottom: 2px solid transparent; border-radius: var(--radius-ctl) var(--radius-ctl) 0 0; background: transparent; color: var(--color-ink-2); font-weight: 500; cursor: pointer; transition: background var(--dur-micro), color var(--dur-micro); }
 .tab:hover { background: var(--color-paper-2); color: var(--color-ink); }
 .tab:active { transform: scale(0.97); }
 .tab[aria-selected="true"] { color: var(--color-accent); border-bottom-color: var(--color-accent); font-weight: 700; }

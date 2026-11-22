@@ -87,7 +87,7 @@ input[type="checkbox"], input[type="radio"] { min-height: 0; width: 18px; height
 .here input { min-height: 32px; padding: 0 var(--space-xs); font-family: var(--font-data); background: transparent; border-color: transparent; }
 .here input:hover, .here input:focus { border-color: var(--color-rule); background: var(--color-paper); }
 
-.tabs { display: flex; gap: var(--space-2xs); overflow-x: auto; padding: var(--space-2xs); background: var(--color-paper-2); border-radius: var(--radius-card); scrollbar-width: none; }
+.tabs { display: flex; gap: var(--space-2xs); overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; padding: var(--space-2xs); background: var(--color-paper-2); border-radius: var(--radius-card); scrollbar-width: none; }
 .tab { flex: 1 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-xs); min-height: 44px; padding: 0 var(--space-md); border: 0; border-radius: var(--radius-ctl); background: transparent; color: var(--color-ink-2); font-size: var(--text-sm); font-weight: 500; cursor: pointer; white-space: nowrap; }
 .tab[aria-selected="true"] { background: var(--color-paper); color: var(--color-ink); box-shadow: 0 1px 2px color-mix(in oklab, var(--color-ink) 18%, transparent); }
 .cnt { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--color-warn); color: var(--color-accent-ink); font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
