@@ -156,4 +156,4 @@ URL: https://workline.zixiang0623.workers.dev/mcp
 
 - 更新するには、インストーラーをもう一度実行します(データとパスワードはそのままです)。
 - リリースするときは、`package.json` と `src/worker.js` の `VERSION` を同じ番号に上げて、本家の `main` に反映します。`public/sw.js` の `SHELL` も合わせて上げます。
-- 画面の下には、どのコピーにも「©2026 Workline/darumin」を表示します。
+- どのコピーにも「©2026 Workline/darumin」を表示します(ビューアーは左の「ログをすべて消去…」の下、リプレイは上のバー、人力AIは画面の下)。1画面に収まるよう、高さが増えない場所に置いています。

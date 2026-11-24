@@ -148,7 +148,7 @@ button, input { font: inherit; color: inherit; }
 .rail-update .ic { margin-top: var(--space-2xs); flex: none; }
 .rail-update b { display: block; font-weight: 700; }
 .rail-update a { color: inherit; font-weight: 700; text-underline-offset: 2px; }
-.app-copy { margin: 0; padding: var(--space-md) var(--space-md) calc(var(--space-md) + env(safe-area-inset-bottom, 0px)); text-align: center; font-size: var(--text-xs); color: var(--color-muted); }
+.rail-copy { margin: 0; font-size: var(--text-xs); color: var(--color-muted); text-align: center; }
 .scrim { position: fixed; inset: 0; z-index: var(--z-scrim); background: var(--color-scrim); opacity: 0; }
 
 /* ---- agents (which AI is working) ---- */
@@ -755,6 +755,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
       <button class="btn small" id="sfxMode" type="button"><svg class="ic" aria-hidden="true"><use href="#i-audio-lines"/></svg><span id="sfxModeT"></span></button>
       <button class="btn small" id="sfxTestBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-flask-conical"/></svg><span>効果音テスト</span></button>
       <button class="btn small danger" id="openPurge" type="button"><svg class="ic" aria-hidden="true"><use href="#i-trash-2"/></svg><span>ログをすべて消去…</span></button>
+      <p class="rail-copy">©2026 Workline/darumin</p>
     </div>
   </aside>
 
@@ -799,7 +800,6 @@ dialog.lb::backdrop { background: var(--color-scrim); }
     </article>
   </main>
 </div>
-<footer class="app-copy">©2026 Workline/darumin</footer>
 <dialog class="wiz" id="purge" aria-labelledby="wizTitle">
   <div class="wiz-in">
     <header class="wiz-head"><h2 id="wizTitle"><svg class="ic" aria-hidden="true"><use href="#i-trash-2"/></svg><span>すべてのログを消去</span></h2><button class="icon-btn" id="wizClose" type="button" aria-label="閉じる"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></header>
