@@ -149,3 +149,11 @@ URL: https://workline.zixiang0623.workers.dev/mcp
 - 小さな行動のたびに addStep を呼び、作業が終わったら finishTask を呼ぶ。
 - 停止命令が届いたら、新しい行動を始めず、finishTask(status="cancelled") で閉じる。
 - パスワードやAPIキーなどの秘密情報は送らない。
+
+## 更新のお知らせ(v2.4)
+
+ビューアーを開くたびに、本家(GitHub の `zixiang0623/Workline` の `package.json`)のバージョンをたずねます。このコピーより新しい版があれば、左の一覧の下(書き込みトークンの警告の下)に「新しいバージョンがあります」と出ます。本家に届かないときは何も出しません。
+
+- 更新するには、インストーラーをもう一度実行します(データとパスワードはそのままです)。
+- リリースするときは、`package.json` と `src/worker.js` の `VERSION` を同じ番号に上げて、本家の `main` に反映します。`public/sw.js` の `SHELL` も合わせて上げます。
+- 画面の下には、どのコピーにも「©2026 Workline/darumin」を表示します。

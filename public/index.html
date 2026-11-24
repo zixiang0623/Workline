@@ -144,6 +144,11 @@ button, input { font: inherit; color: inherit; }
 .rail-foot { display: flex; flex-direction: column; gap: var(--space-xs); padding: var(--space-sm) var(--space-md) var(--space-md); border-top: var(--rule-hair) solid var(--color-rule); }
 .rail-note { display: flex; gap: var(--space-xs); align-items: flex-start; font-size: var(--text-xs); color: var(--color-warn); }
 .rail-note .ic { margin-top: var(--space-2xs); }
+.rail-update { display: flex; gap: var(--space-xs); align-items: flex-start; padding: var(--space-xs) var(--space-sm); border: var(--rule-hair) solid var(--color-warn-rule); border-radius: var(--radius-ctl); background: var(--color-warn-soft); color: var(--color-warn); font-size: var(--text-xs); line-height: 1.55; }
+.rail-update .ic { margin-top: var(--space-2xs); flex: none; }
+.rail-update b { display: block; font-weight: 700; }
+.rail-update a { color: inherit; font-weight: 700; text-underline-offset: 2px; }
+.app-copy { margin: 0; padding: var(--space-md) var(--space-md) calc(var(--space-md) + env(safe-area-inset-bottom, 0px)); text-align: center; font-size: var(--text-xs); color: var(--color-muted); }
 .scrim { position: fixed; inset: 0; z-index: var(--z-scrim); background: var(--color-scrim); opacity: 0; }
 
 /* ---- agents (which AI is working) ---- */
@@ -682,6 +687,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
 <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="M12 6v6l4 2" /></symbol>
 <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
 <symbol id="i-radio" viewBox="0 0 24 24"><path d="M16.247 7.761a6 6 0 0 1 0 8.478" /> <path d="M19.075 4.933a10 10 0 0 1 0 14.134" /> <path d="M4.925 19.067a10 10 0 0 1 0-14.134" /> <path d="M7.753 16.239a6 6 0 0 1 0-8.478" /> <circle cx="12" cy="12" r="2" /></symbol>
+<symbol id="i-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="m16 12-4-4-4 4" /> <path d="M12 16V8" /></symbol>
 <symbol id="i-triangle-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /> <path d="M12 9v4" /> <path d="M12 17h.01" /></symbol>
 <symbol id="i-radio-tower" viewBox="0 0 24 24"><path d="M4.9 16.1C1 12.2 1 5.8 4.9 1.9" /> <path d="M7.8 4.7a6.14 6.14 0 0 0-.8 7.5" /> <circle cx="12" cy="9" r="2" /> <path d="M16.2 4.8c2 2 2.26 5.11.8 7.47" /> <path d="M19.1 1.9a9.96 9.96 0 0 1 0 14.1" /> <path d="M9.5 18h5" /> <path d="m8 22 4-11 4 11" /></symbol>
 <symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /> <path d="M7 11V7a5 5 0 0 1 10 0v4" /></symbol>
@@ -741,6 +747,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
     <ul class="tasklist" id="taskList"></ul>
     <div class="rail-foot">
       <p class="rail-note" id="railNote" hidden><svg class="ic" aria-hidden="true"><use href="#i-triangle-alert"/></svg><span>書き込みトークンが未設定です。URLを知っている人は誰でも送信できます。</span></p>
+      <div class="rail-update" id="updNote" role="status" aria-live="polite" hidden><svg class="ic" aria-hidden="true"><use href="#i-circle-arrow-up"/></svg><div><b>新しいバージョン <span id="updNew"></span> があります</b>いまは <span id="updCur"></span> です。インストーラーをもう一度実行すると、データとパスワードはそのままで更新できます。<br><a id="updLink" href="https://github.com/zixiang0623/Workline" target="_blank" rel="noopener">更新内容を見る</a></div></div>
       <button class="btn small" id="openInbox" type="button"><svg class="ic" aria-hidden="true"><use href="#i-inbox"/></svg><span>司令・要求 inbox</span><b class="cnt" id="inboxCnt" hidden></b></button>
       <button class="btn small" id="refreshIcons" type="button"><svg class="ic" aria-hidden="true"><use href="#i-refresh-cw"/></svg><span>更新</span></button>
       <p class="rail-note" id="iconStat" role="status" aria-live="polite" hidden></p>
@@ -792,6 +799,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
     </article>
   </main>
 </div>
+<footer class="app-copy">©2026 Workline/darumin</footer>
 <dialog class="wiz" id="purge" aria-labelledby="wizTitle">
   <div class="wiz-in">
     <header class="wiz-head"><h2 id="wizTitle"><svg class="ic" aria-hidden="true"><use href="#i-trash-2"/></svg><span>すべてのログを消去</span></h2><button class="icon-btn" id="wizClose" type="button" aria-label="閉じる"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></header>
@@ -2538,6 +2546,21 @@ $('#lightbox').addEventListener('keydown', (e) => { if (lbGroup.length > 1 && e.
 $('#lightbox').addEventListener('close', () => { $('#lbImg').removeAttribute('src'); if (lbOpener && lbOpener.isConnected) lbOpener.focus(); });
 
 });
+</script>
+<script>
+/* 本家のバージョンを毎回たずね、このコピーが古ければ、左の一覧の下に更新をうながす */
+(() => {
+  const ORIGIN = 'https://raw.githubusercontent.com/zixiang0623/Workline/main/package.json';
+  const parts = (v) => String(v || '').split('-')[0].split('.').map((n) => parseInt(n, 10) || 0);
+  const cmp = (a, b) => { const x = parts(a), y = parts(b); for (let i = 0; i < 3; i++) { const d = (x[i] || 0) - (y[i] || 0); if (d) return d; } return 0; };
+  const get = (u) => fetch(u, { cache: 'no-store' }).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); });
+  Promise.all([get('/api/health'), get(ORIGIN)]).then(([mine, origin]) => {
+    if (!mine.version || !origin.version || cmp(origin.version, mine.version) <= 0) return;
+    document.getElementById('updNew').textContent = 'v' + origin.version;
+    document.getElementById('updCur').textContent = 'v' + mine.version;
+    document.getElementById('updNote').hidden = false;
+  }).catch(() => { /* 本家に届かないときは、何も出さない */ });
+})();
 </script>
 <script>addEventListener('load', () => { if (window.WLNotify) WLNotify.mount({ before: '#soundBtn', cls: 'icon-btn' }); });</script>
 <script>
