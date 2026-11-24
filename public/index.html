@@ -470,7 +470,10 @@ dialog.lb::backdrop { background: var(--color-scrim); }
 .trace-meter[data-pass="true"] span:first-child::before { content: ""; }
 
 /* ---- narrow ---- */
+.main-copy { display: none; margin: 0; padding: var(--space-lg) var(--space-md) calc(var(--space-lg) + env(safe-area-inset-bottom, 0px)); text-align: center; font-size: var(--text-xs); color: var(--color-muted); }
 @media (max-width: 60rem) {
+  .main-copy { display: block; }
+  .rail-copy { display: none; }
   .menu-btn { display: inline-grid; }
   .shell { grid-template-columns: minmax(0, 1fr); }
   .rail { position: fixed; top: var(--bar-h); bottom: 0; left: 0; height: auto; width: min(20rem, 88vw); z-index: var(--z-drawer); transform: translateX(-105%); box-shadow: var(--shadow-sheet); transition: transform var(--dur-short) var(--ease-out); }
@@ -798,6 +801,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
       <div class="pn" role="tabpanel" id="pn-note" aria-labelledby="tab-note" hidden></div>
       <div class="pn" role="tabpanel" id="pn-req" aria-labelledby="tab-req" hidden></div>
     </article>
+    <p class="main-copy">©2026 Workline/darumin</p>
   </main>
 </div>
 <dialog class="wiz" id="purge" aria-labelledby="wizTitle">
