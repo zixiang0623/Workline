@@ -86,6 +86,46 @@
 }
 :root[data-theme="newyear"] body::before { content: ""; position: fixed; inset: 0 0 auto 0; height: 5px; z-index: 400; pointer-events: none; background: repeating-linear-gradient(90deg, oklch(46% 0.2 28) 0 14px, oklch(98.2% 0.016 80) 14px 28px); box-shadow: inset 0 -1px 0 oklch(72% 0.12 85); }
 /* テーマ切り替えダイアログのサムネイル */
+:root[data-theme="sakura"] {
+  --color-paper: oklch(98.5% 0.012 10); --color-paper-2: oklch(96.2% 0.018 10); --color-paper-3: oklch(93.5% 0.024 10);
+  --color-ink: oklch(27% 0.03 10); --color-ink-2: oklch(42% 0.028 10); --color-muted: oklch(48% 0.024 10);
+  --color-rule: oklch(89.5% 0.02 10);
+  --color-accent: oklch(52% 0.14 5); --color-accent-ink: oklch(98.5% 0.012 10); --color-accent-soft: oklch(94.5% 0.04 5);
+  --color-focus: oklch(52% 0.14 5); --color-success: oklch(41% 0.1 155);
+}
+:root[data-theme="sakura"] body::before { content: ""; position: fixed; inset: 0 0 auto 0; height: 4px; z-index: 400; pointer-events: none; background: radial-gradient(circle, oklch(78% 0.09 5) 1.6px, transparent 2.2px) 0 0 / 15px 4px repeat-x, linear-gradient(90deg, oklch(90% 0.05 5), oklch(95% 0.03 5)); }
+:root[data-theme="hoshizora"] {
+  --color-paper: oklch(24% 0.03 265); --color-paper-2: oklch(27.5% 0.032 265); --color-paper-3: oklch(31.5% 0.034 265);
+  --color-ink: oklch(92% 0.02 265); --color-ink-2: oklch(80% 0.022 265); --color-muted: oklch(68% 0.024 265);
+  --color-rule: oklch(37% 0.03 265);
+  --color-accent: oklch(80% 0.11 85); --color-accent-ink: oklch(24% 0.03 265); --color-accent-soft: oklch(33% 0.05 265);
+  --color-focus: oklch(80% 0.11 85); --color-success: oklch(75% 0.11 155);
+}
+:root[data-theme="hoshizora"] body::before { content: ""; position: fixed; inset: 0 0 auto 0; height: 6px; z-index: 400; pointer-events: none; background: radial-gradient(circle at 8px 3px, oklch(92% 0.02 265) 1px, transparent 1.7px) 0 0 / 26px 6px repeat-x, radial-gradient(circle at 20px 4px, oklch(80% 0.11 85) 1px, transparent 1.7px) 8px 0 / 34px 6px repeat-x; }
+:root[data-theme="momiji"] {
+  --color-paper: oklch(98% 0.014 60); --color-paper-2: oklch(95.8% 0.02 58); --color-paper-3: oklch(93% 0.026 55);
+  --color-ink: oklch(26% 0.035 45); --color-ink-2: oklch(41% 0.032 45); --color-muted: oklch(47% 0.028 45);
+  --color-rule: oklch(89% 0.022 55);
+  --color-accent: oklch(50% 0.16 40); --color-accent-ink: oklch(98% 0.014 60); --color-accent-soft: oklch(94% 0.045 45);
+  --color-focus: oklch(50% 0.16 40); --color-success: oklch(43% 0.1 150);
+}
+:root[data-theme="momiji"] body::before { content: ""; position: fixed; inset: 0 0 auto 0; height: 4px; z-index: 400; pointer-events: none; background: repeating-linear-gradient(120deg, oklch(50% 0.16 40) 0 9px, oklch(62% 0.14 55) 9px 18px, oklch(72% 0.12 85) 18px 27px); }
+:root[data-theme="neko"] {
+  --color-paper: oklch(98.5% 0.01 70); --color-paper-2: oklch(96.2% 0.015 70); --color-paper-3: oklch(93.5% 0.02 68);
+  --color-ink: oklch(28% 0.03 60); --color-ink-2: oklch(43% 0.028 60); --color-muted: oklch(49% 0.024 60);
+  --color-rule: oklch(89.5% 0.018 68);
+  --color-accent: oklch(55% 0.13 55); --color-accent-ink: oklch(98.5% 0.01 70); --color-accent-soft: oklch(94.5% 0.04 55);
+  --color-focus: oklch(55% 0.13 55); --color-success: oklch(41% 0.1 155);
+}
+:root[data-theme="neko"] body::before { content: ""; position: fixed; inset: 0 0 auto 0; height: 4px; z-index: 400; pointer-events: none; background: repeating-linear-gradient(90deg, oklch(78% 0.07 55) 0 6px, transparent 6px 18px, oklch(78% 0.07 55) 18px 21px, transparent 21px 34px); }
+:root[data-theme="shinkai"] {
+  --color-paper: oklch(22% 0.03 210); --color-paper-2: oklch(25.5% 0.032 210); --color-paper-3: oklch(29.5% 0.034 210);
+  --color-ink: oklch(90% 0.02 200); --color-ink-2: oklch(78% 0.022 200); --color-muted: oklch(65% 0.024 205);
+  --color-rule: oklch(35% 0.03 210);
+  --color-accent: oklch(78% 0.1 195); --color-accent-ink: oklch(20% 0.03 210); --color-accent-soft: oklch(31% 0.05 205);
+  --color-focus: oklch(78% 0.1 195); --color-success: oklch(72% 0.11 160);
+}
+:root[data-theme="shinkai"] body::before { content: ""; position: fixed; inset: 0 0 auto 0; height: 6px; z-index: 400; pointer-events: none; background: radial-gradient(circle at 6px 4px, oklch(78% 0.1 195 / 0.8) 1.2px, transparent 1.9px) 0 0 / 22px 6px repeat-x, radial-gradient(circle at 16px 2px, oklch(90% 0.02 200 / 0.6) 0.9px, transparent 1.5px) 6px 0 / 30px 6px repeat-x; }
 .theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: var(--space-sm); margin-top: var(--space-sm); }
 .theme-card { display: flex; flex-direction: column; gap: var(--space-xs); padding: var(--space-xs); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); background: var(--color-paper-2); color: var(--color-ink); text-align: left; cursor: pointer; font: inherit; }
 .theme-card:hover { border-color: var(--color-accent); }
@@ -804,6 +844,24 @@ dialog.lb::backdrop { background: var(--color-scrim); }
 <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z" /> <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" /> <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" /> <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" /> <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" /></symbol>
 <symbol id="i-tree-pine" viewBox="0 0 24 24"><path d="m17 14 3 3.3a1 1 0 0 1-.7 1.7H4.7a1 1 0 0 1-.7-1.7L7 14h-.3a1 1 0 0 1-.7-1.7L9 9h-.2A1 1 0 0 1 8 7.3L12 3l4 4.3a1 1 0 0 1-.8 1.7H15l3 3.3a1 1 0 0 1-.7 1.7H17Z" /> <path d="M12 22v-3" /></symbol>
 <symbol id="i-gift" viewBox="0 0 24 24"><path d="M12 7v14" /> <path d="M20 11v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8" /> <path d="M7.5 7a1 1 0 0 1 0-5A4.8 8 0 0 1 12 7a4.8 8 0 0 1 4.5-5 1 1 0 0 1 0 5" /> <rect x="3" y="7" width="18" height="4" rx="1" /></symbol>
+<symbol id="i-flower-2" viewBox="0 0 24 24"><path d="M12 5a3 3 0 1 1 3 3m-3-3a3 3 0 1 0-3 3m3-3v1M9 8a3 3 0 1 0 3 3M9 8h1m5 0a3 3 0 1 1-3 3m3-3h-1m-2 3v-1" />
+  <circle cx="12" cy="8" r="2" />
+  <path d="M12 10v12" />
+  <path d="M12 22c4.2 0 7-1.667 7-5-4.2 0-7 1.667-7 5Z" />
+  <path d="M12 22c-4.2 0-7-1.667-7-5 4.2 0 7 1.667 7 5Z" /></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></symbol>
+<symbol id="i-leaf" viewBox="0 0 24 24"><path d="M11 20a10 10 0 0010-10 25.9 25.9 0 00-1.04-7.281 1 1 0 00-1.755-.325C15.833 5.5 13 5.5 9.8 6.1A7 7 0 0011 20" />
+  <path d="M2 21a5 5 0 012.911-4.544C7.613 15.212 8.351 15.24 11 13" /></symbol>
+<symbol id="i-cat" viewBox="0 0 24 24"><path d="M12 5c.67 0 1.35.09 2 .26 1.78-2 5.03-2.84 6.42-2.26 1.4.58-.42 7-.42 7 .57 1.07 1 2.24 1 3.44C21 17.9 16.97 21 12 21s-9-3-9-7.56c0-1.25.5-2.4 1-3.44 0 0-1.89-6.42-.5-7 1.39-.58 4.72.23 6.5 2.23A9.04 9.04 0 0 1 12 5Z" />
+  <path d="M8 14v.5" />
+  <path d="M16 14v.5" />
+  <path d="M11.25 16.25h1.5L12 17l-.75-.75Z" /></symbol>
+<symbol id="i-fish" viewBox="0 0 24 24"><path d="M6.5 12c.94-3.46 4.94-6 8.5-6 3.56 0 6.06 2.54 7 6-.94 3.47-3.44 6-7 6s-7.56-2.53-8.5-6Z" />
+  <path d="M18 12v.5" />
+  <path d="M16 17.93a9.77 9.77 0 0 1 0-11.86" />
+  <path d="M7 10.67C7 8 5.58 5.97 2.73 5.5c-1 1.5-1 5 .23 6.5-1.24 1.5-1.24 5-.23 6.5C5.58 18.03 7 16 7 13.33" />
+  <path d="M10.46 7.26C10.2 5.88 9.17 4.24 8 3h5.8a2 2 0 0 1 1.98 1.67l.23 1.4" />
+  <path d="m16.01 17.93-.23 1.4A2 2 0 0 1 13.8 21H9.5a5.96 5.96 0 0 0 1.49-3.98" /></symbol>
 <symbol id="i-play" viewBox="0 0 24 24"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z" /></symbol>
 <symbol id="i-flask-conical" viewBox="0 0 24 24"><path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2" /> <path d="M6.453 15h11.094" /> <path d="M8.5 2h7" /></symbol>
 <symbol id="i-square" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" /></symbol>
@@ -1271,7 +1329,117 @@ const synthN = {
   offline() { pluck(622, 0.026); pluck(440, 0.026, 0.1); },
   tap(on) { const f = on === false ? 1568 : 2093; beep(f, 0.04, 'triangle', 0.012); },
 };
-const THEME_SYNTH = { xmas: synthX, newyear: synthN };
+/* ---- ねこ用の鳴き声 ---- */
+const meow = (vol = 0.05, delay = 0, down = false) => {
+  if (!S.sound || !ac()) return;
+  const t0 = ctx.currentTime + delay, o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = 'sine';
+  if (down) { o.frequency.setValueAtTime(900, t0); o.frequency.exponentialRampToValueAtTime(500, t0 + 0.22); }
+  else { o.frequency.setValueAtTime(620, t0); o.frequency.exponentialRampToValueAtTime(940, t0 + 0.09); o.frequency.exponentialRampToValueAtTime(480, t0 + 0.24); }
+  g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(vol, t0 + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.26);
+  o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + 0.28);
+};
+/* ---- テーマ別セット: 桜(風鈴のベル) ---- */
+const synthS = {
+  step(kind) {
+    if (!gate('step', 160)) return;
+    const hi = { plan: 1568, think: 1319, search: 2093, read: 1760, write: 1568, run: 1175, web: 1976, check: 1760, fix: 2093, wait: 1568 };
+    bell(hi[kind] || 1568, 0.02);
+  },
+  start() { bell(1319, 0.024); bell(1760, 0.024, 0.14); },
+  done() { [1760, 1568, 1319, 1175].forEach((f, i) => bell(f, 0.026, i * 0.13)); },
+  fail() { bell(392, 0.028); bell(330, 0.028, 0.2); },
+  cancel() { bell(659, 0.022); bell(523, 0.022, 0.15); },
+  ask() { for (let i = 0; i < 2; i++) { bell(1760, 0.024, i * 0.36); bell(1319, 0.024, i * 0.36 + 0.17); } },
+  answered(st) { if (st === 'answered' || st === 'approved') { bell(1568, 0.024); bell(2093, 0.024, 0.11); } else bell(392, 0.024); },
+  note() { bell(2093, 0.022); bell(1760, 0.02, 0.1); },
+  knock() { bell(1175, 0.024); bell(1175, 0.02, 0.13); },
+  stop() { if (!gate('stop', 300)) return; for (let i = 0; i < 3; i++) bell(880, 0.026, i * 0.24); },
+  online() { bell(1319, 0.02); bell(1760, 0.02, 0.11); },
+  offline() { bell(880, 0.02); bell(659, 0.02, 0.11); },
+  tap(on) { const f = on === false ? 1568 : 2093; beep(f, 0.035, 'triangle', 0.01); },
+};
+/* ---- テーマ別セット: 星空(サイン波のきらめき) ---- */
+const synthH = {
+  step(kind) {
+    if (!gate('step', 200)) return;
+    const hi = { plan: 1568, think: 1047, search: 2093, read: 1319, write: 1760, run: 1175, web: 1568, check: 1760, fix: 2093, wait: 880 };
+    beep(hi[kind] || 1568, 0.016, 'sine');
+  },
+  start() { [1047, 1319, 1568].forEach((f, i) => beep(f, 0.02, 'sine', i * 0.13)); },
+  done() { [1047, 1047, 1568, 1568, 1760, 1760].forEach((f, i) => beep(f, 0.022, 'sine', i * 0.15)); beep(1568, 0.026, 'sine', 0.92); },
+  fail() { beep(660, 0.024, 'sine'); beep(440, 0.024, 'sine', 0.2); },
+  cancel() { beep(784, 0.02, 'sine'); beep(587, 0.02, 'sine', 0.16); },
+  ask() { for (let i = 0; i < 2; i++) { beep(1760, 0.02, 'sine', i * 0.4); beep(1319, 0.02, 'sine', i * 0.4 + 0.19); } },
+  answered(st) { if (st === 'answered' || st === 'approved') { beep(1568, 0.02, 'sine'); beep(2093, 0.02, 'sine', 0.12); } else beep(440, 0.02, 'sine'); },
+  note() { beep(2093, 0.018, 'sine'); beep(1568, 0.016, 'sine', 0.12); },
+  knock() { beep(1175, 0.02, 'sine'); beep(1175, 0.018, 'sine', 0.15); },
+  stop() { if (!gate('stop', 300)) return; for (let i = 0; i < 3; i++) beep(1047, 0.022, 'sine', i * 0.26); },
+  online() { beep(1319, 0.018, 'sine'); beep(1760, 0.018, 'sine', 0.12); },
+  offline() { beep(880, 0.018, 'sine'); beep(659, 0.018, 'sine', 0.12); },
+  tap(on) { const f = on === false ? 1568 : 2093; beep(f, 0.03, 'sine', 0.01); },
+};
+/* ---- テーマ別セット: 紅葉(低い弦) ---- */
+const synthM = {
+  step(kind) {
+    if (!gate('step', 150)) return;
+    const mid = { plan: 587, think: 349, search: 880, read: 523, write: 659, run: 440, web: 784, check: 880, fix: 698, wait: 440 };
+    pluck(mid[kind] || 587, 0.03);
+  },
+  start() { drum(0.05); pluck(440, 0.03, 0.05); pluck(587, 0.03, 0.16); },
+  done() { [784, 659, 587, 523].forEach((f, i) => pluck(f, 0.032, i * 0.12)); drum(0.05, 0.5); },
+  fail() { pluck(330, 0.036); pluck(262, 0.036, 0.19); },
+  cancel() { pluck(523, 0.03); pluck(392, 0.03, 0.14); },
+  ask() { for (let i = 0; i < 2; i++) { pluck(880, 0.03, i * 0.36); pluck(659, 0.03, i * 0.36 + 0.17); } },
+  answered(st) { if (st === 'answered' || st === 'approved') { pluck(784, 0.03); pluck(1047, 0.03, 0.11); } else pluck(330, 0.03); },
+  note() { pluck(1047, 0.03); pluck(1319, 0.026, 0.1); },
+  knock() { drum(0.05); pluck(440, 0.026, 0.03); },
+  stop() { if (!gate('stop', 300)) return; for (let i = 0; i < 3; i++) drum(0.06, i * 0.24); },
+  online() { pluck(587, 0.026); pluck(880, 0.026, 0.11); },
+  offline() { pluck(523, 0.026); pluck(392, 0.026, 0.11); },
+  tap(on) { const f = on === false ? 1319 : 1760; beep(f, 0.035, 'triangle', 0.01); },
+};
+/* ---- テーマ別セット: ねこ(鳴き声と小鈴) ---- */
+const synthK = {
+  step(kind) {
+    if (!gate('step', 150)) return;
+    const hi = { plan: 1568, think: 1175, search: 2093, read: 1319, write: 1760, run: 1047, web: 1568, check: 1760, fix: 1976, wait: 1319 };
+    beep(hi[kind] || 1568, 0.02, 'triangle');
+  },
+  start() { beep(1319, 0.024, 'triangle'); beep(1760, 0.024, 'triangle', 0.1); meow(0.04, 0.18); },
+  done() { meow(0.055); beep(1760, 0.022, 'triangle', 0.3); beep(2093, 0.022, 'triangle', 0.4); },
+  fail() { meow(0.05, 0, true); },
+  cancel() { beep(880, 0.022, 'triangle'); beep(659, 0.022, 'triangle', 0.12); },
+  ask() { meow(0.045); meow(0.045, 0.42); },
+  answered(st) { if (st === 'answered' || st === 'approved') { beep(1568, 0.022, 'triangle'); meow(0.04, 0.1); } else meow(0.04, 0, true); },
+  note() { beep(2093, 0.02, 'triangle'); beep(1760, 0.018, 'triangle', 0.09); },
+  knock() { beep(1568, 0.024, 'triangle'); beep(1568, 0.02, 'triangle', 0.11); },
+  stop() { if (!gate('stop', 300)) return; for (let i = 0; i < 3; i++) beep(1047, 0.024, 'triangle', i * 0.22); },
+  online() { beep(1319, 0.02, 'triangle'); beep(1760, 0.02, 'triangle', 0.1); },
+  offline() { beep(880, 0.02, 'triangle'); beep(659, 0.02, 'triangle', 0.1); },
+  tap(on) { const f = on === false ? 1568 : 2093; beep(f, 0.035, 'triangle', 0.012); },
+};
+/* ---- テーマ別セット: 深海(ソナー) ---- */
+const synthD = {
+  step(kind) {
+    if (!gate('step', 380)) return;
+    const mid = { plan: 740, think: 587, search: 880, read: 660, write: 740, run: 523, web: 830, check: 880, fix: 784, wait: 494 };
+    beep(mid[kind] || 740, 0.045, 'sine');
+  },
+  start() { beep(660, 0.05, 'sine'); beep(880, 0.05, 'sine', 0.3); },
+  done() { beep(880, 0.05, 'sine'); beep(660, 0.05, 'sine', 0.32); drum(0.05, 0.6); },
+  fail() { beep(330, 0.05, 'sine'); beep(262, 0.05, 'sine', 0.3); },
+  cancel() { beep(587, 0.045, 'sine'); beep(440, 0.045, 'sine', 0.24); },
+  ask() { for (let i = 0; i < 2; i++) { beep(880, 0.045, 'sine', i * 0.55); beep(660, 0.045, 'sine', i * 0.55 + 0.28); } },
+  answered(st) { if (st === 'answered' || st === 'approved') { beep(740, 0.045, 'sine'); beep(988, 0.045, 'sine', 0.26); } else beep(330, 0.045, 'sine'); },
+  note() { beep(988, 0.04, 'sine'); beep(880, 0.04, 'sine', 0.26); },
+  knock() { beep(740, 0.05, 'sine'); beep(740, 0.045, 'sine', 0.3); },
+  stop() { if (!gate('stop', 400)) return; for (let i = 0; i < 3; i++) drum(0.06, i * 0.34); },
+  online() { beep(660, 0.04, 'sine'); beep(880, 0.04, 'sine', 0.26); },
+  offline() { beep(587, 0.04, 'sine'); beep(440, 0.04, 'sine', 0.26); },
+  tap(on) { const f = on === false ? 880 : 1175; beep(f, 0.04, 'sine', 0.012); },
+};
+const THEME_SYNTH = { xmas: synthX, newyear: synthN, sakura: synthS, hoshizora: synthH, momiji: synthM, neko: synthK, shinkai: synthD };
 const GATE = { step: 140, tap: 45, stop: 300 };
 const sfx = {};
 for (const k of Object.keys(synth)) {
@@ -1935,6 +2103,11 @@ function applySound() {
 const THEMES = {
   xmas: { name: 'クリスマス', short: 'Xmas', icon: 'tree-pine', sound: 'xmas', color: '#fbf8f0' },
   newyear: { name: 'お正月', short: 'お正月', icon: 'gift', sound: 'newyear', color: '#fdfaf0' },
+  sakura: { name: '桜', short: '桜', icon: 'flower-2', sound: 'sakura', color: '#fdf2f3' },
+  hoshizora: { name: '星空', short: '星空', icon: 'star', sound: 'hoshizora', color: '#1e2242' },
+  momiji: { name: '紅葉', short: '紅葉', icon: 'leaf', sound: 'momiji', color: '#fdf6ec' },
+  neko: { name: 'ねこ', short: 'ねこ', icon: 'cat', sound: 'neko', color: '#fdfaf1' },
+  shinkai: { name: '深海', short: '深海', icon: 'fish', sound: 'shinkai', color: '#10222e' },
 };
 const sfxName = (m) => m === 'earshot' ? 'Earshot' : (Object.values(THEMES).find((t) => t.sound === m) || {}).name || 'Beep';
 function applySfxMode() {
@@ -1983,6 +2156,11 @@ const THUMB = {
   default: { paper: 'oklch(98.5% 0.004 235)', ink: 'oklch(27% 0.02 250)', accent: 'oklch(50% 0.115 205)', band: '' },
   xmas: { paper: 'oklch(98.4% 0.009 95)', ink: 'oklch(25% 0.02 30)', accent: 'oklch(46% 0.17 25)', band: 'repeating-linear-gradient(135deg, oklch(46% 0.17 25) 0 10px, oklch(98.4% 0.009 95) 10px 14px, oklch(41% 0.1 155) 14px 24px, oklch(98.4% 0.009 95) 24px 28px)' },
   newyear: { paper: 'oklch(98.2% 0.016 80)', ink: 'oklch(25% 0.035 35)', accent: 'oklch(46% 0.2 28)', band: 'repeating-linear-gradient(90deg, oklch(46% 0.2 28) 0 14px, oklch(98.2% 0.016 80) 14px 28px)', bandShadow: 'inset 0 -1px 0 oklch(72% 0.12 85)' },
+  sakura: { paper: 'oklch(98.5% 0.012 10)', ink: 'oklch(27% 0.03 10)', accent: 'oklch(52% 0.14 5)', band: 'radial-gradient(circle, oklch(78% 0.09 5) 1.6px, transparent 2.2px) 0 0 / 15px 4px repeat-x, linear-gradient(90deg, oklch(90% 0.05 5), oklch(95% 0.03 5))' },
+  hoshizora: { paper: 'oklch(24% 0.03 265)', ink: 'oklch(92% 0.02 265)', accent: 'oklch(80% 0.11 85)', band: 'radial-gradient(circle at 8px 3px, oklch(92% 0.02 265) 1px, transparent 1.7px) 0 0 / 26px 6px repeat-x, radial-gradient(circle at 20px 4px, oklch(80% 0.11 85) 1px, transparent 1.7px) 8px 0 / 34px 6px repeat-x' },
+  momiji: { paper: 'oklch(98% 0.014 60)', ink: 'oklch(26% 0.035 45)', accent: 'oklch(50% 0.16 40)', band: 'repeating-linear-gradient(120deg, oklch(50% 0.16 40) 0 9px, oklch(62% 0.14 55) 9px 18px, oklch(72% 0.12 85) 18px 27px)' },
+  neko: { paper: 'oklch(98.5% 0.01 70)', ink: 'oklch(28% 0.03 60)', accent: 'oklch(55% 0.13 55)', band: 'repeating-linear-gradient(90deg, oklch(78% 0.07 55) 0 6px, transparent 6px 18px, oklch(78% 0.07 55) 18px 21px, transparent 21px 34px)' },
+  shinkai: { paper: 'oklch(22% 0.03 210)', ink: 'oklch(90% 0.02 200)', accent: 'oklch(78% 0.1 195)', band: 'radial-gradient(circle at 6px 4px, oklch(78% 0.1 195 / 0.8) 1.2px, transparent 1.9px) 0 0 / 22px 6px repeat-x, radial-gradient(circle at 16px 2px, oklch(90% 0.02 200 / 0.6) 0.9px, transparent 1.5px) 6px 0 / 30px 6px repeat-x' },
 };
 function renderThemeGrid() {
   const entries = [['default', { name: '標準', icon: 'palette' }], ...Object.entries(THEMES)];
