@@ -1980,14 +1980,15 @@ function setThemes(list) {
 try { S.themes = (JSON.parse(store.get('themes', '[]')) || []).filter((id) => THEMES[id]); } catch { S.themes = []; }
 /* ---- テーマ切り替えダイアログ(サムネイル付き) ---- */
 const THUMB = {
-  none: { paper: 'oklch(98.5% 0.004 235)', ink: 'oklch(27% 0.02 250)', accent: 'oklch(50% 0.115 205)', band: '' },
+  default: { paper: 'oklch(98.5% 0.004 235)', ink: 'oklch(27% 0.02 250)', accent: 'oklch(50% 0.115 205)', band: '' },
   xmas: { paper: 'oklch(98.4% 0.009 95)', ink: 'oklch(25% 0.02 30)', accent: 'oklch(46% 0.17 25)', band: 'repeating-linear-gradient(135deg, oklch(46% 0.17 25) 0 10px, oklch(98.4% 0.009 95) 10px 14px, oklch(41% 0.1 155) 14px 24px, oklch(98.4% 0.009 95) 24px 28px)' },
   newyear: { paper: 'oklch(98.2% 0.016 80)', ink: 'oklch(25% 0.035 35)', accent: 'oklch(46% 0.2 28)', band: 'repeating-linear-gradient(90deg, oklch(46% 0.2 28) 0 14px, oklch(98.2% 0.016 80) 14px 28px)', bandShadow: 'inset 0 -1px 0 oklch(72% 0.12 85)' },
 };
 function renderThemeGrid() {
-  document.getElementById('themeGrid').innerHTML = Object.entries(THEMES).map(([id, t]) => {
-    const th = THUMB[id] || THUMB.none;
-    const locked = id !== 'none' && !S.themes.includes(id);
+  const entries = [['default', { name: '標準', icon: 'palette' }], ...Object.entries(THEMES)];
+  document.getElementById('themeGrid').innerHTML = entries.map(([id, t]) => {
+    const th = THUMB[id] || THUMB.default;
+    const locked = id !== 'default' && !S.themes.includes(id);
     const cur = S.theme === id;
     return `<button class="theme-card" type="button" data-theme-id="${id}"${cur ? ' aria-current="true"' : ''}${locked ? ' data-locked="1"' : ''}>
       <span class="th-thumb" style="background:${th.paper}"><span class="th-band" style="background:${th.band || 'transparent'}${th.bandShadow ? ';box-shadow:' + th.bandShadow : ''}"></span><span class="th-body"><span class="th-line" style="background:${th.ink};opacity:.75;width:62%"></span><span class="th-line" style="background:${th.ink};opacity:.35;width:44%"></span><span class="th-row"><span class="th-dot" style="background:${th.accent}"></span><span class="th-line" style="background:${th.ink};opacity:.5;width:30%"></span><span class="th-btn" style="background:${th.accent}"></span></span></span></span>
@@ -2003,7 +2004,7 @@ function renderThemeGrid() {
     const card = e.target.closest('[data-theme-id]'); if (!card) return;
     const id = card.dataset.themeId;
     dlg.close();
-    if (id !== 'none' && !S.themes.includes(id)) { document.getElementById('codeBtn').click(); return; }
+    if (id !== 'default' && !S.themes.includes(id)) { document.getElementById('codeBtn').click(); return; }
     setTheme(id);
   });
   document.getElementById('themeBtn').addEventListener('click', () => { renderThemeGrid(); dlg.showModal(); });
