@@ -1331,15 +1331,30 @@ const synthN = {
   tap(on) { const f = on === false ? 1568 : 2093; beep(f, 0.04, 'triangle', 0.012); },
 };
 /* ---- ねこ用の鳴き声 ---- */
-const meow = (vol = 0.05, delay = 0, down = false) => {
+const meow = (vol = 0.08, delay = 0, down = false) => {
   if (!S.sound) return;
   try {
-    const c = audio(), t0 = c.currentTime + delay, o = c.createOscillator(), g = c.createGain();
-    o.type = 'sine';
-    if (down) { o.frequency.setValueAtTime(900, t0); o.frequency.exponentialRampToValueAtTime(500, t0 + 0.22); }
-    else { o.frequency.setValueAtTime(620, t0); o.frequency.exponentialRampToValueAtTime(940, t0 + 0.09); o.frequency.exponentialRampToValueAtTime(480, t0 + 0.24); }
-    g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(vol, t0 + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.26);
-    o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + 0.28);
+    const c = audio(), t0 = c.currentTime + delay, dur = down ? 0.42 : 0.6;
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.07);
+    g.gain.setValueAtTime(vol, t0 + dur * 0.55);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    g.connect(master);
+    const contour = down ? [[600, 0], [470, 1]] : [[640, 0], [990, 0.23], [830, 0.55], [430, 1]];
+    const oscs = [];
+    for (const [mult, amt] of [[1, 1], [2, 0.3], [3.01, 0.09]]) {
+      const o = c.createOscillator(); o.type = 'sine';
+      o.frequency.setValueAtTime(contour[0][0] * mult, t0);
+      for (let i = 1; i < contour.length; i++) o.frequency.exponentialRampToValueAtTime(contour[i][0] * mult, t0 + contour[i][1] * dur);
+      const og = c.createGain(); og.gain.value = amt;
+      o.connect(og); og.connect(g); o.start(t0); o.stop(t0 + dur + 0.05);
+      oscs.push(o);
+    }
+    const lfo = c.createOscillator(), lg = c.createGain();
+    lfo.frequency.value = 9; lg.gain.value = 10;
+    lfo.connect(lg); for (const o of oscs) lg.connect(o.frequency);
+    lfo.start(t0); lfo.stop(t0 + dur + 0.05);
   } catch {}
 };
 /* ---- テーマ別セット: 桜(風鈴のベル) ---- */
@@ -1409,12 +1424,12 @@ const synthK = {
     const hi = { plan: 1568, think: 1175, search: 2093, read: 1319, write: 1760, run: 1047, web: 1568, check: 1760, fix: 1976, wait: 1319 };
     beep(hi[kind] || 1568, 0.12, 'triangle', 0.02);
   },
-  start() { beep(1319, 0.12, 'triangle', 0.024); beep(1760, 0.12, 'triangle', 0.024, 0.1); meow(0.04, 0.18); },
-  done() { meow(0.055); beep(1760, 0.14, 'triangle', 0.022, 0.3); beep(2093, 0.16, 'triangle', 0.022, 0.4); },
-  fail() { meow(0.05, 0, true); },
+  start() { beep(1319, 0.12, 'triangle', 0.024); beep(1760, 0.12, 'triangle', 0.024, 0.1); meow(0.07, 0.18); },
+  done() { meow(0.085); beep(1760, 0.14, 'triangle', 0.022, 0.68); beep(2093, 0.16, 'triangle', 0.022, 0.78); },
+  fail() { meow(0.08, 0, true); },
   cancel() { beep(880, 0.12, 'triangle', 0.022); beep(659, 0.14, 'triangle', 0.022, 0.12); },
-  ask() { meow(0.045); meow(0.045, 0.42); },
-  answered(st) { if (st === 'answered' || st === 'approved') { beep(1568, 0.12, 'triangle', 0.022); meow(0.04, 0.1); } else meow(0.04, 0, true); },
+  ask() { meow(0.075); meow(0.075, 0.85); },
+  answered(st) { if (st === 'answered' || st === 'approved') { beep(1568, 0.12, 'triangle', 0.022); meow(0.07, 0.1); } else meow(0.065, 0, true); },
   note() { beep(2093, 0.12, 'triangle', 0.02); beep(1760, 0.12, 'triangle', 0.018, 0.09); },
   knock() { beep(1568, 0.1, 'triangle', 0.024); beep(1568, 0.1, 'triangle', 0.02, 0.11); },
   stop() { if (!gate('stop', 300)) return; for (let i = 0; i < 3; i++) beep(1047, 0.12, 'triangle', 0.024, i * 0.22); },
