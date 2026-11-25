@@ -126,7 +126,9 @@
   --color-focus: oklch(78% 0.1 195); --color-success: oklch(72% 0.11 160);
 }
 :root[data-theme="shinkai"] body::before { content: ""; position: fixed; inset: 0 0 auto 0; height: 6px; z-index: 400; pointer-events: none; background: radial-gradient(circle at 6px 4px, oklch(78% 0.1 195 / 0.8) 1.2px, transparent 1.9px) 0 0 / 22px 6px repeat-x, radial-gradient(circle at 16px 2px, oklch(90% 0.02 200 / 0.6) 0.9px, transparent 1.5px) 6px 0 / 30px 6px repeat-x; }
-.theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: var(--space-sm); margin-top: var(--space-sm); }
+#themeDlg { width: min(64rem, calc(100% - 2rem)); }
+.theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); gap: var(--space-sm); margin-top: var(--space-sm); }
+@media (max-width: 40rem) { .theme-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .theme-card { display: flex; flex-direction: column; gap: var(--space-xs); padding: var(--space-xs); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); background: var(--color-paper-2); color: var(--color-ink); text-align: left; cursor: pointer; font: inherit; }
 .theme-card:hover { border-color: var(--color-accent); }
 .theme-card[aria-current="true"] { border-color: var(--color-accent); box-shadow: inset 0 0 0 var(--rule-hair) var(--color-accent); }
