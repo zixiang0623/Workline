@@ -139,6 +139,7 @@ button, input { font: inherit; color: inherit; }
 .icon-btn:hover { background: var(--color-paper-3); color: var(--color-ink); }
 .icon-btn:active { transform: scale(0.94); }
 .icon-btn[aria-pressed="true"] { box-shadow: inset 0 0 0 var(--rule-hair) var(--color-accent); color: var(--color-accent); }
+.icon-btn[aria-pressed="true"]:focus-visible { box-shadow: none; }
 .icon-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .icon-btn .ic { width: 20px; height: 20px; }
 .menu-btn { display: none; margin-left: calc(var(--space-xs) * -1); }
@@ -870,6 +871,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
       <button class="btn small" id="codeBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-key-round"/></svg><span>シリアルコード</span></button>
       <button class="btn small danger" id="openPurge" type="button"><svg class="ic" aria-hidden="true"><use href="#i-trash-2"/></svg><span>ログをすべて消去…</span></button>
       <p class="rail-copy">©2026 Workline/darumin</p>
+      <p class="rail-copy" id="railVer"></p>
     </div>
   </aside>
 
@@ -2925,6 +2927,7 @@ $('#lightbox').addEventListener('close', () => { $('#lbImg').removeAttribute('sr
   const parts = (v) => String(v || '').split('-')[0].split('.').map((n) => parseInt(n, 10) || 0);
   const cmp = (a, b) => { const x = parts(a), y = parts(b); for (let i = 0; i < 3; i++) { const d = (x[i] || 0) - (y[i] || 0); if (d) return d; } return 0; };
   const get = (u) => fetch(u, { cache: 'no-store' }).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); });
+  get('/api/health').then((mine) => { if (mine.version) document.getElementById('railVer').textContent = 'v' + mine.version; }).catch(() => {});
   Promise.all([get('/api/health'), get(ORIGIN)]).then(([mine, origin]) => {
     if (!mine.version || !origin.version || cmp(origin.version, mine.version) <= 0) return;
     document.getElementById('updNew').textContent = 'v' + origin.version;
