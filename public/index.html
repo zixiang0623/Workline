@@ -478,14 +478,87 @@ dialog.lb::backdrop { background: var(--color-scrim); }
 /* 3つ目の音(テーマの音)があるときは、スマホでは名前を1行目に出し、ボタンを下に3等分で並べる */
 .sfx-3 .sfx-row { grid-template-columns: minmax(0, 1fr) repeat(3, auto); }
 @media (max-width: 40rem) { .sfx-3 .sfx-row { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: var(--space-2xs); } .sfx-3 .sfx-row > span { grid-column: 1 / -1; } .sfx-3 .sfx-row .btn { padding: 0 var(--space-xs); white-space: nowrap; } .sfx-3 .sfx-row .btn .ic { display: none; } }
+.wel { --ease-out: cubic-bezier(.22, 1, .36, 1); --ease-spring: cubic-bezier(.34, 1.56, .64, 1); overflow-x: hidden; }
+.wel[open] { animation: wel-in .5s var(--ease-out); }
+.wel[open]::backdrop { animation: wel-fade .4s ease-out; }
+.wel.out { animation: wel-out .22s ease-in forwards; }
+.wel.out::backdrop { animation: wel-fade-out .22s ease-in forwards; }
 .wel .wiz-head h2 { color: var(--color-ink); }
-.wel .wiz-steps li[data-state="current"] { background: var(--color-accent); }
+.wel .wiz-head h2 > .ic, .wel .wiz-head h2 > .wel-pulse { animation: wel-pop .6s var(--ease-spring) both; }
+.wel .wiz-head h2 > span { animation: wel-rise .5s .05s var(--ease-out) both; }
+.wel .wiz-steps li { position: relative; overflow: hidden; }
+.wel .wiz-steps li[data-state="current"] { background: var(--color-paper-3); }
+.wel .wiz-steps li::after { content: ""; position: absolute; inset: 0; background: var(--color-accent); transform: scaleX(0); transform-origin: left; }
+.wel .wiz-steps li[data-state="current"]::after { animation: wel-fill .7s var(--ease-out) forwards; }
+.wel .wiz-steps li[data-state="done"]::after { transform: scaleX(1); background: var(--color-ink-2); }
+.wel .wiz-body { min-height: 22rem; }
+.wel .wiz-body.fwd > :not(.wel-list) { animation: wel-fwd .5s var(--ease-out) both; }
+.wel .wiz-body.back > :not(.wel-list) { animation: wel-back .5s var(--ease-out) both; }
+.wel .wiz-body > :nth-child(2) { animation-delay: .07s; }
+.wel .wiz-body > :nth-child(3) { animation-delay: .14s; }
+.wel .wiz-body > :nth-child(4) { animation-delay: .21s; }
+.wel .wiz-body > :nth-child(5) { animation-delay: .28s; }
 .wel-list { list-style: none; display: flex; flex-direction: column; gap: var(--space-sm); }
-.wel-list li { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); gap: var(--space-xs); color: var(--color-ink-2); }
+.wel-list li { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); gap: var(--space-xs); color: var(--color-ink-2); animation: wel-fwd .55s var(--ease-out) both; }
+.wel-list li:nth-child(1) { animation-delay: .22s; }
+.wel-list li:nth-child(2) { animation-delay: .32s; }
+.wel-list li:nth-child(3) { animation-delay: .42s; }
+.wel-list li:nth-child(4) { animation-delay: .52s; }
 .wel-list .ic { color: var(--color-accent); margin-top: var(--space-2xs); }
 .wel-list b { display: block; color: var(--color-ink); }
 .wel .howto { margin-top: 0; }
+.wel .howto li { animation: wel-hl 6s infinite; }
+.wel .howto li:nth-child(2) { animation-delay: 2s; }
+.wel .howto li:nth-child(3) { animation-delay: 4s; }
+.wel .wiz-warn { animation: wel-fwd .5s var(--ease-out) both, wel-shake .6s .7s ease-in-out; }
 .wel #welBack[hidden] { display: block; visibility: hidden; }
+.wel .wiz-actions { position: relative; }
+.wel .btn { transition: transform .18s var(--ease-out), background-color .18s, border-color .18s; }
+.wel .btn:hover { transform: translateY(-1px); }
+.wel .btn:active { transform: scale(.97); }
+.wel #welNext .ic { animation: wel-nudge 1.4s ease-in-out infinite; }
+.wel #welBack .ic { transition: transform .2s var(--ease-out); }
+.wel #welBack:hover .ic { transform: translateX(-3px); }
+.wel-pulse path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: wel-draw 1.1s .1s var(--ease-out) forwards; }
+.wel-demo { border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-ctl); background: var(--color-paper-2, var(--color-paper)); overflow: hidden; }
+.wd-head { display: flex; align-items: center; gap: var(--space-xs); padding: var(--space-xs) var(--space-sm); border-bottom: var(--rule-hair) solid var(--color-rule); font-size: var(--text-sm); }
+.wd-head small { margin-left: auto; color: var(--color-muted); font-size: var(--text-xs); }
+.wd-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-accent); animation: wel-beat 1.2s ease-in-out infinite; }
+.wd-head[data-done="true"] .wd-dot { background: var(--color-success); animation: none; }
+.wd-steps { list-style: none; display: flex; flex-direction: column; min-height: 8.5rem; padding: var(--space-3xs) 0; }
+.wd-steps li { display: grid; grid-template-columns: 1.25rem minmax(0, auto) minmax(0, 1fr); align-items: center; gap: var(--space-xs); padding: 6px var(--space-sm); font-size: var(--text-sm); animation: wel-step .45s var(--ease-out) both; }
+.wd-steps li code { font-family: var(--font-data); font-size: var(--text-xs); color: var(--color-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wd-steps li .ic { width: 16px; height: 16px; color: var(--color-success); display: none; animation: wel-pop .4s var(--ease-spring) both; }
+.wd-steps li.done .ic { display: block; }
+.wd-spin { width: 14px; height: 14px; border: 2px solid var(--color-paper-3); border-top-color: var(--color-accent); border-radius: 50%; animation: wel-spin .8s linear infinite; }
+.wd-steps li.done .wd-spin { display: none; }
+.wel-flow { display: flex; align-items: center; gap: var(--space-2xs); }
+.wel-flow > span { padding: 4px var(--space-sm); border: var(--rule-hair) solid var(--color-rule); border-radius: 99px; font-size: var(--text-xs); color: var(--color-ink-2); background: var(--color-paper); animation: wel-chip 5.4s infinite; }
+.wel-flow > span:nth-of-type(2) { animation-delay: 1.8s; }
+.wel-flow > span:nth-of-type(3) { animation-delay: 3.6s; }
+.fl-line { position: relative; flex: 1; height: 2px; border-radius: 2px; background: var(--color-paper-3); overflow: hidden; }
+.fl-line::after { content: ""; position: absolute; top: 0; left: 0; width: 28%; height: 100%; border-radius: 2px; background: var(--color-accent); animation: wel-travel 1.8s linear infinite; }
+.fl-line:nth-of-type(2)::after { animation-delay: .9s; }
+.wel-spark { position: absolute; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%; background: var(--c, var(--color-accent)); pointer-events: none; animation: wel-burst .7s var(--ease-out) forwards; }
+@keyframes wel-in { from { opacity: 0; transform: translateY(18px) scale(.95); } to { opacity: 1; transform: none; } }
+@keyframes wel-out { to { opacity: 0; transform: translateY(10px) scale(.97); } }
+@keyframes wel-fade { from { opacity: 0; } }
+@keyframes wel-fade-out { to { opacity: 0; } }
+@keyframes wel-fwd { from { opacity: 0; transform: translateX(22px); } to { opacity: 1; transform: none; } }
+@keyframes wel-back { from { opacity: 0; transform: translateX(-22px); } to { opacity: 1; transform: none; } }
+@keyframes wel-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes wel-pop { from { opacity: 0; transform: scale(.4) rotate(-12deg); } to { opacity: 1; transform: none; } }
+@keyframes wel-fill { to { transform: scaleX(1); } }
+@keyframes wel-draw { to { stroke-dashoffset: 0; } }
+@keyframes wel-nudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(3px); } }
+@keyframes wel-beat { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: .55; } }
+@keyframes wel-spin { to { transform: rotate(360deg); } }
+@keyframes wel-step { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes wel-hl { 0%, 30%, 100% { color: var(--color-ink-2); transform: none; } 6%, 24% { color: var(--color-accent); transform: translateX(4px); } }
+@keyframes wel-chip { 0%, 33%, 100% { border-color: var(--color-rule); color: var(--color-ink-2); transform: none; } 6%, 27% { border-color: var(--color-accent); color: var(--color-accent); transform: translateY(-2px); } }
+@keyframes wel-travel { from { transform: translateX(-110%); } to { transform: translateX(380%); } }
+@keyframes wel-shake { 0%, 100% { transform: none; } 20% { transform: translateX(-4px); } 40% { transform: translateX(4px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(2px); } }
+@keyframes wel-burst { from { opacity: 1; transform: translate(0, 0) scale(1); } to { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(.2); } }
 .wiz-actions { display: flex; justify-content: space-between; align-items: center; gap: var(--space-sm); margin-top: var(--space-xs); }
 .wiz-actions .wiz-actions { margin-top: 0; }
 .trace { position: relative; width: 100%; aspect-ratio: 14 / 5; border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-ctl); background: var(--color-paper); touch-action: none; cursor: crosshair; overflow: hidden; }
@@ -851,7 +924,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
     <header class="wiz-head"><h2 id="welTitle"></h2><button class="icon-btn" id="welClose" type="button" aria-label="閉じる"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></header>
     <ol class="wiz-steps" id="welSteps"></ol>
     <div class="wiz-body" id="welBody"></div>
-    <div class="wiz-actions"><button class="btn" id="welBack" type="button">戻る</button><button class="btn primary" id="welNext" type="button" autofocus>次へ</button></div>
+    <div class="wiz-actions" id="welActions"><button class="btn" id="welBack" type="button">戻る</button><button class="btn primary" id="welNext" type="button" autofocus>次へ</button></div>
   </div>
 </dialog>
 <dialog class="wiz" id="sfxTest" aria-labelledby="sfxTestTitle">
@@ -1635,18 +1708,39 @@ el.state.addEventListener('submit', (e) => {
   S.booted = false; boot();
 });
 /* ---- ようこそガイド(初めて開いたときに1回。バーのメニューからいつでも開き直せる) ---- */
+const welReduce = matchMedia('(prefers-reduced-motion: reduce)');
+let welTimers = [], welI = 0, welClosing = false;
+const welLater = (fn, ms) => { const t = setTimeout(fn, ms); welTimers.push(t); return t; };
+const welClear = () => { welTimers.forEach(clearTimeout); welTimers = []; };
+const PULSE = '<svg class="ic wel-pulse" viewBox="0 0 24 24" aria-hidden="true"><path pathLength="1" d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></svg>';
+const DEMO = [['ファイルを読む', 'src/worker.js'], ['コードを検索する', 'VERSION'], ['ファイルを編集する', 'package.json'], ['テストを実行する', '12 passed']];
+function welDemo() {
+  const ol = $('#wdSteps'), head = $('#wdHead'), st = $('#wdState');
+  if (!ol) return;
+  const row = ([a, b]) => { const li = document.createElement('li'); li.innerHTML = `<span class="wd-spin"></span>${icon('check')}<b>${esc(a)}</b><code>${esc(b)}</code>`; return li; };
+  ol.innerHTML = ''; head.dataset.done = 'false'; st.textContent = '実行中';
+  if (welReduce.matches) { DEMO.forEach((d) => { const li = row(d); li.classList.add('done'); ol.appendChild(li); }); head.dataset.done = 'true'; st.textContent = '完了'; return; }
+  let i = 0, prev = null;
+  const add = () => {
+    if (prev) prev.classList.add('done');
+    if (i >= DEMO.length) { head.dataset.done = 'true'; st.textContent = '完了'; welLater(welDemo, 2200); return; }
+    prev = row(DEMO[i++]); ol.appendChild(prev); welLater(add, 1000);
+  };
+  welLater(add, 350);
+}
 const WEL = [
-  { t: 'Workline へようこそ', h: () => `<p>AIがいま何をしているかを、この画面でリアルタイムに眺められます。</p>
+  { t: 'Workline へようこそ', ic: PULSE, after: welDemo, h: () => `<p>AIがいま何をしているかを、リアルタイムで眺められます。</p>
+    <div class="wel-demo" aria-hidden="true"><div class="wd-head" id="wdHead"><span class="wd-dot"></span><b>Claude</b><small id="wdState">実行中</small></div><ol class="wd-steps" id="wdSteps"></ol></div>
     <ul class="wel-list">
-      <li>${icon('activity')}<div><b>1ステップずつ流れる</b>AIが作業を進めるたびに、ここが更新されます。複数のAIが同時に動いても、名前とアイコンで見分けられます。</div></li>
-      <li>${icon('bell')}<div><b>音と通知</b>作業の節目で、小さな音や通知でお知らせします。右上のボタンから切り替えられます。</div></li>
-      <li>${icon('inbox')}<div><b>司令・要求</b>AIからの確認や、あなたからのお願いは、左の一覧の inbox にまとまります。</div></li>
+      <li>${icon('bell')}<div><b>音と通知</b>作業の節目で、小さな音や通知でお知らせします。</div></li>
+      <li>${icon('inbox')}<div><b>司令・要求</b>AIとのやり取りは、左の一覧の inbox にまとまります。</div></li>
     </ul>` },
-  { t: 'AIとつなぐ', h: () => `<p>次のURLをAIに渡すと、作業がここに流れ始めます。</p>
+  { t: 'AIとつなぐ', ic: icon('message-square-text'), h: () => `<div class="wel-flow" aria-hidden="true"><span>あなた</span><i class="fl-line"></i><span>AI</span><i class="fl-line"></i><span>Workline</span></div>
+    <p>次のURLをAIに渡すと、作業がここに流れ始めます。</p>
     <div class="endpoint"><code>${esc(endpoint())}</code><button class="btn small" type="button" data-copy="${esc(endpoint())}">${icon('copy')}<span>コピー</span></button></div>
     <button class="btn" type="button" data-copy-brief>${icon('message-square-text')}<span>AIへの依頼文をコピー</span></button>
     <ol class="howto"><li><span>URLか依頼文を、AIに渡す</span></li><li><span>AIが <code>startTask</code> で名前とモデルを申告する</span></li><li><span>作業が1ステップずつ流れ始める</span></li></ol>` },
-  { t: '安全に使うために', h: () => `${S.auth && S.auth.writeOpen ? `<div class="wiz-warn">${icon('lock')}<span>いま、書き込みトークンが未設定です。URLを知っている人は誰でも送信できます。</span></div>` : ''}
+  { t: '安全に使うために', ic: icon('shield-check'), h: () => `${S.auth && S.auth.writeOpen ? `<div class="wiz-warn">${icon('lock')}<span>いま、書き込みトークンが未設定です。URLを知っている人は誰でも送信できます。</span></div>` : ''}
     <ul class="wel-list">
       <li>${icon('key-round')}<div><b>書き込みトークン(MCP_TOKEN)</b>AIが送信するときの鍵です。Cloudflare のシークレットに設定してください。未設定の間は、左の一覧に警告が出ます。</div></li>
       <li>${icon('lock')}<div><b>閲覧用パスワード(VIEW_TOKEN)</b>設定すると、見る人にも入力が必要になります。入力した内容は、この端末のブラウザに保存され、次回から省けます。</div></li>
@@ -1654,22 +1748,46 @@ const WEL = [
       <li>${icon('circle-arrow-up')}<div><b>更新のお知らせ</b>新しい版が出ると、左の一覧に案内が出ます。</div></li>
     </ul>` },
 ];
-let welI = 0;
-function renderWelcome() {
-  const last = welI === WEL.length - 1;
-  $('#welTitle').textContent = WEL[welI].t;
+function renderWelcome(dir) {
+  welClear();
+  const last = welI === WEL.length - 1, pg = WEL[welI];
+  $('#welTitle').innerHTML = pg.ic + '<span>' + esc(pg.t) + '</span>';
   $('#welSteps').innerHTML = WEL.map((_, i) => `<li data-state="${i < welI ? 'done' : i === welI ? 'current' : 'todo'}"></li>`).join('');
-  $('#welBody').innerHTML = WEL[welI].h();
+  const body = $('#welBody'); body.className = 'wiz-body ' + (dir || 'fwd'); body.innerHTML = pg.h();
   $('#welBack').hidden = welI === 0;
-  $('#welNext').textContent = last ? 'はじめる' : '次へ';
+  $('#welBack').innerHTML = icon('chevron-left') + '<span>戻る</span>';
+  $('#welNext').innerHTML = '<span>' + (last ? 'はじめる' : '次へ') + '</span>' + icon(last ? 'check' : 'chevron-right');
+  if (pg.after) pg.after();
 }
-function openWelcome(i = 0) { welI = i; renderWelcome(); if (!$('#welcome').open) $('#welcome').showModal(); }
+function openWelcome(i = 0) { const d = $('#welcome'); welClosing = false; d.classList.remove('out'); welI = i; renderWelcome('fwd'); if (!d.open) d.showModal(); }
 function maybeWelcome() { if (store.get('welcomed', '0') !== '1') openWelcome(); }
+function welBurst() {
+  const b = $('#welNext'), host = $('#welActions'), r = b.getBoundingClientRect(), h = host.getBoundingClientRect();
+  for (let i = 0; i < 16; i++) {
+    const s = document.createElement('i'), a = Math.random() * Math.PI * 2, d = 40 + Math.random() * 70;
+    s.className = 'wel-spark';
+    s.style.cssText = `left:${r.left - h.left + r.width / 2}px;top:${r.top - h.top + r.height / 2}px;--dx:${(Math.cos(a) * d).toFixed(1)}px;--dy:${(Math.sin(a) * d - 24).toFixed(1)}px;--c:${i % 3 ? 'var(--color-accent)' : 'var(--color-ink-2)'};animation-delay:${Math.round(Math.random() * 70)}ms`;
+    host.appendChild(s); setTimeout(() => s.remove(), 900);
+  }
+}
+function closeWelcome(celebrate) {
+  const d = $('#welcome'); if (!d.open || welClosing) return;
+  welClear();
+  if (welReduce.matches) { d.close(); return; }
+  welClosing = true;
+  const fin = () => { d.classList.add('out'); setTimeout(() => { d.close(); d.classList.remove('out'); welClosing = false; }, 230); };
+  if (celebrate) { welBurst(); setTimeout(fin, 450); } else fin();
+}
 $('#guideBtn').addEventListener('click', () => openWelcome());
-$('#welClose').addEventListener('click', () => $('#welcome').close());
-$('#welBack').addEventListener('click', () => { welI = Math.max(0, welI - 1); renderWelcome(); });
-$('#welNext').addEventListener('click', () => { if (welI >= WEL.length - 1) $('#welcome').close(); else { welI++; renderWelcome(); } });
-$('#welcome').addEventListener('close', () => store.set('welcomed', '1'));
+$('#welClose').addEventListener('click', () => closeWelcome());
+$('#welBack').addEventListener('click', () => { if (welI > 0) { welI--; renderWelcome('back'); } });
+$('#welNext').addEventListener('click', () => { if (welI >= WEL.length - 1) closeWelcome(true); else { welI++; renderWelcome('fwd'); } });
+$('#welcome').addEventListener('cancel', (e) => { e.preventDefault(); closeWelcome(); });
+$('#welcome').addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' && welI < WEL.length - 1) { welI++; renderWelcome('fwd'); }
+  else if (e.key === 'ArrowLeft' && welI > 0) { welI--; renderWelcome('back'); }
+});
+$('#welcome').addEventListener('close', () => { welClear(); store.set('welcomed', '1'); });
 
 document.addEventListener('click', async (e) => {
   const c = e.target.closest('[data-copy],[data-copy-brief],[data-copy-endpoint],[data-retry],#copyLog'); if (!c) return;
