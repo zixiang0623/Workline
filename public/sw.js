@@ -2,7 +2,7 @@
  * - PWA: ホーム画面に追加できるようにし、通信できないときは最後に見た画面を出す(API・WebSocket・画像は一切キャッシュしない)
  * - 通知: Web Push を受け取って表示する。画面を見ているときは、通知を出さずに画面へ知らせるだけにする(iOS は常に出す必要がある)
  */
-const SHELL = 'workline-shell-v2.5';
+const SHELL = 'workline-shell-v2.6';
 const IDB = 'workline-sw';
 
 const idb = () => new Promise((res, rej) => {

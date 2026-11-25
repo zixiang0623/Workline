@@ -6,6 +6,7 @@
 <title>Workline</title>
 <meta name="description" content="AIが今なにをしているかを、MCPで受け取ってリアルタイムに表示するビューアー">
 <meta name="theme-color" content="#f7f9fa">
+<script>try{var _t=localStorage.getItem('workline.theme'),_l=JSON.parse(localStorage.getItem('workline.themes')||'[]');if(_t&&_t!=='default'&&_l.indexOf(_t)>=0)document.documentElement.setAttribute('data-theme',_t)}catch(e){}</script>
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
@@ -67,6 +68,20 @@
   --bar-h: 52px; --rail-w: 19rem; --measure: 58rem;
 }
 
+/* ---- テーマ(シリアルコードで獲得)。色の変数だけを差し替える。どれも紙色の上で文字が4.5:1以上 ---- */
+:root[data-theme="xmas"] {
+  --color-paper: oklch(98.4% 0.009 95); --color-paper-2: oklch(96% 0.013 95); --color-paper-3: oklch(93% 0.017 95);
+  --color-ink: oklch(24% 0.03 165); --color-ink-2: oklch(40% 0.028 165); --color-muted: oklch(46% 0.022 165);
+  --color-rule: oklch(89% 0.015 95);
+  --color-accent: oklch(46% 0.17 25); --color-accent-ink: oklch(98.4% 0.009 95); --color-accent-soft: oklch(94.5% 0.032 25);
+  --color-focus: oklch(46% 0.17 25); --color-success: oklch(41% 0.1 155);
+}
+:root[data-theme="xmas"] body::before { content: ""; position: fixed; inset: 0 0 auto 0; height: 3px; z-index: 400; pointer-events: none; background: repeating-linear-gradient(135deg, oklch(46% 0.17 25) 0 10px, oklch(98.4% 0.009 95) 10px 14px, oklch(41% 0.1 155) 14px 24px, oklch(98.4% 0.009 95) 24px 28px); }
+.code-form { display: grid; gap: var(--space-xs); }
+.code-form label { font-size: var(--text-sm); color: var(--color-ink-2); }
+.code-form .btn { justify-self: start; }
+.code-msg { min-height: 1lh; font-size: var(--text-sm); color: var(--color-error); }
+.code-msg[data-ok="true"] { color: var(--color-success); }
 *, *::before, *::after { box-sizing: border-box; }
 html, body { overflow-x: clip; }
 html { scrollbar-color: var(--color-muted) var(--color-paper); scroll-padding-top: calc(var(--bar-h) + 140px); }
@@ -460,6 +475,9 @@ dialog.lb::backdrop { background: var(--color-scrim); }
 .sfx-row span { font-size: var(--text-sm); min-width: 0; overflow-wrap: anywhere; }
 .sfx-row .btn { min-width: 6.2rem; }
 @media (max-width: 40rem) { .sfx-row { grid-template-columns: minmax(0, 1fr) auto auto; } .sfx-row .btn { min-width: 0; } }
+/* 3つ目の音(テーマの音)があるときは、スマホでは名前を1行目に出し、ボタンを下に3等分で並べる */
+.sfx-3 .sfx-row { grid-template-columns: minmax(0, 1fr) repeat(3, auto); }
+@media (max-width: 40rem) { .sfx-3 .sfx-row { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: var(--space-2xs); } .sfx-3 .sfx-row > span { grid-column: 1 / -1; } .sfx-3 .sfx-row .btn { padding: 0 var(--space-xs); white-space: nowrap; } .sfx-3 .sfx-row .btn .ic { display: none; } }
 .wel .wiz-head h2 { color: var(--color-ink); }
 .wel .wiz-steps li[data-state="current"] { background: var(--color-accent); }
 .wel-list { list-style: none; display: flex; flex-direction: column; gap: var(--space-sm); }
@@ -686,6 +704,9 @@ dialog.lb::backdrop { background: var(--color-scrim); }
 <symbol id="i-circle-dashed" viewBox="0 0 24 24"><path d="M10.1 2.182a10 10 0 0 1 3.8 0" /> <path d="M13.9 21.818a10 10 0 0 1-3.8 0" /> <path d="M17.609 3.721a10 10 0 0 1 2.69 2.7" /> <path d="M2.182 13.9a10 10 0 0 1 0-3.8" /> <path d="M20.279 17.609a10 10 0 0 1-2.7 2.69" /> <path d="M21.818 10.1a10 10 0 0 1 0 3.8" /> <path d="M3.721 6.391a10 10 0 0 1 2.7-2.69" /> <path d="M6.391 20.279a10 10 0 0 1-2.69-2.7" /></symbol>
 <symbol id="i-circle-minus" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="M8 12h8" /></symbol>
 <symbol id="i-audio-lines" viewBox="0 0 24 24"><path d="M2 10v3" /> <path d="M6 6v11" /> <path d="M10 3v18" /> <path d="M14 8v7" /> <path d="M18 5v13" /> <path d="M22 10v3" /></symbol>
+<symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z" /> <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" /> <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" /> <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" /> <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" /></symbol>
+<symbol id="i-tree-pine" viewBox="0 0 24 24"><path d="m17 14 3 3.3a1 1 0 0 1-.7 1.7H4.7a1 1 0 0 1-.7-1.7L7 14h-.3a1 1 0 0 1-.7-1.7L9 9h-.2A1 1 0 0 1 8 7.3L12 3l4 4.3a1 1 0 0 1-.8 1.7H15l3 3.3a1 1 0 0 1-.7 1.7H17Z" /> <path d="M12 22v-3" /></symbol>
+<symbol id="i-gift" viewBox="0 0 24 24"><path d="M12 7v14" /> <path d="M20 11v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8" /> <path d="M7.5 7a1 1 0 0 1 0-5A4.8 8 0 0 1 12 7a4.8 8 0 0 1 4.5-5 1 1 0 0 1 0 5" /> <rect x="3" y="7" width="18" height="4" rx="1" /></symbol>
 <symbol id="i-play" viewBox="0 0 24 24"><path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z" /></symbol>
 <symbol id="i-flask-conical" viewBox="0 0 24 24"><path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2" /> <path d="M6.453 15h11.094" /> <path d="M8.5 2h7" /></symbol>
 <symbol id="i-square" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" /></symbol>
@@ -764,6 +785,8 @@ dialog.lb::backdrop { background: var(--color-scrim); }
       <button class="btn small" id="copyEndpoint" type="button" data-copy-endpoint><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg><span>MCPのURLをコピー</span></button>
       <button class="btn small" id="sfxMode" type="button"><svg class="ic" aria-hidden="true"><use href="#i-audio-lines"/></svg><span id="sfxModeT"></span></button>
       <button class="btn small" id="sfxTestBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-flask-conical"/></svg><span>効果音テスト</span></button>
+      <button class="btn small" id="themeBtn" type="button" hidden><svg class="ic" aria-hidden="true"><use href="#i-palette"/></svg><span id="themeBtnT"></span></button>
+      <button class="btn small" id="codeBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-key-round"/></svg><span>シリアルコード</span></button>
       <button class="btn small danger" id="openPurge" type="button"><svg class="ic" aria-hidden="true"><use href="#i-trash-2"/></svg><span>ログをすべて消去…</span></button>
       <p class="rail-copy">©2026 Workline/darumin</p>
     </div>
@@ -834,9 +857,21 @@ dialog.lb::backdrop { background: var(--color-scrim); }
 <dialog class="wiz" id="sfxTest" aria-labelledby="sfxTestTitle">
   <div class="wiz-in">
     <header class="wiz-head"><h2 id="sfxTestTitle" style="color:var(--color-ink)">効果音テスト</h2><button class="icon-btn" id="sfxTestClose" type="button" aria-label="閉じる"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></header>
-    <p class="sfx-note">すべての音を、Beep(コードで作った音)と Earshot(ファイルの音)で聞き比べられます。通知音のオン/オフには関係なく鳴ります。</p>
+    <p class="sfx-note">すべての音を、Beep(コードで作った音)と Earshot(ファイルの音)で聞き比べられます。獲得したテーマの音も、ここに並びます。通知音のオン/オフには関係なく鳴ります。</p>
     <div class="sfx-all"><button class="btn small" type="button" data-all="beep"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg><span>Beep を全部聞く</span></button><button class="btn small" type="button" data-all="earshot"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg><span>Earshot を全部聞く</span></button></div>
     <div id="sfxList"></div>
+  </div>
+</dialog>
+<dialog class="wiz" id="codeDlg" aria-labelledby="codeTitle">
+  <div class="wiz-in">
+    <header class="wiz-head"><h2 id="codeTitle" style="color:var(--color-ink)">シリアルコード</h2><button class="icon-btn" id="codeClose" type="button" aria-label="閉じる"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></header>
+    <p class="sfx-note">コードを入力すると、テーマと効果音が手に入ります。獲得したテーマはこのWorklineに記録され、どの端末からでも使えます。</p>
+    <form class="code-form" id="codeForm" autocomplete="off">
+      <label for="codeIn">コード</label>
+      <input class="field" id="codeIn" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="64" required>
+      <p class="code-msg" id="codeMsg" role="status" aria-live="polite"></p>
+      <button class="btn primary" id="codeGo" type="submit"><svg class="ic" aria-hidden="true"><use href="#i-gift"/></svg><span>受け取る</span></button>
+    </form>
   </div>
 </dialog>
 <dialog class="lb" id="lightbox" aria-label="スクリーンショットの拡大表示">
@@ -897,7 +932,7 @@ const FINISH_TEXT = { done: '作業が完了しました', failed: '作業が失
 /* ================= state ================= */
 const S = {
   tasks: new Map(), sel: null, maxId: 0, follow: true, agents: new Map(), filter: '', fsig: '', mode: store.get('mode', 'tree'), scope: store.get('scope', 'self'), fold: new Map(), rsig: '', ssig: '', chips: '',
-  newestFirst: store.get('order', 'new') === 'new', sound: store.get('sound', '0') === '1', sfx: store.get('sfx', 'beep') === 'earshot' ? 'earshot' : 'beep',
+  newestFirst: store.get('order', 'new') === 'new', sound: store.get('sound', '0') === '1', sfx: store.get('sfx', 'beep') === 'earshot' ? 'earshot' : 'beep', sfxBase: store.get('sfx', 'beep') === 'earshot' ? 'earshot' : 'beep', theme: store.get('theme', 'default'), themes: [],
   conn: 'connecting', offset: 0, auth: null, token: store.get('token', ''), planOpen: true,
   sig: '', expanded: new Set(), lastNow: '', lastProgress: 0, rows: new Map(), stepEls: new Map(), booted: false,
 };
@@ -1053,12 +1088,54 @@ const SAMPLE = {
   online: () => ['online', 0.6], offline: () => ['offline', 0.6],
   tap: (on) => [on === null ? 'tap' : on ? 'toggle_on' : 'toggle_off', 0.5, 0.04],
 };
+/* ---- テーマ「クリスマス」の音: ベル・グロッケン・そりの鈴。ファイルは使わず、Beepと同じく Web Audio で作る ---- */
+// ベル: 鐘らしい倍音(1 : 2.76 : 5.4 : 8.93)を重ねて、高い倍音ほど早く消す
+function bell(freq, dur = 0.9, gain = 0.03, delay = 0) {
+  for (const [r, a] of [[1, 1], [2.76, 0.42], [5.4, 0.2], [8.93, 0.08]]) { if (freq * r < 12000) beep(freq * r, dur / (1 + r * 0.35), 'sine', gain * a, delay); }
+}
+// グロッケン(オルゴール)の一音
+function tink(freq, gain = 0.03, delay = 0) { beep(freq, 0.28, 'triangle', gain, delay); beep(freq * 3.01, 0.09, 'sine', gain * 0.35, delay); }
+// そりの鈴: 高い帯域のノイズに、小さな金属の響きを重ねる
+function jingle(n = 3, gain = 0.04, delay = 0, gap = 0.05) {
+  for (let i = 0; i < n; i++) { const d = delay + i * gap + (i % 2 ? 0.012 : 0); puff(0.07, gain, { hp: 6000, delay: d }); beep(4200 + (i % 3) * 700, 0.1, 'sine', gain * 0.25, d); beep(6100, 0.07, 'sine', gain * 0.15, d); }
+}
+const synthX = {
+  step(kind) {
+    if (!gate('step', 140)) return;
+    switch (kind) {
+      case 'plan': tink(1047, 0.03); tink(1319, 0.03, 0.08); break;
+      case 'think': bell(392, 0.7, 0.022); break;
+      case 'search': tink(1760, 0.022); tink(2349, 0.022, 0.07); break;
+      case 'read': jingle(2, 0.035, 0, 0.07); break;
+      case 'write': [1319, 1568, 1319].forEach((f, i) => tink(f, 0.024, i * 0.07)); break;
+      case 'run': jingle(4, 0.04, 0, 0.045); break;
+      case 'web': bell(880, 0.4, 0.02); bell(659, 0.5, 0.02, 0.09); break;
+      case 'check': tink(1568, 0.03); tink(2093, 0.03, 0.08); break;
+      case 'fix': [1175, 1175, 1568].forEach((f, i) => tink(f, 0.026, i * 0.07)); break;
+      case 'wait': bell(523, 0.5, 0.014); break;
+      default: tink(1319, 0.03);
+    }
+  },
+  start() { bell(784, 0.5, 0.03); bell(988, 0.5, 0.03, 0.1); bell(1175, 0.9, 0.03, 0.2); jingle(2, 0.03, 0.2, 0.08); },
+  done() { bell(1047, 0.5, 0.03); bell(1319, 0.5, 0.03, 0.1); bell(1568, 0.6, 0.03, 0.2); bell(2093, 1.1, 0.03, 0.3); jingle(5, 0.04, 0.28, 0.05); },
+  fail() { bell(293, 1.2, 0.05); bell(220, 1.6, 0.05, 0.22); },
+  cancel() { bell(587, 0.5, 0.03); bell(440, 0.8, 0.03, 0.14); },
+  ask() { for (let i = 0; i < 2; i++) { bell(1319, 0.8, 0.035, i * 0.34); bell(1047, 0.9, 0.035, i * 0.34 + 0.16); } },
+  answered(st) { if (st === 'answered' || st === 'approved') { bell(988, 0.4, 0.03); bell(1319, 0.8, 0.03, 0.1); } else bell(330, 0.5, 0.03); },
+  note() { tink(1568, 0.035); tink(2093, 0.03, 0.09); },
+  knock() { bell(262, 0.3, 0.05); bell(262, 0.3, 0.05, 0.14); jingle(2, 0.03, 0, 0.13); },
+  stop() { if (!gate('stop', 300)) return; for (let i = 0; i < 3; i++) { bell(466, 0.5, 0.045, i * 0.24); bell(659, 0.5, 0.03, i * 0.24 + 0.01); } },
+  online() { bell(784, 0.4, 0.025); bell(1175, 0.8, 0.025, 0.1); },
+  offline() { bell(659, 0.4, 0.025); bell(440, 0.8, 0.025, 0.1); },
+  tap(on) { const f = on === false ? 1568 : 2349; beep(f, 0.05, 'sine', 0.014); beep(f * 2.76, 0.03, 'sine', 0.005); },
+};
 const GATE = { step: 140, tap: 45, stop: 300 };
 const sfx = {};
 for (const k of Object.keys(synth)) {
   sfx[k] = (...a) => {
     if (!S.sound) return;
     if (GATE[k] && !gate(k, GATE[k])) return;
+    if (S.sfx === 'xmas') { lastAt[k] = 0; (synthX[k] || synth[k])(...a); return; }   // テーマの音(クリスマス)
     if (S.sfx === 'earshot') {   // Earshot: the files in /sfx. Beep: the synthesized sounds below
       loadSamples();
       const m = SAMPLE[k] && SAMPLE[k](...a);
@@ -1072,7 +1149,7 @@ for (const k of Object.keys(synth)) {
 document.addEventListener('click', (e) => {
   if (!S.sound) return;
   const b = e.target.closest && e.target.closest('button, a.btn, a.icon-btn, [role="tab"], .tab, .chip, .trow, summary');
-  if (!b || b.disabled || b.id === 'soundBtn' || b.id === 'sfxMode' || b.closest('#sfxTest')) return;
+  if (!b || b.disabled || b.id === 'soundBtn' || b.id === 'sfxMode' || b.id === 'themeBtn' || b.closest('#sfxTest') || b.closest('#codeDlg')) return;
   sfx.tap(b.hasAttribute('aria-pressed') ? b.getAttribute('aria-pressed') === 'true' : null);
 });
 
@@ -1162,11 +1239,13 @@ function upsertStep(s) {
 }
 
 function handle(msg, quiet = false) {
+  if (msg.t === 'theme') { setThemes(msg.themes); return; }
   if (commsHandle(msg)) return;
   if (msg.t === 'purged') { clearAll(); return; }
   if (msg.t === 'snapshot') {
     S.offset = msg.serverTime - Date.now();
     S.auth = msg.auth;
+    if (msg.themes) setThemes(msg.themes);
     commsSnap(msg);
     el.note.hidden = !(msg.auth && msg.auth.writeOpen);
     const prevLatest = latest();
@@ -1662,17 +1741,82 @@ function applySound() {
   el.sound.innerHTML = icon(S.sound ? 'volume-2' : 'volume-x');
   el.sound.setAttribute('aria-label', S.sound ? '通知音をオフにする' : '通知音をオンにする');
 }
-// 効果音の種類: Beep(コードで作った合成音) / Earshot(public/sfx のファイル)。押すと切り替わり、新しい方の音を1回鳴らす
+// 効果音の種類: Beep(コードで作った合成音) / Earshot(public/sfx のファイル)。押すと切り替わり、新しい方の音を1回鳴らす。
+// テーマに専用の音があるあいだは、そのテーマの音が優先される(押せなくなり、標準に戻すと選べる)
+const THEMES = {
+  xmas: { name: 'クリスマス', short: 'Xmas', icon: 'tree-pine', sound: 'xmas', color: '#fbf8f0' },
+};
+const sfxName = (m) => m === 'earshot' ? 'Earshot' : m === 'xmas' ? THEMES.xmas.name : 'Beep';
 function applySfxMode() {
-  const e = S.sfx === 'earshot', b = document.getElementById('sfxMode');
-  document.getElementById('sfxModeT').textContent = '効果音: ' + (e ? 'Earshot' : 'Beep');
-  b.title = (e ? 'Beep' : 'Earshot') + ' に切り替える'; b.setAttribute('aria-label', '効果音の種類: ' + (e ? 'Earshot' : 'Beep') + '。押すと' + (e ? 'Beep' : 'Earshot') + 'に切り替え');
+  const e = S.sfx === 'earshot', themed = !!(THEMES[S.theme] && THEMES[S.theme].sound), b = document.getElementById('sfxMode');
+  document.getElementById('sfxModeT').textContent = '効果音: ' + sfxName(S.sfx);
+  b.disabled = themed;
+  b.title = themed ? 'テーマの音を使っています。テーマを標準に戻すと切り替えられます' : (e ? 'Beep' : 'Earshot') + ' に切り替える';
+  b.setAttribute('aria-label', themed ? '効果音の種類: ' + sfxName(S.sfx) + '(テーマの音)' : '効果音の種類: ' + (e ? 'Earshot' : 'Beep') + '。押すと' + (e ? 'Beep' : 'Earshot') + 'に切り替え');
 }
 document.getElementById('sfxMode').addEventListener('click', async () => {
-  S.sfx = S.sfx === 'earshot' ? 'beep' : 'earshot'; store.set('sfx', S.sfx); applySfxMode();
+  S.sfxBase = S.sfxBase === 'earshot' ? 'beep' : 'earshot'; store.set('sfx', S.sfxBase); S.sfx = S.sfxBase; applySfxMode();
   if (S.sfx === 'earshot') await loadSamples();
   const was = S.sound; S.sound = true; sfx.done(); S.sound = was;   // 音がオフでも、切り替えた音を1回だけ聞かせる
 });
+/* ---- テーマ: シリアルコードで獲得(Durable Object に記録)。見た目と音をまとめて切り替える ---- */
+function applyTheme() {
+  if (!S.themes.includes(S.theme)) S.theme = 'default';
+  const t = THEMES[S.theme], root = document.documentElement;
+  if (t) root.setAttribute('data-theme', S.theme); else root.removeAttribute('data-theme');
+  document.querySelector('meta[name="theme-color"]').setAttribute('content', t ? t.color : '#f7f9fa');
+  S.sfx = (t && t.sound) || S.sfxBase;
+  if (S.sound && S.sfx === 'earshot') loadSamples();
+  applySfxMode(); renderThemeBtn(); renderSfxTest();
+}
+function renderThemeBtn() {
+  const b = document.getElementById('themeBtn'), t = THEMES[S.theme];
+  b.hidden = S.themes.length === 0;   // 獲得したテーマが1つでもあるときだけ出す
+  document.getElementById('themeBtnT').textContent = 'テーマ: ' + (t ? t.name : '標準');
+  b.querySelector('use').setAttribute('href', '#i-' + (t ? t.icon : 'palette'));
+  const next = nextTheme();
+  b.title = (THEMES[next] ? THEMES[next].name : '標準') + ' に切り替える';
+  b.setAttribute('aria-label', 'テーマ: ' + (t ? t.name : '標準') + '。押すと' + (THEMES[next] ? THEMES[next].name : '標準') + 'に切り替え');
+}
+const nextTheme = () => { const all = ['default', ...S.themes]; return all[(all.indexOf(S.theme) + 1) % all.length]; };
+function setTheme(id, hear = true) {
+  S.theme = id; store.set('theme', id); applyTheme();
+  if (hear) { const was = S.sound; S.sound = true; sfx.done(); S.sound = was; }   // 音がオフでも、切り替えた音を1回だけ聞かせる
+}
+// サーバーが持っている獲得済みの一覧に合わせる(他の端末で獲得したテーマも、ここで使えるようになる)
+function setThemes(list) {
+  S.themes = (list || []).map((x) => x.id).filter((id) => THEMES[id]);
+  store.set('themes', JSON.stringify(S.themes));
+  applyTheme();
+}
+try { S.themes = (JSON.parse(store.get('themes', '[]')) || []).filter((id) => THEMES[id]); } catch { S.themes = []; }
+document.getElementById('themeBtn').addEventListener('click', () => setTheme(nextTheme()));
+/* ---- シリアルコードの入力 ---- */
+{
+  const dlg = document.getElementById('codeDlg'), form = document.getElementById('codeForm'), inp = document.getElementById('codeIn'), msg = document.getElementById('codeMsg'), go = document.getElementById('codeGo');
+  const say = (text, ok = false) => { msg.textContent = text; msg.dataset.ok = String(ok); if (ok) inp.removeAttribute('aria-invalid'); else if (text) inp.setAttribute('aria-invalid', 'true'); else inp.removeAttribute('aria-invalid'); };
+  document.getElementById('codeBtn').addEventListener('click', () => { say(''); inp.value = ''; dlg.showModal(); inp.focus(); });
+  document.getElementById('codeClose').addEventListener('click', () => dlg.close());
+  inp.addEventListener('input', () => { if (msg.textContent) say(''); });
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const code = inp.value.trim(); if (!code) return;
+    go.disabled = true; go.querySelector('span').textContent = '確認中…'; say('');
+    try {
+      const r = await fetch('/api/theme', { method: 'POST', headers: { 'content-type': 'application/json', ...authHeaders() }, body: JSON.stringify({ action: 'redeem', code }) });
+      const j = await r.json().catch(() => ({}));
+      if (r.status === 401) say('閲覧トークンが必要です。ビューアーでトークンを入れてからもう一度試してください。');
+      else if (!r.ok) say('受け取れませんでした。しばらくしてからもう一度試してください。');
+      else if (!j.ok) say('このコードは使えません。入力をもう一度確認してください。');
+      else {
+        setThemes(j.themes); setTheme(j.theme);
+        say(`「${THEMES[j.theme].name}」${j.already ? 'はすでに獲得済みです。テーマと効果音を切り替えました' : 'を獲得しました。テーマと効果音を切り替えました'}`, true);
+        inp.value = '';
+      }
+    } catch { say('通信できませんでした。接続を確認してください。'); }
+    finally { go.disabled = false; go.querySelector('span').textContent = '受け取る'; }
+  });
+}
 applySfxMode();
 /* ---- 効果音テスト: 全部の音を Beep / Earshot で鳴らせる ---- */
 const SFX_LIST = [
@@ -1691,9 +1835,11 @@ async function previewSfx(mode, key, arg) {
   for (const g of Object.keys(lastAt)) lastAt[g] = 0;
   try { sfx[key](arg); } finally { S.sound = keep.sound; S.sfx = keep.sfx; }
 }
+// 聴き比べに並べる音: Beep と Earshot に、獲得したテーマの音が加わる
+const sfxModes = () => [['beep', 'Beep'], ['earshot', 'Earshot'], ...S.themes.filter((id) => THEMES[id] && THEMES[id].sound).map((id) => [THEMES[id].sound, THEMES[id].short])];
 function sfxStopAll() {
   clearTimeout(sfxAllTimer); sfxAllTimer = null;
-  document.querySelectorAll('#sfxTest [data-all]').forEach((b) => { b.querySelector('span').textContent = (b.dataset.all === 'beep' ? 'Beep' : 'Earshot') + ' を全部聞く'; b.querySelector('use').setAttribute('href', '#i-play'); });
+  document.querySelectorAll('#sfxTest [data-all]').forEach((b) => { b.querySelector('span').textContent = (sfxModes().find(([m]) => m === b.dataset.all) || [, b.dataset.all])[1] + ' を全部聞く'; b.querySelector('use').setAttribute('href', '#i-play'); });
   document.querySelectorAll('#sfxList .sfx-row').forEach((r) => r.removeAttribute('aria-current'));
 }
 function sfxPlayAll(mode, i = 0) {
@@ -1705,9 +1851,12 @@ function sfxPlayAll(mode, i = 0) {
   sfxAllTimer = setTimeout(() => sfxPlayAll(mode, i + 1), 1700);
 }
 function renderSfxTest() {
-  $('#sfxList').innerHTML = SFX_LIST.map(([g, rows]) => `<div class="sfx-g">${g}</div>` + rows.map(([label]) => `<div class="sfx-row"><span>${label}</span><button class="btn small" type="button" data-mode="beep"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg><span>Beep</span></button><button class="btn small" type="button" data-mode="earshot"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg><span>Earshot</span></button></div>`).join('')).join('');
+  const modes = sfxModes(), btn = (m, label) => `<button class="btn small" type="button" data-mode="${m}"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg><span>${label}</span></button>`;
+  $('#sfxTest').classList.toggle('sfx-3', modes.length > 2);   // 3つ以上のときだけ、並べ方を変える
+  document.querySelector('#sfxTest .sfx-all').innerHTML = modes.map(([m, label]) => `<button class="btn small" type="button" data-all="${m}"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg><span>${label} を全部聞く</span></button>`).join('');
+  $('#sfxList').innerHTML = SFX_LIST.map(([g, rows]) => `<div class="sfx-g">${g}</div>` + rows.map(([label]) => `<div class="sfx-row"><span>${label}</span>${modes.map(([m, l]) => btn(m, l)).join('')}</div>`).join('')).join('');
 }
-renderSfxTest();
+applyTheme();
 $('#sfxTestBtn').addEventListener('click', () => { $('#sfxTest').showModal(); if (S.sfx !== 'earshot') loadSamples(); });
 $('#sfxTestClose').addEventListener('click', () => $('#sfxTest').close());
 $('#sfxTest').addEventListener('close', sfxStopAll);

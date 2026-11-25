@@ -4,7 +4,7 @@ import { DurableObject } from "cloudflare:workers";
 import { SHOT_MAX, findIcon, parseAgent, safeFetch, slugify, sniffShot } from "./agents.js";
 import { publicKey, pushEnabled, sendPush, validEndpoint } from "./push.js";
 
-const VERSION = "2.5.0";
+const VERSION = "2.6.0";
 const ALIASES = { getRequest: "getConfirmation" }; // 旧名(askUser の結果取得)。人間からの「要求」とは別物
 const PROTOCOLS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 
@@ -37,7 +37,9 @@ const LIMIT_BODY = 6000;
 const PUSH_CATS = ["approval", "note", "done", "failed"];
 const PUSH_DEFAULT = { approval: true, note: true, done: true, failed: true };
 const PUSH_MAX_SUBS = 20;
-const LOG_TABLES = ["steps", "tasks", "agents", "directives", "messages", "approvals", "notes", "shots"]; // 全リセットで捨てる表(通知の購読は含めない)
+const LOG_TABLES = ["steps", "tasks", "agents", "directives", "messages", "approvals", "notes", "shots"]; // 全リセットで捨てる表(通知の購読と獲得したテーマは含めない)
+// シリアルコード → テーマ。コードは小文字にして前後の空白を除いて照合する。テーマの見た目と音は画面(public/index.html)の THEMES にある
+const THEME_CODES = { xmas2026: "xmas" };
 
 const INSTRUCTIONS = `Workline は、人間が別画面でリアルタイムに眺めている「AIの作業ログ」です。
 あなた(AI)がいま何をしているかを、できるだけ細かく、その場で送ってください。
@@ -667,6 +669,30 @@ async function handlePush(request, env, url) {
   }
 }
 
+// テーマ(シリアルコードで獲得)。GET: 獲得済みの一覧 / POST: { action: "redeem", code }
+async function handleTheme(request, env, url) {
+  if (!canRead(request, url, env)) return json({ error: "unauthorized" }, 401);
+  const bd = board(env);
+  if (request.method === "GET") return json({ themes: await bd.themeList() });
+  if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: { allow: "GET, POST" } });
+  if (!originOk(request, env)) return json({ error: "forbidden origin" }, 403);
+  let b;
+  try {
+    b = await request.json();
+  } catch {
+    return json({ error: "bad request" }, 400);
+  }
+  if (b.action !== "redeem") return json({ error: "unknown action" }, 400);
+  const code = String(b.code ?? "").trim().toLowerCase().slice(0, 64);
+  let theme = null;
+  for (const [c, id] of Object.entries(THEME_CODES)) if (code && safeEqual(code, c)) theme = id; // 全部と比べる(早く終わらせない)
+  if (!theme) {
+    await sleep(800); // 総当たりを遅くする
+    return json({ ok: false });
+  }
+  return json({ ok: true, ...(await bd.themeRedeem(theme)) });
+}
+
 // ビューアーから人間が送るもの(from は常に "user")の共通の入口: POST のみ・同一オリジン・閲覧トークン
 async function userPost(request, env, url, run) {
   if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: { allow: "POST" } });
@@ -829,6 +855,7 @@ export default {
       if (path === "/api/note") return await handleNote(request, env, url);
       if (path === "/api/purge") return await handlePurge(request, env, url);
       if (path === "/api/push") return await handlePush(request, env, url);
+      if (path === "/api/theme") return await handleTheme(request, env, url);
       if (path === "/api/health") return json({ ok: true, name: "workline", version: VERSION });
     } catch (e) {
       return json({ error: String(e?.message || e) }, 500);
@@ -923,6 +950,7 @@ export class Board extends DurableObject {
     this.sql = ctx.storage.sql;
     this.initSchema();
     this.initPushSchema();
+    this.initThemeSchema();
     // クライアントの "ping" に、DOを起こさず "pong" を返す(接続維持と死活確認)
     ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair("ping", "pong"));
   }
@@ -1036,6 +1064,21 @@ export class Board extends DurableObject {
     )`);
   }
 
+  // 獲得したテーマも、ログではなく「持ち物」なので、全リセットでも残す
+  initThemeSchema() {
+    this.sql.exec("CREATE TABLE IF NOT EXISTS themes (id TEXT PRIMARY KEY, unlocked_at INTEGER NOT NULL)");
+  }
+  themeList() {
+    return this.sql.exec("SELECT id, unlocked_at FROM themes ORDER BY unlocked_at, id").toArray().map((r) => ({ id: r.id, unlockedAt: r.unlocked_at }));
+  }
+  themeRedeem(id) {
+    const had = this.sql.exec("SELECT 1 FROM themes WHERE id = ?", id).toArray().length > 0;
+    if (!had) this.sql.exec("INSERT INTO themes (id, unlocked_at) VALUES (?, ?)", id, Date.now());
+    const themes = this.themeList();
+    if (!had) this.broadcast({ t: "theme", themes }); // 開いている他の端末にも、獲得したことを知らせる
+    return { theme: id, already: had, themes };
+  }
+
   /* --- WebSocket --- */
 
   async fetch(request) {
@@ -1093,6 +1136,7 @@ export class Board extends DurableObject {
     return {
       t: "snapshot",
       serverTime: Date.now(),
+      themes: this.themeList(),
       auth: { writeOpen: !this.env.MCP_TOKEN && !agentTokens(this.env).length, readOpen: !this.env.VIEW_TOKEN, agentAuth: agentTokens(this.env).length > 0 },
       agents: this.sql.exec("SELECT * FROM agents ORDER BY last_seen DESC LIMIT 50").toArray().map(agentRow),
       tasks,
