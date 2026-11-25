@@ -460,6 +460,14 @@ dialog.lb::backdrop { background: var(--color-scrim); }
 .sfx-row span { font-size: var(--text-sm); min-width: 0; overflow-wrap: anywhere; }
 .sfx-row .btn { min-width: 6.2rem; }
 @media (max-width: 40rem) { .sfx-row { grid-template-columns: minmax(0, 1fr) auto auto; } .sfx-row .btn { min-width: 0; } }
+.wel .wiz-head h2 { color: var(--color-ink); }
+.wel .wiz-steps li[data-state="current"] { background: var(--color-accent); }
+.wel-list { list-style: none; display: flex; flex-direction: column; gap: var(--space-sm); }
+.wel-list li { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); gap: var(--space-xs); color: var(--color-ink-2); }
+.wel-list .ic { color: var(--color-accent); margin-top: var(--space-2xs); }
+.wel-list b { display: block; color: var(--color-ink); }
+.wel .howto { margin-top: 0; }
+.wel #welBack[hidden] { display: block; visibility: hidden; }
 .wiz-actions { display: flex; justify-content: space-between; align-items: center; gap: var(--space-sm); margin-top: var(--space-xs); }
 .wiz-actions .wiz-actions { margin-top: 0; }
 .trace { position: relative; width: 100%; aspect-ratio: 14 / 5; border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-ctl); background: var(--color-paper); touch-action: none; cursor: crosshair; overflow: hidden; }
@@ -687,6 +695,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
 <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="M12 6v6l4 2" /></symbol>
 <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></symbol>
 <symbol id="i-radio" viewBox="0 0 24 24"><path d="M16.247 7.761a6 6 0 0 1 0 8.478" /> <path d="M19.075 4.933a10 10 0 0 1 0 14.134" /> <path d="M4.925 19.067a10 10 0 0 1 0-14.134" /> <path d="M7.753 16.239a6 6 0 0 1 0-8.478" /> <circle cx="12" cy="12" r="2" /></symbol>
+<symbol id="i-circle-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /> <path d="M12 17h.01" /></symbol>
 <symbol id="i-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="m16 12-4-4-4 4" /> <path d="M12 16V8" /></symbol>
 <symbol id="i-triangle-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /> <path d="M12 9v4" /> <path d="M12 17h.01" /></symbol>
 <symbol id="i-radio-tower" viewBox="0 0 24 24"><path d="M4.9 16.1C1 12.2 1 5.8 4.9 1.9" /> <path d="M7.8 4.7a6.14 6.14 0 0 0-.8 7.5" /> <circle cx="12" cy="9" r="2" /> <path d="M16.2 4.8c2 2 2.26 5.11.8 7.47" /> <path d="M19.1 1.9a9.96 9.96 0 0 1 0 14.1" /> <path d="M9.5 18h5" /> <path d="m8 22 4-11 4 11" /></symbol>
@@ -731,6 +740,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
   <div class="bar-more" id="barMore">
     <button class="icon-btn more-toggle" id="moreBtn" type="button" aria-label="その他のメニュー" aria-haspopup="true" aria-expanded="false" aria-controls="morePanel"><svg class="ic" aria-hidden="true"><use href="#i-ellipsis"/></svg></button>
     <div class="more-panel" id="morePanel">
+    <button class="icon-btn" id="guideBtn" data-label="使い方ガイド" type="button" aria-label="使い方ガイドを開く" title="使い方ガイド"><svg class="ic" aria-hidden="true"><use href="#i-circle-help"/></svg></button>
     <button class="icon-btn" id="soundBtn" data-label="通知音" type="button" aria-pressed="false" aria-label="通知音" title="新しいステップで小さな音を鳴らす"><svg class="ic" aria-hidden="true"><use href="#i-volume-x"/></svg></button>
     <a class="icon-btn" href="/wall" id="wallLink" data-label="壁掛けモード" aria-label="壁掛けモードを開く" title="壁掛けモード(いまの作業を大きく常時表示)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg></a>
     </div>
@@ -811,6 +821,14 @@ dialog.lb::backdrop { background: var(--color-scrim); }
   <div class="wiz-in">
     <header class="wiz-head"><h2 id="infoTitle"></h2><button class="icon-btn" id="infoClose" type="button" aria-label="閉じる"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></header>
     <div id="infoBody" style="display:flex;flex-direction:column;gap:var(--space-md)"></div>
+  </div>
+</dialog>
+<dialog class="wiz wel" id="welcome" aria-labelledby="welTitle">
+  <div class="wiz-in">
+    <header class="wiz-head"><h2 id="welTitle"></h2><button class="icon-btn" id="welClose" type="button" aria-label="閉じる"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></header>
+    <ol class="wiz-steps" id="welSteps"></ol>
+    <div class="wiz-body" id="welBody"></div>
+    <div class="wiz-actions"><button class="btn" id="welBack" type="button">戻る</button><button class="btn primary" id="welNext" type="button" autofocus>次へ</button></div>
   </div>
 </dialog>
 <dialog class="wiz" id="sfxTest" aria-labelledby="sfxTestTitle">
@@ -1083,6 +1101,7 @@ async function boot() {
     handle(await fetchSnapshot(), true);
     S.booted = true;
     connect();
+    maybeWelcome();
   } catch (e) {
     if (e.denied) { setConn('denied'); showState('locked'); return; }
     setConn('retry');
@@ -1536,6 +1555,43 @@ el.state.addEventListener('submit', (e) => {
   S.token = $('#tok').value.trim(); store.set('token', S.token);
   S.booted = false; boot();
 });
+/* ---- ようこそガイド(初めて開いたときに1回。バーのメニューからいつでも開き直せる) ---- */
+const WEL = [
+  { t: 'Workline へようこそ', h: () => `<p>AIがいま何をしているかを、この画面でリアルタイムに眺められます。</p>
+    <ul class="wel-list">
+      <li>${icon('activity')}<div><b>1ステップずつ流れる</b>AIが作業を進めるたびに、ここが更新されます。複数のAIが同時に動いても、名前とアイコンで見分けられます。</div></li>
+      <li>${icon('bell')}<div><b>音と通知</b>作業の節目で、小さな音や通知でお知らせします。右上のボタンから切り替えられます。</div></li>
+      <li>${icon('inbox')}<div><b>司令・要求</b>AIからの確認や、あなたからのお願いは、左の一覧の inbox にまとまります。</div></li>
+    </ul>` },
+  { t: 'AIとつなぐ', h: () => `<p>次のURLをAIに渡すと、作業がここに流れ始めます。</p>
+    <div class="endpoint"><code>${esc(endpoint())}</code><button class="btn small" type="button" data-copy="${esc(endpoint())}">${icon('copy')}<span>コピー</span></button></div>
+    <button class="btn" type="button" data-copy-brief>${icon('message-square-text')}<span>AIへの依頼文をコピー</span></button>
+    <ol class="howto"><li><span>URLか依頼文を、AIに渡す</span></li><li><span>AIが <code>startTask</code> で名前とモデルを申告する</span></li><li><span>作業が1ステップずつ流れ始める</span></li></ol>` },
+  { t: '安全に使うために', h: () => `${S.auth && S.auth.writeOpen ? `<div class="wiz-warn">${icon('lock')}<span>いま、書き込みトークンが未設定です。URLを知っている人は誰でも送信できます。</span></div>` : ''}
+    <ul class="wel-list">
+      <li>${icon('key-round')}<div><b>書き込みトークン(MCP_TOKEN)</b>AIが送信するときの鍵です。Cloudflare のシークレットに設定してください。未設定の間は、左の一覧に警告が出ます。</div></li>
+      <li>${icon('lock')}<div><b>閲覧用パスワード(VIEW_TOKEN)</b>設定すると、見る人にも入力が必要になります。入力した内容は、この端末のブラウザに保存され、次回から省けます。</div></li>
+      <li>${icon('trash-2')}<div><b>ログの消去</b>4つの確認を通らないと消えません。途中でやめても、何も消えません。</div></li>
+      <li>${icon('circle-arrow-up')}<div><b>更新のお知らせ</b>新しい版が出ると、左の一覧に案内が出ます。</div></li>
+    </ul>` },
+];
+let welI = 0;
+function renderWelcome() {
+  const last = welI === WEL.length - 1;
+  $('#welTitle').textContent = WEL[welI].t;
+  $('#welSteps').innerHTML = WEL.map((_, i) => `<li data-state="${i < welI ? 'done' : i === welI ? 'current' : 'todo'}"></li>`).join('');
+  $('#welBody').innerHTML = WEL[welI].h();
+  $('#welBack').hidden = welI === 0;
+  $('#welNext').textContent = last ? 'はじめる' : '次へ';
+}
+function openWelcome(i = 0) { welI = i; renderWelcome(); if (!$('#welcome').open) $('#welcome').showModal(); }
+function maybeWelcome() { if (store.get('welcomed', '0') !== '1') openWelcome(); }
+$('#guideBtn').addEventListener('click', () => openWelcome());
+$('#welClose').addEventListener('click', () => $('#welcome').close());
+$('#welBack').addEventListener('click', () => { welI = Math.max(0, welI - 1); renderWelcome(); });
+$('#welNext').addEventListener('click', () => { if (welI >= WEL.length - 1) $('#welcome').close(); else { welI++; renderWelcome(); } });
+$('#welcome').addEventListener('close', () => store.set('welcomed', '1'));
+
 document.addEventListener('click', async (e) => {
   const c = e.target.closest('[data-copy],[data-copy-brief],[data-copy-endpoint],[data-retry],#copyLog'); if (!c) return;
   if (c.hasAttribute('data-retry')) { backoff = 1000; boot(); return; }
