@@ -4,7 +4,7 @@ import { DurableObject } from "cloudflare:workers";
 import { SHOT_MAX, findIcon, parseAgent, safeFetch, slugify, sniffShot } from "./agents.js";
 import { publicKey, pushEnabled, sendPush, validEndpoint } from "./push.js";
 
-const VERSION = "2.6.6";
+const VERSION = "2.7.0";
 const ALIASES = { getRequest: "getConfirmation" }; // 旧名(askUser の結果取得)。人間からの「要求」とは別物
 const PROTOCOLS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 
@@ -39,7 +39,7 @@ const PUSH_DEFAULT = { approval: true, note: true, done: true, failed: true };
 const PUSH_MAX_SUBS = 20;
 const LOG_TABLES = ["steps", "tasks", "agents", "directives", "messages", "approvals", "notes", "shots"]; // 全リセットで捨てる表(通知の購読と獲得したテーマは含めない)
 // シリアルコード → テーマ。コードは小文字にして前後の空白を除いて照合する。テーマの見た目と音は画面(public/index.html)の THEMES にある
-const THEME_CODES = { xmas2026: "xmas" };
+const THEME_CODES = { xmas2026: "xmas", newyear2027: "newyear" };
 
 const INSTRUCTIONS = `Workline は、人間が別画面でリアルタイムに眺めている「AIの作業ログ」です。
 あなた(AI)がいま何をしているかを、できるだけ細かく、その場で送ってください。

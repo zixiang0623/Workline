@@ -77,6 +77,14 @@
   --color-focus: oklch(46% 0.17 25); --color-success: oklch(41% 0.1 155);
 }
 :root[data-theme="xmas"] body::before { content: ""; position: fixed; inset: 0 0 auto 0; height: 3px; z-index: 400; pointer-events: none; background: repeating-linear-gradient(135deg, oklch(46% 0.17 25) 0 10px, oklch(98.4% 0.009 95) 10px 14px, oklch(41% 0.1 155) 14px 24px, oklch(98.4% 0.009 95) 24px 28px); }
+:root[data-theme="newyear"] {
+  --color-paper: oklch(98.4% 0.012 85); --color-paper-2: oklch(96% 0.016 85); --color-paper-3: oklch(93% 0.02 85);
+  --color-ink: oklch(25% 0.03 40); --color-ink-2: oklch(40% 0.03 40); --color-muted: oklch(46% 0.025 40);
+  --color-rule: oklch(89% 0.018 85);
+  --color-accent: oklch(48% 0.19 32); --color-accent-ink: oklch(98.4% 0.012 85); --color-accent-soft: oklch(94.5% 0.035 32);
+  --color-focus: oklch(48% 0.19 32); --color-success: oklch(41% 0.1 155);
+}
+:root[data-theme="newyear"] body::before { content: ""; position: fixed; inset: 0 0 auto 0; height: 3px; z-index: 400; pointer-events: none; background: repeating-linear-gradient(135deg, oklch(48% 0.19 32) 0 10px, oklch(98.4% 0.012 85) 10px 14px, oklch(72% 0.12 85) 14px 24px, oklch(98.4% 0.012 85) 24px 28px); }
 .code-form { display: grid; gap: var(--space-xs); }
 .code-form label { font-size: var(--text-sm); color: var(--color-ink-2); }
 .code-form .btn { justify-self: start; }
@@ -1202,13 +1210,52 @@ const synthX = {
   offline() { bell(659, 0.4, 0.025); bell(440, 0.8, 0.025, 0.1); },
   tap(on) { const f = on === false ? 1568 : 2349; beep(f, 0.05, 'sine', 0.014); beep(f * 2.76, 0.03, 'sine', 0.005); },
 };
+/* ---- テーマ「お正月」の音: 琴・太鼓・拍子木。ファイルは使わず、Beepと同じく Web Audio で作る ---- */
+// 琴: 三角波の基音に倍音を重ねて、つま弾く感じにする
+function pluck(freq, gain = 0.03, delay = 0) { beep(freq, 0.55, 'triangle', gain, delay); beep(freq * 2, 0.22, 'sine', gain * 0.35, delay); beep(freq * 4, 0.07, 'sine', gain * 0.1, delay); }
+// 太鼓: 低い正弦波を下へ滑らせて「ドン」
+function drum(gain = 0.09, delay = 0) { beep(150, 0.28, 'sine', gain, delay, 55); puff(0.05, gain * 0.25, { lp: 500, delay }); }
+// 拍子木: 短いノイズの打撃を間を置いて2つ
+function clack(gain = 0.05, delay = 0) { puff(0.03, gain, { hp: 1800, delay }); puff(0.03, gain * 0.8, { hp: 1800, delay: delay + 0.09 }); }
+const synthN = {
+  step(kind) {
+    if (!gate('step', 140)) return;
+    switch (kind) {
+      case 'plan': pluck(587, 0.03); pluck(880, 0.03, 0.09); break;
+      case 'think': pluck(294, 0.028); break;
+      case 'search': pluck(1175, 0.022); pluck(1319, 0.022, 0.07); break;
+      case 'read': pluck(784, 0.026); pluck(659, 0.026, 0.08); break;
+      case 'write': [880, 988, 880].forEach((f, i) => pluck(f, 0.024, i * 0.07)); break;
+      case 'run': drum(0.07); pluck(587, 0.026, 0.02); break;
+      case 'web': pluck(988, 0.024); pluck(784, 0.024, 0.09); break;
+      case 'check': pluck(880, 0.03); pluck(1175, 0.03, 0.08); break;
+      case 'fix': [988, 988, 1175].forEach((f, i) => pluck(f, 0.026, i * 0.07)); break;
+      case 'wait': pluck(440, 0.016); break;
+      default: pluck(880, 0.03);
+    }
+  },
+  start() { drum(0.09); pluck(587, 0.03, 0.05); pluck(880, 0.03, 0.15); pluck(1175, 0.03, 0.25); },
+  done() { pluck(587, 0.03); pluck(880, 0.03, 0.1); pluck(988, 0.03, 0.2); pluck(1175, 0.032, 0.3); drum(0.08, 0.3); },
+  fail() { pluck(330, 0.04); pluck(262, 0.04, 0.18); },
+  cancel() { pluck(659, 0.03); pluck(494, 0.03, 0.13); },
+  ask() { for (let i = 0; i < 2; i++) { pluck(1175, 0.032, i * 0.34); pluck(880, 0.032, i * 0.34 + 0.16); } },
+  answered(st) { if (st === 'answered' || st === 'approved') { pluck(988, 0.03); pluck(1319, 0.03, 0.1); } else pluck(330, 0.032); },
+  note() { pluck(1175, 0.032); pluck(1568, 0.028, 0.09); },
+  knock() { clack(0.055); drum(0.06, 0.02); },
+  stop() { if (!gate('stop', 300)) return; for (let i = 0; i < 3; i++) drum(0.08, i * 0.24); },
+  online() { pluck(784, 0.026); pluck(1175, 0.026, 0.1); },
+  offline() { pluck(659, 0.026); pluck(440, 0.026, 0.1); },
+  tap(on) { const f = on === false ? 1568 : 2093; beep(f, 0.04, 'triangle', 0.012); },
+};
+const THEME_SYNTH = { xmas: synthX, newyear: synthN };
 const GATE = { step: 140, tap: 45, stop: 300 };
 const sfx = {};
 for (const k of Object.keys(synth)) {
   sfx[k] = (...a) => {
     if (!S.sound) return;
     if (GATE[k] && !gate(k, GATE[k])) return;
-    if (S.sfx === 'xmas') { lastAt[k] = 0; (synthX[k] || synth[k])(...a); return; }   // テーマの音(クリスマス)
+    const ts = THEME_SYNTH[S.sfx];
+    if (ts) { lastAt[k] = 0; (ts[k] || synth[k])(...a); return; }   // テーマの音
     if (S.sfx === 'earshot') {   // Earshot: the files in /sfx. Beep: the synthesized sounds below
       loadSamples();
       const m = SAMPLE[k] && SAMPLE[k](...a);
@@ -1863,8 +1910,9 @@ function applySound() {
 // テーマに専用の音があるあいだは、そのテーマの音が優先される(押せなくなり、標準に戻すと選べる)
 const THEMES = {
   xmas: { name: 'クリスマス', short: 'Xmas', icon: 'tree-pine', sound: 'xmas', color: '#fbf8f0' },
+  newyear: { name: 'お正月', short: 'お正月', icon: 'gift', sound: 'newyear', color: '#fdfaf0' },
 };
-const sfxName = (m) => m === 'earshot' ? 'Earshot' : m === 'xmas' ? THEMES.xmas.name : 'Beep';
+const sfxName = (m) => m === 'earshot' ? 'Earshot' : (Object.values(THEMES).find((t) => t.sound === m) || {}).name || 'Beep';
 function applySfxMode() {
   const e = S.sfx === 'earshot', themed = !!(THEMES[S.theme] && THEMES[S.theme].sound), b = document.getElementById('sfxMode');
   document.getElementById('sfxModeT').textContent = '効果音: ' + sfxName(S.sfx);
