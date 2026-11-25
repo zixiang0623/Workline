@@ -130,7 +130,6 @@
 .theme-card { display: flex; flex-direction: column; gap: var(--space-xs); padding: var(--space-xs); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); background: var(--color-paper-2); color: var(--color-ink); text-align: left; cursor: pointer; font: inherit; }
 .theme-card:hover { border-color: var(--color-accent); }
 .theme-card[aria-current="true"] { border-color: var(--color-accent); box-shadow: inset 0 0 0 var(--rule-hair) var(--color-accent); }
-.theme-card[data-locked] { opacity: 0.75; }
 .th-thumb { display: block; height: 4.6rem; border: var(--rule-hair) solid var(--color-rule); border-radius: calc(var(--radius-card) - 4px); overflow: hidden; }
 .th-band { display: block; height: 5px; }
 .th-body { display: flex; flex-direction: column; gap: 5px; padding: 7px 9px; }
@@ -2163,15 +2162,14 @@ const THUMB = {
   shinkai: { paper: 'oklch(22% 0.03 210)', ink: 'oklch(90% 0.02 200)', accent: 'oklch(78% 0.1 195)', band: 'radial-gradient(circle at 6px 4px, oklch(78% 0.1 195 / 0.8) 1.2px, transparent 1.9px) 0 0 / 22px 6px repeat-x, radial-gradient(circle at 16px 2px, oklch(90% 0.02 200 / 0.6) 0.9px, transparent 1.5px) 6px 0 / 30px 6px repeat-x' },
 };
 function renderThemeGrid() {
-  const entries = [['default', { name: '標準', icon: 'palette' }], ...Object.entries(THEMES)];
+  const entries = [['default', { name: '標準', icon: 'palette' }], ...Object.entries(THEMES)].filter(([id]) => id === 'default' || S.themes.includes(id));
   document.getElementById('themeGrid').innerHTML = entries.map(([id, t]) => {
     const th = THUMB[id] || THUMB.default;
-    const locked = id !== 'default' && !S.themes.includes(id);
     const cur = S.theme === id;
-    return `<button class="theme-card" type="button" data-theme-id="${id}"${cur ? ' aria-current="true"' : ''}${locked ? ' data-locked="1"' : ''}>
+    return `<button class="theme-card" type="button" data-theme-id="${id}"${cur ? ' aria-current="true"' : ''}>
       <span class="th-thumb" style="background:${th.paper}"><span class="th-band" style="background:${th.band || 'transparent'}${th.bandShadow ? ';box-shadow:' + th.bandShadow : ''}"></span><span class="th-body"><span class="th-line" style="background:${th.ink};opacity:.75;width:62%"></span><span class="th-line" style="background:${th.ink};opacity:.35;width:44%"></span><span class="th-row"><span class="th-dot" style="background:${th.accent}"></span><span class="th-line" style="background:${th.ink};opacity:.5;width:30%"></span><span class="th-btn" style="background:${th.accent}"></span></span></span></span>
       <span class="theme-name">${icon(t.icon)}<span>${esc(t.name)}</span></span>
-      <span class="theme-state">${cur ? '使用中' : locked ? 'ロック中(シリアルコードで解放)' : 'タップで切り替え'}</span>
+      <span class="theme-state">${cur ? '使用中' : 'タップで切り替え'}</span>
     </button>`;
   }).join('');
 }
@@ -2182,7 +2180,6 @@ function renderThemeGrid() {
     const card = e.target.closest('[data-theme-id]'); if (!card) return;
     const id = card.dataset.themeId;
     dlg.close();
-    if (id !== 'default' && !S.themes.includes(id)) { document.getElementById('codeBtn').click(); return; }
     setTheme(id);
   });
   document.getElementById('themeBtn').addEventListener('click', () => { renderThemeGrid(); dlg.showModal(); });
