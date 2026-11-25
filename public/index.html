@@ -1483,7 +1483,7 @@ el.list.addEventListener('click', (e) => {
   closeDrawer();
 });
 function applyMode() {
-  el.mode.innerHTML = `${icon(S.mode === 'tree' ? 'tree-pine' : 'list')}<span>${S.mode === 'tree' ? 'ツリー' : '一覧'}</span>`;
+  el.mode.innerHTML = `${icon(S.mode === 'tree' ? (S.theme === 'xmas' ? 'tree-pine' : 'list-tree') : 'list')}<span>${S.mode === 'tree' ? 'ツリー' : '一覧'}</span>`;
   el.mode.title = S.mode === 'tree' ? '親子のツリーで表示中(クリックでフラットな一覧)' : 'フラットな一覧で表示中(クリックで親子のツリー)';
   S.rsig = ''; railDirty();
 }
@@ -1933,7 +1933,7 @@ function applyTheme() {
   document.querySelector('meta[name="theme-color"]').setAttribute('content', t ? t.color : '#f7f9fa');
   S.sfx = (t && t.sound) || S.sfxBase;
   if (S.sound && S.sfx === 'earshot') loadSamples();
-  applySfxMode(); renderThemeBtn(); renderSfxTest();
+  applySfxMode(); renderThemeBtn(); renderSfxTest(); applyMode();
 }
 function renderThemeBtn() {
   const b = document.getElementById('themeBtn'), t = THEMES[S.theme];
