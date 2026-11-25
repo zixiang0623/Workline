@@ -2197,19 +2197,23 @@ function renderThemeGrid() {
     e.preventDefault();
     const code = inp.value.trim(); if (!code) return;
     go.disabled = true; go.querySelector('span').textContent = '確認中…'; say('');
+    let r = null, j = {};
     try {
-      const r = await fetch('/api/theme', { method: 'POST', headers: { 'content-type': 'application/json', ...authHeaders() }, body: JSON.stringify({ action: 'redeem', code }) });
-      const j = await r.json().catch(() => ({}));
-      if (r.status === 401) say('閲覧トークンが必要です。ビューアーでトークンを入れてからもう一度試してください。');
+      r = await fetch('/api/theme', { method: 'POST', headers: { 'content-type': 'application/json', ...authHeaders() }, body: JSON.stringify({ action: 'redeem', code }) });
+      j = await r.json().catch(() => ({}));
+    } catch { r = null; }
+    try {
+      if (!r) say('通信できませんでした。接続を確認してください。');
+      else if (r.status === 401) say('閲覧トークンが必要です。ビューアーでトークンを入れてからもう一度試してください。');
       else if (!r.ok) say('受け取れませんでした。しばらくしてからもう一度試してください。');
       else if (!j.ok) say('このコードは使えません。入力をもう一度確認してください。');
       else {
         setThemes(j.themes); setTheme(j.theme);
-        say(`「${THEMES[j.theme].name}」${j.already ? 'はすでに獲得済みです。テーマと効果音を切り替えました' : 'を獲得しました。テーマと効果音を切り替えました'}`, true);
+        const tn = THEMES[j.theme];
+        say(tn ? `「${tn.name}」${j.already ? 'はすでに獲得済みです。テーマと効果音を切り替えました' : 'を獲得しました。テーマと効果音を切り替えました'}` : 'テーマを獲得しました。画面を再読み込みすると、テーマの一覧に出てきます', true);
         inp.value = '';
       }
-    } catch { say('通信できませんでした。接続を確認してください。'); }
-    finally { go.disabled = false; go.querySelector('span').textContent = '受け取る'; }
+    } finally { go.disabled = false; go.querySelector('span').textContent = '受け取る'; }
   });
 }
 applySfxMode();
