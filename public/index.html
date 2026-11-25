@@ -78,13 +78,13 @@
 }
 :root[data-theme="xmas"] body::before { content: ""; position: fixed; inset: 0 0 auto 0; height: 3px; z-index: 400; pointer-events: none; background: repeating-linear-gradient(135deg, oklch(46% 0.17 25) 0 10px, oklch(98.4% 0.009 95) 10px 14px, oklch(41% 0.1 155) 14px 24px, oklch(98.4% 0.009 95) 24px 28px); }
 :root[data-theme="newyear"] {
-  --color-paper: oklch(98.4% 0.012 85); --color-paper-2: oklch(96% 0.016 85); --color-paper-3: oklch(93% 0.02 85);
-  --color-ink: oklch(25% 0.03 40); --color-ink-2: oklch(40% 0.03 40); --color-muted: oklch(46% 0.025 40);
-  --color-rule: oklch(89% 0.018 85);
-  --color-accent: oklch(48% 0.19 32); --color-accent-ink: oklch(98.4% 0.012 85); --color-accent-soft: oklch(94.5% 0.035 32);
-  --color-focus: oklch(48% 0.19 32); --color-success: oklch(41% 0.1 155);
+  --color-paper: oklch(98.2% 0.016 80); --color-paper-2: oklch(95.8% 0.021 80); --color-paper-3: oklch(92.8% 0.026 80);
+  --color-ink: oklch(25% 0.035 35); --color-ink-2: oklch(40% 0.034 35); --color-muted: oklch(46% 0.028 35);
+  --color-rule: oklch(88.5% 0.022 80);
+  --color-accent: oklch(46% 0.2 28); --color-accent-ink: oklch(98.2% 0.016 80); --color-accent-soft: oklch(94% 0.045 75);
+  --color-focus: oklch(46% 0.2 28); --color-success: oklch(41% 0.1 155);
 }
-:root[data-theme="newyear"] body::before { content: ""; position: fixed; inset: 0 0 auto 0; height: 3px; z-index: 400; pointer-events: none; background: repeating-linear-gradient(135deg, oklch(48% 0.19 32) 0 10px, oklch(98.4% 0.012 85) 10px 14px, oklch(72% 0.12 85) 14px 24px, oklch(98.4% 0.012 85) 24px 28px); }
+:root[data-theme="newyear"] body::before { content: ""; position: fixed; inset: 0 0 auto 0; height: 5px; z-index: 400; pointer-events: none; background: repeating-linear-gradient(90deg, oklch(46% 0.2 28) 0 14px, oklch(98.2% 0.016 80) 14px 28px); box-shadow: inset 0 -1px 0 oklch(72% 0.12 85); }
 .code-form { display: grid; gap: var(--space-xs); }
 .code-form label { font-size: var(--text-sm); color: var(--color-ink-2); }
 .code-form .btn { justify-self: start; }
@@ -1223,28 +1223,28 @@ const synthN = {
     switch (kind) {
       case 'plan': pluck(587, 0.03); pluck(880, 0.03, 0.09); break;
       case 'think': pluck(294, 0.028); break;
-      case 'search': pluck(1175, 0.022); pluck(1319, 0.022, 0.07); break;
-      case 'read': pluck(784, 0.026); pluck(659, 0.026, 0.08); break;
-      case 'write': [880, 988, 880].forEach((f, i) => pluck(f, 0.024, i * 0.07)); break;
+      case 'search': pluck(1175, 0.022); pluck(1245, 0.022, 0.07); break;
+      case 'read': pluck(784, 0.026); pluck(622, 0.026, 0.08); break;
+      case 'write': [880, 932, 880].forEach((f, i) => pluck(f, 0.024, i * 0.07)); break;
       case 'run': drum(0.07); pluck(587, 0.026, 0.02); break;
-      case 'web': pluck(988, 0.024); pluck(784, 0.024, 0.09); break;
+      case 'web': pluck(932, 0.024); pluck(784, 0.024, 0.09); break;
       case 'check': pluck(880, 0.03); pluck(1175, 0.03, 0.08); break;
-      case 'fix': [988, 988, 1175].forEach((f, i) => pluck(f, 0.026, i * 0.07)); break;
+      case 'fix': [932, 932, 1175].forEach((f, i) => pluck(f, 0.026, i * 0.07)); break;
       case 'wait': pluck(440, 0.016); break;
       default: pluck(880, 0.03);
     }
   },
-  start() { drum(0.09); pluck(587, 0.03, 0.05); pluck(880, 0.03, 0.15); pluck(1175, 0.03, 0.25); },
-  done() { pluck(587, 0.03); pluck(880, 0.03, 0.1); pluck(988, 0.03, 0.2); pluck(1175, 0.032, 0.3); drum(0.08, 0.3); },
-  fail() { pluck(330, 0.04); pluck(262, 0.04, 0.18); },
-  cancel() { pluck(659, 0.03); pluck(494, 0.03, 0.13); },
+  start() { drum(0.09); [587, 784, 880].forEach((f, i) => pluck(f, 0.03, 0.06 + i * 0.1)); },
+  done() { [587, 622, 784, 880, 932, 1175].forEach((f, i) => pluck(f, 0.03, i * 0.05)); drum(0.085, 0.3); clack(0.04, 0.32); },
+  fail() { pluck(311, 0.04); pluck(262, 0.04, 0.18); },
+  cancel() { pluck(622, 0.03); pluck(466, 0.03, 0.13); },
   ask() { for (let i = 0; i < 2; i++) { pluck(1175, 0.032, i * 0.34); pluck(880, 0.032, i * 0.34 + 0.16); } },
-  answered(st) { if (st === 'answered' || st === 'approved') { pluck(988, 0.03); pluck(1319, 0.03, 0.1); } else pluck(330, 0.032); },
+  answered(st) { if (st === 'answered' || st === 'approved') { pluck(932, 0.03); pluck(1245, 0.03, 0.1); } else pluck(311, 0.032); },
   note() { pluck(1175, 0.032); pluck(1568, 0.028, 0.09); },
   knock() { clack(0.055); drum(0.06, 0.02); },
   stop() { if (!gate('stop', 300)) return; for (let i = 0; i < 3; i++) drum(0.08, i * 0.24); },
   online() { pluck(784, 0.026); pluck(1175, 0.026, 0.1); },
-  offline() { pluck(659, 0.026); pluck(440, 0.026, 0.1); },
+  offline() { pluck(622, 0.026); pluck(440, 0.026, 0.1); },
   tap(on) { const f = on === false ? 1568 : 2093; beep(f, 0.04, 'triangle', 0.012); },
 };
 const THEME_SYNTH = { xmas: synthX, newyear: synthN };
@@ -1483,7 +1483,7 @@ el.list.addEventListener('click', (e) => {
   closeDrawer();
 });
 function applyMode() {
-  el.mode.innerHTML = `${icon(S.mode === 'tree' ? 'list-tree' : 'list')}<span>${S.mode === 'tree' ? 'ツリー' : '一覧'}</span>`;
+  el.mode.innerHTML = `${icon(S.mode === 'tree' ? 'tree-pine' : 'list')}<span>${S.mode === 'tree' ? 'ツリー' : '一覧'}</span>`;
   el.mode.title = S.mode === 'tree' ? '親子のツリーで表示中(クリックでフラットな一覧)' : 'フラットな一覧で表示中(クリックで親子のツリー)';
   S.rsig = ''; railDirty();
 }
