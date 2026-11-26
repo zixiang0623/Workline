@@ -231,14 +231,14 @@ button, input { font: inherit; color: inherit; }
 .rail-copy { margin: 0; font-size: var(--text-xs); color: var(--color-muted); text-align: center; }
 .rail-badges { display: flex; justify-content: center; align-items: center; gap: var(--space-xs); margin: 0 auto; padding: var(--space-2xs) var(--space-xs); border: 0; border-radius: var(--radius-ctl); background: transparent; color: var(--color-accent); cursor: pointer; font: inherit; }
 .rail-badges:hover { background: var(--color-paper-2); }
-.rail-badge { display: inline-grid; place-items: center; width: 1.7rem; height: 1.7rem; border: var(--rule-hair) solid var(--color-rule); border-radius: 50%; background: linear-gradient(180deg, var(--color-paper), var(--color-paper-3)); box-shadow: inset 0 1px 1px rgb(255 255 255 / .45), inset 0 -2px 3px rgb(0 0 0 / .14), 0 1px 2px rgb(0 0 0 / .2); }
-.rail-badge .ic { width: 1rem; height: 1rem; }
+.rail-badge { display: inline-grid; place-items: center; width: 1.7rem; height: 1.7rem; border: var(--rule-hair) solid var(--color-rule); border-radius: 50%; background: linear-gradient(165deg, color-mix(in oklch, var(--color-paper) 72%, #ffffff) 0%, color-mix(in oklch, var(--color-paper-3) 52%, #a7b0b8) 38%, color-mix(in oklch, var(--color-paper) 62%, #e9edf0) 54%, color-mix(in oklch, var(--color-paper-3) 58%, #828b93) 100%); box-shadow: inset 0 1px 1px rgb(255 255 255 / .45), inset 0 -2px 3px rgb(0 0 0 / .14), 0 1px 2px rgb(0 0 0 / .2); }
+.rail-badge .ic { width: 1rem; height: 1rem; filter: drop-shadow(0 1px 0 rgb(255 255 255 / .4)); }
 .rail-badge-more { color: var(--color-muted); }
 #badgeDlg { width: min(30rem, calc(100% - 2rem)); }
 .badge-list { display: flex; flex-direction: column; gap: var(--space-sm); margin-top: var(--space-sm); }
 .badge-row { display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-xs) var(--space-sm); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); background: var(--color-paper-2); }
-.badge-ic { display: inline-grid; place-items: center; flex: none; width: 2.4rem; height: 2.4rem; border: var(--rule-hair) solid var(--color-rule); border-radius: 50%; background: linear-gradient(180deg, var(--color-paper), var(--color-paper-3)); box-shadow: inset 0 1px 1px rgb(255 255 255 / .45), inset 0 -3px 4px rgb(0 0 0 / .14), 0 2px 3px rgb(0 0 0 / .2); color: var(--color-accent); }
-.badge-ic .ic { width: 1.25rem; height: 1.25rem; }
+.badge-ic { display: inline-grid; place-items: center; flex: none; width: 2.4rem; height: 2.4rem; border: var(--rule-hair) solid var(--color-rule); border-radius: 50%; background: linear-gradient(165deg, color-mix(in oklch, var(--color-paper) 72%, #ffffff) 0%, color-mix(in oklch, var(--color-paper-3) 52%, #a7b0b8) 38%, color-mix(in oklch, var(--color-paper) 62%, #e9edf0) 54%, color-mix(in oklch, var(--color-paper-3) 58%, #828b93) 100%); box-shadow: inset 0 1px 1px rgb(255 255 255 / .45), inset 0 -3px 4px rgb(0 0 0 / .14), 0 2px 3px rgb(0 0 0 / .2); color: var(--color-accent); }
+.badge-ic .ic { width: 1.25rem; height: 1.25rem; filter: drop-shadow(0 1px 0 rgb(255 255 255 / .4)); }
 .badge-name { font-weight: 700; color: var(--color-ink); }
 .badge-desc { font-size: var(--text-xs); color: var(--color-muted); line-height: 1.55; }
 .badge-empty { font-size: var(--text-sm); color: var(--color-muted); line-height: 1.6; }
