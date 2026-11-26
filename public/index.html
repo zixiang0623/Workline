@@ -256,27 +256,31 @@ button, input { font: inherit; color: inherit; }
 .badge-cell.locked .badge-name { color: var(--color-muted); font-weight: 400; }
 .badge-name { font-weight: 700; color: var(--color-ink); }
 .badge-empty { grid-column: 1 / -1; font-size: var(--text-sm); color: var(--color-muted); line-height: 1.6; }
-.dbgwin { position: fixed; right: 1rem; top: 4rem; z-index: 600; width: 22rem; height: 26rem; min-width: 16rem; min-height: 12rem; max-width: calc(100vw - 1rem); max-height: calc(100vh - 1rem); display: flex; flex-direction: column; background: transparent; color: var(--color-ink); border: none; box-shadow: none; overflow: visible; }
-.dbgwin-bg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; filter: drop-shadow(0 16px 22px rgb(0 0 0 / .30)); }
-.dbgwin-bg path { fill: var(--color-paper); stroke: var(--color-rule); stroke-width: 1; }
+.dbgwin { position: fixed; right: 1rem; top: 4rem; z-index: 600; width: 22rem; height: 26rem; min-width: 16rem; min-height: 12rem; max-width: calc(100vw - 1rem); max-height: calc(100vh - 1rem); display: flex; flex-direction: column; background: transparent; color: #1d1d1f; border: none; box-shadow: none; overflow: visible; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Hiragino Sans", "Helvetica Neue", Arial, sans-serif; font-size: 13px; }
+.dbgwin-bg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; filter: drop-shadow(0 24px 44px rgb(0 0 0 / .30)); }
+.dbgwin-bg path { fill: #fbfbfd; stroke: rgb(0 0 0 / .20); stroke-width: 1; }
 .dbgwin-clip { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .dbgwin[hidden] { display: none; }
 .dbgwin.mini { height: auto !important; min-height: 0; }
 .dbgwin.mini .dbgwin-body, .dbgwin.mini .dbgwin-actions, .dbgwin.mini .dbgwin-resize { display: none; }
-.dbgwin-bar { display: flex; align-items: center; gap: var(--space-xs); padding: 16px 22px 12px 24px; background: var(--color-paper-2); border-bottom: var(--rule-hair) solid var(--color-rule); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.dbgwin-bar { position: relative; display: flex; align-items: center; justify-content: center; padding: 10px 12px; background: linear-gradient(180deg, #f9f9fa, #ececee); border-bottom: 1px solid #d9d9de; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
 .dbgwin-bar:active { cursor: grabbing; }
-.dbgwin-btns { display: inline-flex; gap: 8px; margin-right: 6px; }
-.dbgwin-dot { width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgb(0 0 0 / .14); display: inline-grid; place-items: center; font-size: 14px; font-weight: 700; line-height: 1; padding: 0; cursor: pointer; color: rgb(0 0 0 / .5); font-family: inherit; }
-.dbgwin-dot.close { background: #ff5f57; }
-.dbgwin-dot.mini { background: #febc2e; }
-.dbgwin-dot:hover { filter: brightness(1.06); }
-.dbgwin-title { font-weight: 700; }
-.dbgwin-ver { color: var(--color-muted); font-size: var(--text-xs); }
-.dbgwin-body { flex: 1; padding: var(--space-sm) 22px; overflow: auto; font-size: var(--text-sm); line-height: 1.7; }
-.dbg-row { display: flex; justify-content: space-between; gap: var(--space-md); padding: 1px 0; }
-.dbg-k { color: var(--color-muted); flex: none; }
-.dbgwin-actions { display: flex; flex-wrap: wrap; gap: var(--space-xs); padding: var(--space-sm) 22px 18px; border-top: var(--rule-hair) solid var(--color-rule); }
-.dbgwin-resize { position: absolute; right: 14px; bottom: 14px; width: 18px; height: 18px; cursor: nwse-resize; touch-action: none; background: linear-gradient(135deg, transparent 52%, var(--color-muted) 52%, var(--color-muted) 60%, transparent 60%, transparent 72%, var(--color-muted) 72%, var(--color-muted) 80%, transparent 80%); opacity: .55; }
+.dbgwin-btns { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); display: inline-flex; gap: 8px; }
+.dbgwin-dot { width: 14px; height: 14px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 10px; font-weight: 700; line-height: 1; padding: 0; cursor: pointer; color: rgb(0 0 0 / .55); font-family: inherit; }
+.dbgwin-dot.close { background: #ff5f57; border: 1px solid #e0443e; }
+.dbgwin-dot.mini { background: #febc2e; border: 1px solid #dea123; }
+.dbgwin-dot.zoom { background: #28c840; border: 1px solid #1aab29; }
+.dbgwin-dot span { opacity: 0; transition: opacity .12s; }
+.dbgwin-bar:hover .dbgwin-dot span, .dbgwin-dot:focus-visible span { opacity: 1; }
+.dbgwin-title { font-weight: 600; color: #26262b; font-size: 13px; }
+.dbgwin-body { flex: 1; padding: 10px 16px; overflow: auto; line-height: 1.65; }
+.dbg-row { display: flex; justify-content: space-between; gap: var(--space-md); padding: 3px 0; border-bottom: 1px solid #eeeef1; }
+.dbg-row:last-child { border-bottom: none; }
+.dbg-k { color: #86868b; flex: none; }
+.dbgwin-actions { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 16px 14px; border-top: 1px solid #e4e4e8; background: #f5f5f7; }
+.dbgwin .btn { background: linear-gradient(180deg, #ffffff, #f2f2f4); border: 1px solid #d1d1d6; color: #1d1d1f; border-radius: 6px; box-shadow: 0 1px 2px rgb(0 0 0 / .05); font-family: inherit; }
+.dbgwin .btn:hover { background: #ffffff; }
+.dbgwin-resize { position: absolute; right: 10px; bottom: 10px; width: 18px; height: 18px; cursor: nwse-resize; touch-action: none; background: linear-gradient(135deg, transparent 52%, #aeaeb2 52%, #aeaeb2 60%, transparent 60%, transparent 72%, #aeaeb2 72%, #aeaeb2 80%, transparent 80%); opacity: .6; }
 .scrim { position: fixed; inset: 0; z-index: var(--z-scrim); background: var(--color-scrim); opacity: 0; }
 
 /* ---- agents (which AI is working) ---- */
@@ -1100,16 +1104,19 @@ dialog.lb::backdrop { background: var(--color-scrim); }
   <div class="dbgwin-clip">
   <div class="dbgwin-bar" id="dbgBar">
     <span class="dbgwin-btns">
-      <button class="dbgwin-dot close" id="dbgClose" type="button" aria-label="閉じる">×</button>
-      <button class="dbgwin-dot mini" id="dbgMini" type="button" aria-label="最小化">−</button>
+      <button class="dbgwin-dot close" id="dbgClose" type="button" aria-label="閉じる"><span>×</span></button>
+      <button class="dbgwin-dot mini" id="dbgMini" type="button" aria-label="最小化"><span>−</span></button>
+      <button class="dbgwin-dot zoom" id="dbgZoom" type="button" aria-label="拡大・縮小"><span>+</span></button>
     </span>
     <span class="dbgwin-title">デバッグ</span>
-    <span class="dbgwin-ver" id="dbgVer"></span>
   </div>
   <div class="dbgwin-body" id="dbgBody"></div>
   <div class="dbgwin-actions">
     <button class="btn small" id="dbgUnlock" type="button"><span>テーマ・バッジ全解放</span></button>
     <button class="btn small" id="dbgReset" type="button"><span>解放をリセット</span></button>
+    <button class="btn small" id="dbgSound" type="button"><span>効果音テスト</span></button>
+    <button class="btn small" id="dbgThemeReset" type="button"><span>テーマを標準に戻す</span></button>
+    <button class="btn small" id="dbgCopy" type="button"><span>状態をコピー</span></button>
     <button class="btn small" id="dbgReload" type="button"><span>画面を再読み込み</span></button>
     <button class="btn small" id="dbgClear" type="button"><span>ローカル設定クリア</span></button>
   </div>
@@ -2328,15 +2335,16 @@ renderRailBadges();
 {
   const win = document.getElementById('dbgWin'), bodyEl = document.getElementById('dbgBody');
   const bgPath = document.getElementById('dbgBgPath'), clip = win.querySelector('.dbgwin-clip');
-  /* 角はR16+スムージング60%(Figma式): 角の届く範囲は 16*1.6=25.6px、ベジェでなめらかに */
+  /* 角はR20+スムージング60%(Figma式): 角の届く範囲は 20*1.6=32px、ベジェでなめらかに */
   const shape = () => {
     const w = win.clientWidth, h = win.clientHeight; if (!w || !h) return;
-    const a = Math.min(16 * 1.6, w / 2, h / 2), k = a * 0.7;
+    const a = Math.min(20 * 1.6, w / 2, h / 2), k = a * 0.7;
     const d = `M ${a} 0 H ${w - a} C ${w - a + k} 0 ${w} ${a - k} ${w} ${a} V ${h - a} C ${w} ${h - a + k} ${w - a + k} ${h} ${w - a} ${h} H ${a} C ${a - k} ${h} 0 ${h - a + k} 0 ${h - a} V ${a} C 0 ${a - k} ${a - k} 0 ${a} 0 Z`;
     bgPath.setAttribute('d', d);
     clip.style.clipPath = `path("${d}")`;
   };
   new ResizeObserver(shape).observe(win);
+  const t0 = Date.now();
   let taps = [], refresh = null;
   const row = (k, v) => `<div class="dbg-row"><span class="dbg-k">${k}</span><span>${v}</span></div>`;
   function renderDbg() {
@@ -2345,9 +2353,11 @@ renderRailBadges();
     const dirs = [...S.dirs.values()], open = dirs.filter((d) => d.status === 'posted' || d.status === 'accepted');
     const agents = [...S.agents.values()].sort((a, b) => b.lastSeen - a.lastSeen).slice(0, 6)
       .map((a) => `${esc(a.name)}（${a.lastSeen ? new Date(a.lastSeen).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '—'}）`).join('、');
-    document.getElementById('dbgVer').textContent = document.getElementById('railVer').textContent || '';
+    const el = Math.floor((Date.now() - t0) / 1000), elStr = el >= 3600 ? `${Math.floor(el / 3600)}時間${Math.floor(el % 3600 / 60)}分` : el >= 60 ? `${Math.floor(el / 60)}分${el % 60}秒` : `${el}秒`;
+    const ua = navigator.userAgent, bname = /Edg\//.test(ua) ? 'Edge' : /Chrome\//.test(ua) ? 'Chrome' : /Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : '不明';
     bodyEl.innerHTML =
-      row('接続', ws && ws.readyState === 1 ? '接続中' : '切断')
+      row('バージョン', esc(document.getElementById('railVer').textContent || '—'))
+      + row('接続', ws && ws.readyState === 1 ? '接続中' : '切断')
       + row('タスク', `${tasks.length}件（ルート${roots.length}・実行中${running.length}）`)
       + row('ステップ', `${steps}件`)
       + row('司令・要求', `${dirs.length}件（未処理${open.length}）`)
@@ -2355,7 +2365,11 @@ renderRailBadges();
       + row('確認待ち', `${S.approvals.size}件`)
       + row('テーマ', `${(THEMES[S.theme] || { name: '標準' }).name}（解放済み${S.themes.length}）`)
       + row('バッジ', `解放済み${S.badges.length}`)
-      + row('エージェント', agents || '—');
+      + row('エージェント', agents || '—')
+      + row('画面', `${innerWidth}×${innerHeight}（DPR ${devicePixelRatio}）`)
+      + row('ブラウザ', bname)
+      + row('開いてから', elStr)
+      + row('回線', navigator.onLine ? 'オンライン' : 'オフライン');
   }
   function closeDbg() { win.hidden = true; if (refresh) { clearInterval(refresh); refresh = null; } }
   function openDbg() {
@@ -2370,6 +2384,29 @@ renderRailBadges();
     else { win.dataset.h = Math.round(win.getBoundingClientRect().height); win.classList.add('mini'); }
     savePos();
   });
+  document.getElementById('dbgZoom').addEventListener('click', () => {
+    if (win.classList.contains('zoom')) {
+      win.classList.remove('zoom');
+      try { const g = JSON.parse(win.dataset.geo); win.style.left = g.x + 'px'; win.style.top = g.y + 'px'; win.style.right = 'auto'; win.style.width = g.w + 'px'; win.style.height = g.h + 'px'; } catch {}
+    } else {
+      const r = win.getBoundingClientRect();
+      win.dataset.geo = JSON.stringify({ x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) });
+      win.classList.add('zoom');
+      win.style.left = '12px'; win.style.top = '12px'; win.style.right = 'auto';
+      win.style.width = (innerWidth - 24) + 'px'; win.style.height = (innerHeight - 24) + 'px';
+    }
+    savePos();
+  });
+  document.getElementById('dbgSound').addEventListener('click', () => { const was = S.sound; S.sound = true; sfx.done(); S.sound = was; });
+  document.getElementById('dbgThemeReset').addEventListener('click', () => setTheme('default'));
+  const copyBtn = document.getElementById('dbgCopy');
+  copyBtn.addEventListener('click', () => {
+    const data = { version: document.getElementById('railVer').textContent || '', tasks: S.tasks.size, dirs: S.dirs.size, notes: S.notes.size, approvals: S.approvals.size, theme: S.theme, themes: S.themes, badges: S.badges, screen: `${innerWidth}x${innerHeight}`, dpr: devicePixelRatio, ua: navigator.userAgent };
+    const label = copyBtn.querySelector('span'), old = label.textContent;
+    const done = (ok) => { label.textContent = ok ? 'コピーした' : 'コピー失敗'; setTimeout(() => { label.textContent = old; }, 1500); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(JSON.stringify(data, null, 2)).then(() => done(true), () => done(false));
+    else done(false);
+  });
   document.getElementById('railVer').addEventListener('click', () => {
     const now = Date.now(); taps = taps.filter((t) => now - t < 2000); taps.push(now);
     if (taps.length >= 5) { taps = []; openDbg(); }
@@ -2378,7 +2415,7 @@ renderRailBadges();
   addEventListener('keydown', (e) => {
     if (e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey && !e.isComposing && e.code === 'Semicolon') { e.preventDefault(); openDbg(); }
   });
-  const savePos = () => { const r = win.getBoundingClientRect(); const h = win.classList.contains('mini') && win.dataset.h ? Number(win.dataset.h) : Math.round(r.height); store.set('dbgwin', JSON.stringify({ x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h })); };
+  const savePos = () => { if (win.classList.contains('zoom') && win.dataset.geo) { store.set('dbgwin', win.dataset.geo); return; } const r = win.getBoundingClientRect(); const h = win.classList.contains('mini') && win.dataset.h ? Number(win.dataset.h) : Math.round(r.height); store.set('dbgwin', JSON.stringify({ x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h })); };
   const dragWith = (onMove) => {
     const move = (ev) => onMove(ev), up = () => { removeEventListener('pointermove', move); removeEventListener('pointerup', up); savePos(); };
     addEventListener('pointermove', move); addEventListener('pointerup', up);
