@@ -2328,10 +2328,10 @@ renderRailBadges();
 {
   const win = document.getElementById('dbgWin'), bodyEl = document.getElementById('dbgBody');
   const bgPath = document.getElementById('dbgBgPath'), clip = win.querySelector('.dbgwin-clip');
-  /* 角はR10+スムージング60%(Figma式): 角の届く範囲は 10*1.6=16px、ベジェでなめらかに */
+  /* 角はR16+スムージング60%(Figma式): 角の届く範囲は 16*1.6=25.6px、ベジェでなめらかに */
   const shape = () => {
     const w = win.clientWidth, h = win.clientHeight; if (!w || !h) return;
-    const a = Math.min(16, w / 2, h / 2), k = a * 0.7;
+    const a = Math.min(16 * 1.6, w / 2, h / 2), k = a * 0.7;
     const d = `M ${a} 0 H ${w - a} C ${w - a + k} 0 ${w} ${a - k} ${w} ${a} V ${h - a} C ${w} ${h - a + k} ${w - a + k} ${h} ${w - a} ${h} H ${a} C ${a - k} ${h} 0 ${h - a + k} 0 ${h - a} V ${a} C 0 ${a - k} ${a - k} 0 ${a} 0 Z`;
     bgPath.setAttribute('d', d);
     clip.style.clipPath = `path("${d}")`;
@@ -2373,6 +2373,10 @@ renderRailBadges();
   document.getElementById('railVer').addEventListener('click', () => {
     const now = Date.now(); taps = taps.filter((t) => now - t < 2000); taps.push(now);
     if (taps.length >= 5) { taps = []; openDbg(); }
+  });
+  /* ショートカット: Ctrl+` (バッククォート)。ブラウザの標準操作に割り当てがなく、通常のWeb操作とぶつからない */
+  addEventListener('keydown', (e) => {
+    if (e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey && !e.isComposing && e.code === 'Backquote') { e.preventDefault(); openDbg(); }
   });
   const savePos = () => { const r = win.getBoundingClientRect(); const h = win.classList.contains('mini') && win.dataset.h ? Number(win.dataset.h) : Math.round(r.height); store.set('dbgwin', JSON.stringify({ x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h })); };
   const dragWith = (onMove) => {
