@@ -4,7 +4,7 @@ import { DurableObject } from "cloudflare:workers";
 import { SHOT_MAX, findIcon, parseAgent, safeFetch, slugify, sniffShot } from "./agents.js";
 import { publicKey, pushEnabled, sendPush, validEndpoint } from "./push.js";
 
-const VERSION = "2.8.5";
+const VERSION = "2.9.0";
 const ALIASES = { getRequest: "getConfirmation" }; // 旧名(askUser の結果取得)。人間からの「要求」とは別物
 const PROTOCOLS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 
@@ -40,6 +40,7 @@ const PUSH_MAX_SUBS = 20;
 const LOG_TABLES = ["steps", "tasks", "agents", "directives", "messages", "approvals", "notes", "shots"]; // 全リセットで捨てる表(通知の購読と獲得したテーマは含めない)
 // シリアルコード → テーマ。コードは小文字にして前後の空白を除いて照合する。テーマの見た目と音は画面(public/index.html)の THEMES にある
 const THEME_CODES = { xmas2026: "xmas", newyear2027: "newyear", sakura2027: "sakura", hoshizora: "hoshizora", momiji2027: "momiji", neko: "neko", shinkai: "shinkai" };
+const BADGE_CODES = { founder: "founder", qiita: "qiita", contributor: "contributor" };
 
 const INSTRUCTIONS = `Workline は、人間が別画面でリアルタイムに眺めている「AIの作業ログ」です。
 あなた(AI)がいま何をしているかを、できるだけ細かく、その場で送ってください。
@@ -669,11 +670,11 @@ async function handlePush(request, env, url) {
   }
 }
 
-// テーマ(シリアルコードで獲得)。GET: 獲得済みの一覧 / POST: { action: "redeem", code }
+// テーマとバッジ(どちらもシリアルコードで獲得)。GET: 獲得済みの一覧 / POST: { action: "redeem", code }
 async function handleTheme(request, env, url) {
   if (!canRead(request, url, env)) return json({ error: "unauthorized" }, 401);
   const bd = board(env);
-  if (request.method === "GET") return json({ themes: await bd.themeList() });
+  if (request.method === "GET") return json({ themes: await bd.themeList(), badges: await bd.badgeList() });
   if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: { allow: "GET, POST" } });
   if (!originOk(request, env)) return json({ error: "forbidden origin" }, 403);
   let b;
@@ -684,8 +685,10 @@ async function handleTheme(request, env, url) {
   }
   if (b.action !== "redeem") return json({ error: "unknown action" }, 400);
   const code = String(b.code ?? "").trim().toLowerCase().slice(0, 64);
-  let theme = null;
+  let theme = null, badge = null;
   for (const [c, id] of Object.entries(THEME_CODES)) if (code && safeEqual(code, c)) theme = id; // 全部と比べる(早く終わらせない)
+  for (const [c, id] of Object.entries(BADGE_CODES)) if (code && safeEqual(code, c)) badge = id;
+  if (badge) return json({ ok: true, ...(await bd.badgeRedeem(badge)) });
   if (!theme) {
     await sleep(800); // 総当たりを遅くする
     return json({ ok: false });
@@ -951,6 +954,7 @@ export class Board extends DurableObject {
     this.initSchema();
     this.initPushSchema();
     this.initThemeSchema();
+    this.initBadgeSchema();
     // クライアントの "ping" に、DOを起こさず "pong" を返す(接続維持と死活確認)
     ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair("ping", "pong"));
   }
@@ -1079,6 +1083,21 @@ export class Board extends DurableObject {
     return { theme: id, already: had, themes };
   }
 
+  // バッジもテーマと同じく「持ち物」なので、全リセットでも残す
+  initBadgeSchema() {
+    this.sql.exec("CREATE TABLE IF NOT EXISTS badges (id TEXT PRIMARY KEY, unlocked_at INTEGER NOT NULL)");
+  }
+  badgeList() {
+    return this.sql.exec("SELECT id, unlocked_at FROM badges ORDER BY unlocked_at, id").toArray().map((r) => ({ id: r.id, unlockedAt: r.unlocked_at }));
+  }
+  badgeRedeem(id) {
+    const had = this.sql.exec("SELECT 1 FROM badges WHERE id = ?", id).toArray().length > 0;
+    if (!had) this.sql.exec("INSERT INTO badges (id, unlocked_at) VALUES (?, ?)", id, Date.now());
+    const badges = this.badgeList();
+    if (!had) this.broadcast({ t: "badge", badges }); // 開いている他の端末にも、獲得したことを知らせる
+    return { badge: id, already: had, badges };
+  }
+
   /* --- WebSocket --- */
 
   async fetch(request) {
@@ -1137,6 +1156,7 @@ export class Board extends DurableObject {
       t: "snapshot",
       serverTime: Date.now(),
       themes: this.themeList(),
+      badges: this.badgeList(),
       auth: { writeOpen: !this.env.MCP_TOKEN && !agentTokens(this.env).length, readOpen: !this.env.VIEW_TOKEN, agentAuth: agentTokens(this.env).length > 0 },
       agents: this.sql.exec("SELECT * FROM agents ORDER BY last_seen DESC LIMIT 50").toArray().map(agentRow),
       tasks,

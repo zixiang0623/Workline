@@ -229,6 +229,19 @@ button, input { font: inherit; color: inherit; }
 .rail-update b { display: block; font-weight: 700; }
 .rail-update a { color: inherit; font-weight: 700; text-underline-offset: 2px; }
 .rail-copy { margin: 0; font-size: var(--text-xs); color: var(--color-muted); text-align: center; }
+.rail-badges { display: flex; justify-content: center; align-items: center; gap: var(--space-xs); margin: 0 auto; padding: var(--space-2xs) var(--space-xs); border: 0; border-radius: var(--radius-ctl); background: transparent; color: var(--color-accent); cursor: pointer; font: inherit; }
+.rail-badges:hover { background: var(--color-paper-2); }
+.rail-badge { display: inline-grid; place-items: center; width: 1.7rem; height: 1.7rem; border: var(--rule-hair) solid var(--color-rule); border-radius: 50%; background: var(--color-paper-2); }
+.rail-badge .ic { width: 1rem; height: 1rem; }
+.rail-badge-more { color: var(--color-muted); }
+#badgeDlg { width: min(30rem, calc(100% - 2rem)); }
+.badge-list { display: flex; flex-direction: column; gap: var(--space-sm); margin-top: var(--space-sm); }
+.badge-row { display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-xs) var(--space-sm); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); background: var(--color-paper-2); }
+.badge-ic { display: inline-grid; place-items: center; flex: none; width: 2.4rem; height: 2.4rem; border: var(--rule-hair) solid var(--color-rule); border-radius: 50%; background: var(--color-paper); color: var(--color-accent); }
+.badge-ic .ic { width: 1.25rem; height: 1.25rem; }
+.badge-name { font-weight: 700; color: var(--color-ink); }
+.badge-desc { font-size: var(--text-xs); color: var(--color-muted); line-height: 1.55; }
+.badge-empty { font-size: var(--text-sm); color: var(--color-muted); line-height: 1.6; }
 .scrim { position: fixed; inset: 0; z-index: var(--z-scrim); background: var(--color-scrim); opacity: 0; }
 
 /* ---- agents (which AI is working) ---- */
@@ -944,6 +957,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
       <button class="btn small" id="themeBtn" type="button" hidden><svg class="ic" aria-hidden="true"><use href="#i-palette"/></svg><span id="themeBtnT"></span></button>
       <button class="btn small" id="codeBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-key-round"/></svg><span>シリアルコード</span></button>
       <button class="btn small danger" id="openPurge" type="button"><svg class="ic" aria-hidden="true"><use href="#i-trash-2"/></svg><span>ログをすべて消去…</span></button>
+      <button class="rail-badges" id="railBadges" type="button" hidden></button>
       <p class="rail-copy">©2026 Workline/darumin</p>
       <p class="rail-copy" id="railVer"></p>
     </div>
@@ -1036,6 +1050,13 @@ dialog.lb::backdrop { background: var(--color-scrim); }
     <header class="wiz-head"><h2 id="themeDlgTitle" style="color:var(--color-ink)">テーマ</h2><button class="icon-btn" id="themeDlgClose" type="button" aria-label="閉じる"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></header>
     <p class="sfx-note">見た目と効果音のセットです。選ぶとすぐに切り替わり、そのテーマの音が1回鳴ります。</p>
     <div class="theme-grid" id="themeGrid"></div>
+  </div>
+</dialog>
+<dialog class="wiz" id="badgeDlg" aria-labelledby="badgeDlgTitle">
+  <div class="wiz-in">
+    <header class="wiz-head"><h2 id="badgeDlgTitle" style="color:var(--color-ink)">バッジ</h2><button class="icon-btn" id="badgeDlgClose" type="button" aria-label="閉じる"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></header>
+    <p class="sfx-note">シリアルコードで獲得したバッジの一覧です。</p>
+    <div class="badge-list" id="badgeList"></div>
   </div>
 </dialog>
 <dialog class="lb" id="lightbox" aria-label="スクリーンショットの拡大表示">
@@ -1570,12 +1591,14 @@ function upsertStep(s) {
 
 function handle(msg, quiet = false) {
   if (msg.t === 'theme') { setThemes(msg.themes); return; }
+  if (msg.t === 'badge') { setBadges(msg.badges); return; }
   if (commsHandle(msg)) return;
   if (msg.t === 'purged') { clearAll(); return; }
   if (msg.t === 'snapshot') {
     S.offset = msg.serverTime - Date.now();
     S.auth = msg.auth;
     if (msg.themes) setThemes(msg.themes);
+    if (msg.badges) setBadges(msg.badges);
     commsSnap(msg);
     el.note.hidden = !(msg.auth && msg.auth.writeOpen);
     const prevLatest = latest();
@@ -2169,6 +2192,39 @@ function setThemes(list) {
   applyTheme();
 }
 try { S.themes = (JSON.parse(store.get('themes', '[]')) || []).filter((id) => THEMES[id]); } catch { S.themes = []; }
+/* ---- バッジ: シリアルコードで獲得(Durable Object に記録)。レール下部に最大2つ+…で出し、ダイアログで一覧 ---- */
+const BADGES = {
+  founder: { name: '創設者', icon: 'star', desc: 'Worklineを作った人に贈られる、最初のバッジ' },
+  qiita: { name: 'Qiita読者', icon: 'book-open', desc: 'Qiitaの「Workline完全ガイド」読者への特典バッジ' },
+  contributor: { name: 'コントリビューター', icon: 'wrench', desc: 'Worklineへの貢献(報告・提案・開発)に贈られるバッジ' },
+};
+function renderRailBadges() {
+  const w = document.getElementById('railBadges');
+  const ids = S.badges.filter((id) => BADGES[id]);
+  w.hidden = ids.length === 0;
+  w.innerHTML = ids.slice(0, 2).map((id) => `<span class="rail-badge" title="${esc(BADGES[id].name)}バッジ">${icon(BADGES[id].icon)}</span>`).join('')
+    + (ids.length > 2 ? `<span class="rail-badge rail-badge-more" title="ほか ${ids.length - 2} 個">${icon('ellipsis')}</span>` : '');
+  w.setAttribute('aria-label', `獲得したバッジ ${ids.length} 個。押すと一覧を開く`);
+}
+// サーバーが持っている獲得済みの一覧に合わせる(テーマと同じ仕組み)
+function setBadges(list) {
+  S.badges = (list || []).map((x) => x.id).filter((id) => BADGES[id]);
+  store.set('badges', JSON.stringify(S.badges));
+  renderRailBadges();
+}
+try { S.badges = (JSON.parse(store.get('badges', '[]')) || []).filter((id) => BADGES[id]); } catch { S.badges = []; }
+function renderBadgeList() {
+  const ids = S.badges.filter((id) => BADGES[id]);
+  document.getElementById('badgeList').innerHTML = ids.length
+    ? ids.map((id) => `<div class="badge-row"><span class="badge-ic">${icon(BADGES[id].icon)}</span><span><span class="badge-name">${esc(BADGES[id].name)}バッジ</span><br><span class="badge-desc">${esc(BADGES[id].desc)}</span></span></div>`).join('')
+    : '<p class="badge-empty">まだバッジがありません。シリアルコードを入力すると、ここに集まります。</p>';
+}
+{
+  const dlg = document.getElementById('badgeDlg');
+  document.getElementById('badgeDlgClose').addEventListener('click', () => dlg.close());
+  document.getElementById('railBadges').addEventListener('click', () => { renderBadgeList(); dlg.showModal(); });
+}
+renderRailBadges();
 /* ---- テーマ切り替えダイアログ(サムネイル付き) ---- */
 const THUMB = {
   default: { paper: 'oklch(98.5% 0.004 235)', ink: 'oklch(27% 0.02 250)', accent: 'oklch(50% 0.115 205)', band: '' },
@@ -2224,6 +2280,13 @@ function renderThemeGrid() {
       else if (r.status === 401) say('閲覧トークンが必要です。ビューアーでトークンを入れてからもう一度試してください。');
       else if (!r.ok) say('受け取れませんでした。しばらくしてからもう一度試してください。');
       else if (!j.ok) say('このコードは使えません。入力をもう一度確認してください。');
+      else if (j.badge) {
+        setBadges(j.badges);
+        const bn = BADGES[j.badge];
+        say(bn ? `バッジ「${bn.name}」${j.already ? 'はすでに獲得済みです' : 'を獲得しました'}` : 'バッジを獲得しました', true);
+        inp.value = '';
+        const was = S.sound; S.sound = true; try { sfx.done(); } catch {} S.sound = was;   // 音がオフでも、獲得した音を1回だけ聞かせる(テーマ獲得と同じ)
+      }
       else {
         setThemes(j.themes); setTheme(j.theme);
         const tn = THEMES[j.theme];
