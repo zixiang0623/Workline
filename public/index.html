@@ -234,15 +234,19 @@ button, input { font: inherit; color: inherit; }
 .rail-badge { display: inline-grid; place-items: center; width: 1.7rem; height: 1.7rem; border: var(--rule-hair) solid var(--color-rule); border-radius: 50%; background: linear-gradient(165deg, color-mix(in oklch, var(--color-paper) 72%, #ffffff) 0%, color-mix(in oklch, var(--color-paper-3) 52%, #a7b0b8) 38%, color-mix(in oklch, var(--color-paper) 62%, #e9edf0) 54%, color-mix(in oklch, var(--color-paper-3) 58%, #828b93) 100%); box-shadow: inset 0 1px 1px rgb(255 255 255 / .45), inset 0 -2px 3px rgb(0 0 0 / .14), 0 1px 2px rgb(0 0 0 / .2); }
 .rail-badge .ic { width: 1rem; height: 1rem; filter: drop-shadow(0 1px 0 rgb(255 255 255 / .4)); }
 .rail-badge-more { color: var(--color-muted); }
-#badgeDlg { width: min(30rem, calc(100% - 2rem)); }
-.badge-list { display: flex; flex-direction: column; gap: var(--space-sm); margin-top: var(--space-sm); }
-.badge-row { display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-xs) var(--space-sm); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); background: var(--color-paper-2); }
-.badge-ic { display: inline-grid; place-items: center; flex: none; width: 2.4rem; height: 2.4rem; border: var(--rule-hair) solid var(--color-rule); border-radius: 50%; background: linear-gradient(165deg, color-mix(in oklch, var(--color-paper) 72%, #ffffff) 0%, color-mix(in oklch, var(--color-paper-3) 52%, #a7b0b8) 38%, color-mix(in oklch, var(--color-paper) 62%, #e9edf0) 54%, color-mix(in oklch, var(--color-paper-3) 58%, #828b93) 100%); box-shadow: inset 0 1px 1px rgb(255 255 255 / .45), inset 0 -3px 4px rgb(0 0 0 / .14), 0 2px 3px rgb(0 0 0 / .2); color: var(--color-accent); }
-.badge-ic .ic { width: 1.25rem; height: 1.25rem; filter: drop-shadow(0 1px 0 rgb(255 255 255 / .4)); }
+#badgeDlg { width: min(32rem, calc(100% - 2rem)); }
+.badge-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.1rem var(--space-sm); margin-top: var(--space-sm); }
+.badge-cell { display: flex; flex-direction: column; align-items: center; gap: var(--space-2xs); text-align: center; }
+.badge-ic { position: relative; display: inline-grid; place-items: center; flex: none; width: 3.6rem; height: 3.6rem; border: var(--rule-hair) solid var(--color-rule); border-radius: 50%; background: linear-gradient(165deg, color-mix(in oklch, var(--color-paper) 55%, #ffffff) 0%, color-mix(in oklch, var(--color-paper-3) 45%, #a7b0b8) 34%, color-mix(in oklch, var(--color-paper) 50%, #e9edf0) 52%, color-mix(in oklch, var(--color-paper-3) 50%, #828b93) 82%, color-mix(in oklch, var(--color-paper-3) 62%, #6e777f) 100%); box-shadow: inset 0 2px 2px rgb(255 255 255 / .55), inset 0 -5px 7px rgb(0 0 0 / .22), inset 2px 0 3px rgb(255 255 255 / .18), 0 4px 7px rgb(0 0 0 / .28), 0 1px 2px rgb(0 0 0 / .22); color: var(--color-accent); overflow: hidden; }
+.badge-ic::after { content: ""; position: absolute; left: 12%; right: 12%; top: 5%; height: 42%; border-radius: 50%; background: linear-gradient(180deg, rgb(255 255 255 / .5), rgb(255 255 255 / 0)); pointer-events: none; }
+.badge-ic .ic { position: relative; z-index: 1; width: 1.7rem; height: 1.7rem; filter: drop-shadow(0 1px 1px rgb(255 255 255 / .45)); }
 .rail-badge.gold, .badge-ic.gold { background: linear-gradient(165deg, #fff7cf 0%, #dcb13e 38%, #ffec8f 54%, #a87e14 100%); color: #7c5c0d; }
+.badge-cell.locked .badge-ic { background: transparent; border: 1.5px solid var(--color-rule); box-shadow: none; color: var(--color-muted); opacity: .55; }
+.badge-cell.locked .badge-ic::after { content: none; }
+.badge-cell.locked .badge-ic .ic { filter: none; }
+.badge-cell.locked .badge-name { color: var(--color-muted); font-weight: 400; }
 .badge-name { font-weight: 700; color: var(--color-ink); }
-.badge-desc { font-size: var(--text-xs); color: var(--color-muted); line-height: 1.55; }
-.badge-empty { font-size: var(--text-sm); color: var(--color-muted); line-height: 1.6; }
+.badge-empty { grid-column: 1 / -1; font-size: var(--text-sm); color: var(--color-muted); line-height: 1.6; }
 .scrim { position: fixed; inset: 0; z-index: var(--z-scrim); background: var(--color-scrim); opacity: 0; }
 
 /* ---- agents (which AI is working) ---- */
@@ -1056,7 +1060,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
 <dialog class="wiz" id="badgeDlg" aria-labelledby="badgeDlgTitle">
   <div class="wiz-in">
     <header class="wiz-head"><h2 id="badgeDlgTitle" style="color:var(--color-ink)">バッジ</h2><button class="icon-btn" id="badgeDlgClose" type="button" aria-label="閉じる"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></header>
-    <p class="sfx-note">シリアルコードで獲得したバッジの一覧です。</p>
+    <p class="sfx-note">集めたバッジのコレクションです。まだのバッジは、輪郭だけ見えます。</p>
     <div class="badge-list" id="badgeList"></div>
   </div>
 </dialog>
@@ -2223,10 +2227,11 @@ function setBadges(list) {
 }
 try { S.badges = (JSON.parse(store.get('badges', '[]')) || []).filter((id) => BADGES[id]); } catch { S.badges = []; }
 function renderBadgeList() {
-  const ids = S.badges.filter((id) => BADGES[id]);
-  document.getElementById('badgeList').innerHTML = ids.length
-    ? ids.map((id) => `<div class="badge-row"><span class="badge-ic${BADGES[id].gold ? ' gold' : ''}">${icon(BADGES[id].icon)}</span><span><span class="badge-name">${esc(BADGES[id].name)}バッジ</span><br><span class="badge-desc">${esc(BADGES[id].desc)}</span></span></div>`).join('')
-    : '<p class="badge-empty">まだバッジがありません。シリアルコードを入力すると、ここに集まります。</p>';
+  const owned = new Set(S.badges.filter((id) => BADGES[id]));
+  const cells = Object.entries(BADGES).map(([id, b]) => owned.has(id)
+    ? `<div class="badge-cell" title="${esc(b.desc)}"><span class="badge-ic${b.gold ? ' gold' : ''}">${icon(b.icon)}</span><span class="badge-name">${esc(b.name)}</span></div>`
+    : `<div class="badge-cell locked"><span class="badge-ic">${icon(b.icon)}</span><span class="badge-name">？？？</span></div>`).join('');
+  document.getElementById('badgeList').innerHTML = (owned.size ? '' : '<p class="badge-empty">まだバッジがありません。シリアルコードを入力すると、ここに集まります。</p>') + cells;
 }
 {
   const dlg = document.getElementById('badgeDlg');
