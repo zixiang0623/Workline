@@ -257,7 +257,7 @@ button, input { font: inherit; color: inherit; }
 .badge-cell.locked .badge-name { color: var(--color-muted); font-weight: 400; }
 .badge-name { font-weight: 700; color: var(--color-ink); }
 .badge-empty { grid-column: 1 / -1; font-size: var(--text-sm); color: var(--color-muted); line-height: 1.6; }
-.dbgwin { position: fixed; right: 1rem; top: 4rem; z-index: 600; width: 22rem; height: 26rem; min-width: 16rem; min-height: 12rem; max-width: calc(100vw - 1rem); max-height: calc(100vh - 1rem); display: flex; flex-direction: column; background: transparent; color: #1d1d1f; border: none; box-shadow: none; overflow: visible; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Hiragino Sans", "Helvetica Neue", Arial, sans-serif; font-size: 13px; }
+.dbgwin { position: fixed; right: 1rem; top: 4rem; z-index: 600; width: 22rem; height: 30rem; min-width: 16rem; min-height: 12rem; max-width: calc(100vw - 1rem); max-height: calc(100vh - 1rem); display: flex; flex-direction: column; background: transparent; color: #1d1d1f; border: none; box-shadow: none; overflow: visible; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Hiragino Sans", "Helvetica Neue", Arial, sans-serif; font-size: 13px; }
 .dbgwin-bg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; filter: drop-shadow(0 24px 44px rgb(0 0 0 / .30)); }
 .dbgwin-bg path { fill: rgb(255 255 255 / var(--lg-alpha)); stroke: rgb(0 0 0 / .12); stroke-width: 1; }
 .dbgwin-clip { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; -webkit-backdrop-filter: blur(6px) saturate(160%); backdrop-filter: blur(6px) saturate(160%); box-shadow: inset 0 1px 0 rgb(255 255 255 / .6), inset 0 -1px 0 rgb(255 255 255 / .15), inset 0 0 0 1px rgb(255 255 255 / .2); }
@@ -266,11 +266,7 @@ html.lg-off .bar, html.lg-off .rail, html.lg-off .wiz, html.lg-off dialog.lb, ht
 @media (prefers-reduced-transparency: reduce) { .dbgwin-bg path { fill: #fbfbfd; } .dbgwin-clip, .bar, .rail, .wiz, dialog.lb, .now { -webkit-backdrop-filter: none; backdrop-filter: none; } .bar, .wiz, dialog.lb, .now { background: var(--color-paper); } .rail { background: var(--color-paper-2); } }
 .dbgwin[hidden] { display: none; }
 .dbgwin.mini { height: auto !important; min-height: 0; }
-.dbgwin.mini .dbgwin-body, .dbgwin.mini .dbgwin-scale, .dbgwin.mini .dbgwin-actions, .dbgwin.mini .dbgwin-resize { display: none; }
-.dbgwin-scale { display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-top: 1px solid rgb(0 0 0 / .06); background: rgb(255 255 255 / .22); font-size: 12px; color: #1d1d1f; }
-.dbgwin-scale label { color: #86868b; white-space: nowrap; }
-.dbgwin-scale input[type="range"] { flex: 1; min-width: 0; accent-color: #0071e3; }
-.dbgwin-scale span { font-family: var(--font-data); min-width: 2.2em; text-align: right; }
+.dbgwin.mini .dbgwin-body, .dbgwin.mini .dbgwin-resize { display: none; }
 .dbgwin-bar { position: relative; display: flex; align-items: center; justify-content: center; padding: 10px 12px; background: linear-gradient(180deg, rgb(255 255 255 / .50), rgb(255 255 255 / .22)); border-bottom: 1px solid rgb(0 0 0 / .06); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
 .dbgwin-bar:active { cursor: grabbing; }
 .dbgwin-btns { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); display: inline-flex; gap: 8px; }
@@ -281,13 +277,29 @@ html.lg-off .bar, html.lg-off .rail, html.lg-off .wiz, html.lg-off dialog.lb, ht
 .dbgwin-dot span { opacity: 0; transition: opacity .12s; }
 .dbgwin-bar:hover .dbgwin-dot span, .dbgwin-dot:focus-visible span { opacity: 1; }
 .dbgwin-title { font-weight: 600; color: #26262b; font-size: 13px; }
-.dbgwin-body { flex: 1; padding: 10px 16px; overflow: auto; line-height: 1.65; }
-.dbg-row { display: flex; justify-content: space-between; gap: var(--space-md); padding: 3px 0; border-bottom: 1px solid rgb(0 0 0 / .05); }
-.dbg-row:last-child { border-bottom: none; }
-.dbg-k { color: #86868b; flex: none; }
-.dbgwin-actions { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 16px 14px; border-top: 1px solid rgb(0 0 0 / .06); background: rgb(255 255 255 / .22); }
-.dbgwin .btn { background: rgb(255 255 255 / .55); border: 1px solid rgb(0 0 0 / .07); color: #1d1d1f; border-radius: 8px; box-shadow: inset 0 1px 0 rgb(255 255 255 / .65), 0 1px 3px rgb(0 0 0 / .08); font-family: inherit; }
-.dbgwin .btn:hover { background: rgb(255 255 255 / .82); }
+.dbgwin-body { flex: 1; padding: 14px 14px 16px; overflow: auto; background: rgb(238 238 242 / .45); }
+.dbg-hero { text-align: center; padding: 4px 0 14px; }
+.dbg-hero-ic { display: inline-grid; place-items: center; width: 54px; height: 54px; border-radius: 13px; background: linear-gradient(180deg, #fdfdfd, #e9e9ee); border: 1px solid rgb(0 0 0 / .06); box-shadow: 0 2px 8px rgb(0 0 0 / .10), inset 0 1px 0 #fff; color: #48484a; }
+.dbg-hero-ic .ic { width: 27px; height: 27px; }
+.dbg-hero-name { margin-top: 7px; font-size: 16px; font-weight: 700; color: #1d1d1f; }
+.dbg-hero-sub { font-size: 11.5px; color: #86868b; }
+.dbg-group { margin-bottom: 14px; }
+.dbg-group:last-child { margin-bottom: 2px; }
+.dbg-group-t { font-size: 11px; font-weight: 600; color: #6e6e73; letter-spacing: .04em; padding: 0 4px 5px; }
+.dbg-card { background: rgb(255 255 255 / .85); border: 1px solid rgb(0 0 0 / .05); border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgb(0 0 0 / .05); }
+.dbg-row { display: flex; align-items: center; gap: 10px; padding: 6px 12px; min-height: 31px; border-top: 1px solid rgb(0 0 0 / .05); box-sizing: border-box; }
+.dbg-card > .dbg-row:first-child, .dbg-card > button.dbg-act:first-child { border-top: none; }
+.dbg-k { color: #48484a; flex: none; min-width: 74px; }
+.dbg-v { color: #1d1d1f; }
+.dbg-num { font-family: var(--font-data); min-width: 2ch; text-align: right; }
+.dbg-row input[type="range"] { flex: 1; min-width: 0; accent-color: #0071e3; }
+.dbg-note { flex: 1; font-size: 11px; color: #86868b; line-height: 1.5; }
+.dbg-linkbtn { flex: none; border: none; background: none; color: #0071e3; font: inherit; font-size: 12px; cursor: pointer; padding: 2px 0; }
+button.dbg-act { width: 100%; background: none; border: none; border-top: 1px solid rgb(0 0 0 / .05); font: inherit; color: #1d1d1f; cursor: pointer; text-align: left; justify-content: space-between; }
+button.dbg-act:hover { background: rgb(0 0 0 / .03); }
+button.dbg-act:disabled { opacity: .55; cursor: default; }
+button.dbg-act.danger { color: #d70015; }
+.dbg-chev { color: #c7c7cc; font-size: 15px; line-height: 1; }
 .dbgwin-resize { position: absolute; right: 10px; bottom: 10px; width: 18px; height: 18px; cursor: nwse-resize; touch-action: none; background: linear-gradient(135deg, transparent 52%, #aeaeb2 52%, #aeaeb2 60%, transparent 60%, transparent 72%, #aeaeb2 72%, #aeaeb2 80%, transparent 80%); opacity: .6; }
 .scrim { position: fixed; inset: 0; z-index: var(--z-scrim); background: var(--color-scrim); opacity: 0; }
 
@@ -1118,20 +1130,26 @@ dialog.lb::backdrop { background: var(--color-scrim); }
     </span>
     <span class="dbgwin-title">デバッグ</span>
   </div>
-  <div class="dbgwin-body" id="dbgBody"></div>
-  <div class="dbgwin-scale">
-    <label for="dbgTint">透明度</label>
-    <input type="range" id="dbgTint" min="0" max="100" step="1" value="60">
-    <span id="dbgTintVal">60</span>
-  </div>
-  <div class="dbgwin-actions">
-    <button class="btn small" id="dbgUnlock" type="button"><span>テーマ・バッジ全解放</span></button>
-    <button class="btn small" id="dbgReset" type="button"><span>解放をリセット</span></button>
-    <button class="btn small" id="dbgSound" type="button"><span>効果音テスト</span></button>
-    <button class="btn small" id="dbgThemeReset" type="button"><span>テーマを標準に戻す</span></button>
-    <button class="btn small" id="dbgCopy" type="button"><span>状態をコピー</span></button>
-    <button class="btn small" id="dbgReload" type="button"><span>画面を再読み込み</span></button>
-    <button class="btn small" id="dbgClear" type="button"><span>ローカル設定クリア</span></button>
+  <div class="dbgwin-body">
+    <div class="dbg-hero">
+      <span class="dbg-hero-ic"><svg class="ic" aria-hidden="true"><use href="#i-wrench"/></svg></span>
+      <div class="dbg-hero-name">Workline</div>
+      <div class="dbg-hero-sub">デバッグ · <span id="dbgHeroVer">—</span></div>
+    </div>
+    <div class="dbg-group"><div class="dbg-group-t">情報</div><div class="dbg-card" id="dbgInfo"></div></div>
+    <div class="dbg-group"><div class="dbg-group-t">表示</div><div class="dbg-card">
+      <div class="dbg-row"><span class="dbg-k">透明度</span><input type="range" id="dbgTint" min="0" max="100" step="1" value="60"><span class="dbg-v dbg-num" id="dbgTintVal">60</span></div>
+      <div class="dbg-row"><span class="dbg-note">デフォルトは 60。0 にすると Liquid Glass が無効になります</span><button class="dbg-linkbtn" id="dbgTintReset" type="button">デフォルトに戻す</button></div>
+    </div></div>
+    <div class="dbg-group"><div class="dbg-group-t">操作</div><div class="dbg-card">
+      <button class="dbg-row dbg-act" id="dbgUnlock" type="button"><span>テーマ・バッジ全解放</span><span class="dbg-chev">›</span></button>
+      <button class="dbg-row dbg-act" id="dbgReset" type="button"><span>解放をリセット</span><span class="dbg-chev">›</span></button>
+      <button class="dbg-row dbg-act" id="dbgSound" type="button"><span>効果音テスト</span><span class="dbg-chev">›</span></button>
+      <button class="dbg-row dbg-act" id="dbgThemeReset" type="button"><span>テーマを標準に戻す</span><span class="dbg-chev">›</span></button>
+      <button class="dbg-row dbg-act" id="dbgCopy" type="button"><span>状態をコピー</span><span class="dbg-chev">›</span></button>
+      <button class="dbg-row dbg-act" id="dbgReload" type="button"><span>画面を再読み込み</span><span class="dbg-chev">›</span></button>
+      <button class="dbg-row dbg-act danger" id="dbgClear" type="button"><span>ローカル設定クリア</span><span class="dbg-chev">›</span></button>
+    </div></div>
   </div>
   <div class="dbgwin-resize" id="dbgResize"></div>
   </div>
@@ -2426,7 +2444,7 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
 
 /* ---- デバッグウィンドウ: バージョン表示を5回タップで開く。タイトルバーを掴んで移動、右下のつまみでリサイズ ---- */
 {
-  const win = document.getElementById('dbgWin'), bodyEl = document.getElementById('dbgBody');
+  const win = document.getElementById('dbgWin'), bodyEl = document.getElementById('dbgInfo'), heroVer = document.getElementById('dbgHeroVer');
   const bgPath = document.getElementById('dbgBgPath'), clip = win.querySelector('.dbgwin-clip');
   /* 角はR20+スムージング60%(Figma式): 角の届く範囲は 20*1.6=32px、ベジェでなめらかに */
   const shape = () => {
@@ -2439,30 +2457,29 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
   new ResizeObserver(() => { shape(); lgSchedule(clip, win); }).observe(win);
   const t0 = Date.now();
   let taps = [], refresh = null;
-  const row = (k, v) => `<div class="dbg-row"><span class="dbg-k">${k}</span><span>${v}</span></div>`;
+  const row = (k, v) => `<div class="dbg-row"><span class="dbg-k">${k}</span><span class="dbg-v">${v}</span></div>`;
+  /* 情報の行はこの配列が正本。行を増やすときはここに1行足すだけ */
+  const DBG_ROWS = [
+    ['バージョン', () => esc(document.getElementById('railVer').textContent || '—')],
+    ['接続', () => ws && ws.readyState === 1 ? '接続中' : '切断'],
+    ['タスク', () => { const t = [...S.tasks.values()]; return `${t.length}件（ルート${t.filter(isRoot).length}・実行中${t.filter((x) => x.status === 'running').length}）`; }],
+    ['ステップ', () => `${[...S.tasks.values()].reduce((n, t) => n + (t.steps ? t.steps.length : 0), 0)}件`],
+    ['司令・要求', () => { const d = [...S.dirs.values()]; return `${d.length}件（未処理${d.filter((x) => x.status === 'posted' || x.status === 'accepted').length}）`; }],
+    ['伝言', () => `${S.notes.size}件`],
+    ['確認待ち', () => `${S.approvals.size}件`],
+    ['テーマ', () => `${(THEMES[S.theme] || { name: '標準' }).name}（解放済み${S.themes.length}）`],
+    ['バッジ', () => `解放済み${S.badges.length}`],
+    ['屈折の強さ', () => `${LG_SCALE}（固定）`],
+    ['透明度', () => `${lgTransVal}（デフォルト 60）`],
+    ['エージェント', () => [...S.agents.values()].sort((a, b) => b.lastSeen - a.lastSeen).slice(0, 6).map((a) => `${esc(a.name)}（${a.lastSeen ? new Date(a.lastSeen).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '—'}）`).join('、') || '—'],
+    ['画面', () => `${innerWidth}×${innerHeight}（DPR ${devicePixelRatio}）`],
+    ['ブラウザ', () => { const ua = navigator.userAgent; return /Edg\//.test(ua) ? 'Edge' : /Chrome\//.test(ua) ? 'Chrome' : /Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : '不明'; }],
+    ['開いてから', () => { const el = Math.floor((Date.now() - t0) / 1000); return el >= 3600 ? `${Math.floor(el / 3600)}時間${Math.floor(el % 3600 / 60)}分` : el >= 60 ? `${Math.floor(el / 60)}分${el % 60}秒` : `${el}秒`; }],
+    ['回線', () => navigator.onLine ? 'オンライン' : 'オフライン'],
+  ];
   function renderDbg() {
-    const tasks = [...S.tasks.values()], roots = tasks.filter(isRoot), running = tasks.filter((t) => t.status === 'running');
-    const steps = tasks.reduce((n, t) => n + (t.steps ? t.steps.length : 0), 0);
-    const dirs = [...S.dirs.values()], open = dirs.filter((d) => d.status === 'posted' || d.status === 'accepted');
-    const agents = [...S.agents.values()].sort((a, b) => b.lastSeen - a.lastSeen).slice(0, 6)
-      .map((a) => `${esc(a.name)}（${a.lastSeen ? new Date(a.lastSeen).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '—'}）`).join('、');
-    const el = Math.floor((Date.now() - t0) / 1000), elStr = el >= 3600 ? `${Math.floor(el / 3600)}時間${Math.floor(el % 3600 / 60)}分` : el >= 60 ? `${Math.floor(el / 60)}分${el % 60}秒` : `${el}秒`;
-    const ua = navigator.userAgent, bname = /Edg\//.test(ua) ? 'Edge' : /Chrome\//.test(ua) ? 'Chrome' : /Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : '不明';
-    bodyEl.innerHTML =
-      row('バージョン', esc(document.getElementById('railVer').textContent || '—'))
-      + row('接続', ws && ws.readyState === 1 ? '接続中' : '切断')
-      + row('タスク', `${tasks.length}件（ルート${roots.length}・実行中${running.length}）`)
-      + row('ステップ', `${steps}件`)
-      + row('司令・要求', `${dirs.length}件（未処理${open.length}）`)
-      + row('伝言', `${S.notes.size}件`)
-      + row('確認待ち', `${S.approvals.size}件`)
-      + row('テーマ', `${(THEMES[S.theme] || { name: '標準' }).name}（解放済み${S.themes.length}）`)
-      + row('バッジ', `解放済み${S.badges.length}`)
-      + row('エージェント', agents || '—')
-      + row('画面', `${innerWidth}×${innerHeight}（DPR ${devicePixelRatio}）`)
-      + row('ブラウザ', bname)
-      + row('開いてから', elStr)
-      + row('回線', navigator.onLine ? 'オンライン' : 'オフライン');
+    bodyEl.innerHTML = DBG_ROWS.map(([k, f]) => row(k, f())).join('');
+    heroVer.textContent = document.getElementById('railVer').textContent || '—';
   }
   function closeDbg() { win.hidden = true; if (refresh) { clearInterval(refresh); refresh = null; } }
   function openDbg() {
@@ -2493,11 +2510,12 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
   const tintEl = document.getElementById('dbgTint'), tintVal = document.getElementById('dbgTintVal');
   tintEl.value = lgTransVal; tintVal.textContent = lgTransVal;
   tintEl.addEventListener('input', () => { lgSetTrans(Number(tintEl.value)); tintVal.textContent = tintEl.value; });
+  document.getElementById('dbgTintReset').addEventListener('click', () => { lgSetTrans(60); tintEl.value = 60; tintVal.textContent = '60'; });
   document.getElementById('dbgSound').addEventListener('click', () => { const was = S.sound; S.sound = true; sfx.done(); S.sound = was; });
   document.getElementById('dbgThemeReset').addEventListener('click', () => setTheme('default'));
   const copyBtn = document.getElementById('dbgCopy');
   copyBtn.addEventListener('click', () => {
-    const data = { version: document.getElementById('railVer').textContent || '', tasks: S.tasks.size, dirs: S.dirs.size, notes: S.notes.size, approvals: S.approvals.size, theme: S.theme, themes: S.themes, badges: S.badges, screen: `${innerWidth}x${innerHeight}`, dpr: devicePixelRatio, ua: navigator.userAgent };
+    const data = Object.fromEntries(DBG_ROWS.map(([k, f]) => [k, String(f()).replace(/<[^>]*>/g, '')]));
     const label = copyBtn.querySelector('span'), old = label.textContent;
     const done = (ok) => { label.textContent = ok ? 'コピーした' : 'コピー失敗'; setTimeout(() => { label.textContent = old; }, 1500); };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(JSON.stringify(data, null, 2)).then(() => done(true), () => done(false));
