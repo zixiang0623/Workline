@@ -257,7 +257,8 @@ button, input { font: inherit; color: inherit; }
 .badge-cell.locked .badge-name { color: var(--color-muted); font-weight: 400; }
 .badge-name { font-weight: 700; color: var(--color-ink); }
 .badge-empty { grid-column: 1 / -1; font-size: var(--text-sm); color: var(--color-muted); line-height: 1.6; }
-.dbgwin { position: fixed; right: 1rem; top: 4rem; z-index: 600; width: 34rem; height: 30rem; min-width: min(27rem, calc(100vw - 1rem)); min-height: 12rem; max-width: calc(100vw - 1rem); max-height: calc(100vh - 1rem); display: flex; flex-direction: column; background: transparent; color: #1d1d1f; border: none; box-shadow: none; overflow: visible; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Hiragino Sans", "Helvetica Neue", Arial, sans-serif; font-size: 13px; transition: left .38s cubic-bezier(.25, 1.35, .35, 1), top .38s cubic-bezier(.25, 1.35, .35, 1), width .38s cubic-bezier(.25, 1.35, .35, 1), height .38s cubic-bezier(.25, 1.35, .35, 1); }
+.dbgwin { position: fixed; right: 1rem; top: 4rem; z-index: 600; width: 34rem; height: 30rem; min-width: min(27rem, calc(100vw - 1rem)); min-height: 12rem; max-width: calc(100vw - 1rem); max-height: calc(100vh - 1rem); display: flex; flex-direction: column; background: transparent; color: #1d1d1f; border: none; box-shadow: none; overflow: visible; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Hiragino Sans", "Helvetica Neue", Arial, sans-serif; font-size: 13px; transition: left .38s cubic-bezier(.3, .9, .3, 1), top .38s cubic-bezier(.3, .9, .3, 1), width .38s cubic-bezier(.25, 1.35, .35, 1), height .38s cubic-bezier(.25, 1.35, .35, 1); }
+.dbgwin.zoom { max-width: none; max-height: none; }
 .dbgwin.dragging { transition: none; }
 .dbgwin.resizing { transition: width .13s ease-out, height .13s ease-out; }
 @media (prefers-reduced-motion: reduce) { .dbgwin { transition: none; } }
@@ -2535,6 +2536,7 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
   }
   document.getElementById('dbgClose').addEventListener('click', closeDbg);
   document.getElementById('dbgMini').addEventListener('click', () => {
+    if (win.classList.contains('zoom')) return;
     if (win.classList.contains('mini')) {
       win.classList.remove('mini');
       if (win.dataset.h) {
@@ -2551,10 +2553,12 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
       try { const g = JSON.parse(win.dataset.geo); win.style.left = g.x + 'px'; win.style.top = g.y + 'px'; win.style.right = 'auto'; win.style.width = g.w + 'px'; win.style.height = g.h + 'px'; store.set('dbgwin', win.dataset.geo); } catch {}
     } else {
       const r = win.getBoundingClientRect();
-      win.dataset.geo = JSON.stringify({ x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) });
+      const wasMini = win.classList.contains('mini');
+      if (wasMini) win.classList.remove('mini');
+      win.dataset.geo = JSON.stringify({ x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: wasMini && win.dataset.h ? Number(win.dataset.h) : Math.round(r.height) });
       win.classList.add('zoom');
-      win.style.left = '12px'; win.style.top = '12px'; win.style.right = 'auto';
-      win.style.width = (innerWidth - 24) + 'px'; win.style.height = (innerHeight - 24) + 'px';
+      win.style.left = '0px'; win.style.top = '0px'; win.style.right = 'auto';
+      win.style.width = innerWidth + 'px'; win.style.height = innerHeight + 'px';
       savePos();
     }
   });
