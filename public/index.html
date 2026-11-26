@@ -257,7 +257,10 @@ button, input { font: inherit; color: inherit; }
 .badge-cell.locked .badge-name { color: var(--color-muted); font-weight: 400; }
 .badge-name { font-weight: 700; color: var(--color-ink); }
 .badge-empty { grid-column: 1 / -1; font-size: var(--text-sm); color: var(--color-muted); line-height: 1.6; }
-.dbgwin { position: fixed; right: 1rem; top: 4rem; z-index: 600; width: 34rem; height: 30rem; min-width: min(27rem, calc(100vw - 1rem)); min-height: 12rem; max-width: calc(100vw - 1rem); max-height: calc(100vh - 1rem); display: flex; flex-direction: column; background: transparent; color: #1d1d1f; border: none; box-shadow: none; overflow: visible; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Hiragino Sans", "Helvetica Neue", Arial, sans-serif; font-size: 13px; }
+.dbgwin { position: fixed; right: 1rem; top: 4rem; z-index: 600; width: 34rem; height: 30rem; min-width: min(27rem, calc(100vw - 1rem)); min-height: 12rem; max-width: calc(100vw - 1rem); max-height: calc(100vh - 1rem); display: flex; flex-direction: column; background: transparent; color: #1d1d1f; border: none; box-shadow: none; overflow: visible; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Hiragino Sans", "Helvetica Neue", Arial, sans-serif; font-size: 13px; transition: left .38s cubic-bezier(.25, 1.35, .35, 1), top .38s cubic-bezier(.25, 1.35, .35, 1), width .38s cubic-bezier(.25, 1.35, .35, 1), height .38s cubic-bezier(.25, 1.35, .35, 1); }
+.dbgwin.dragging { transition: none; }
+.dbgwin.resizing { transition: width .13s ease-out, height .13s ease-out; }
+@media (prefers-reduced-motion: reduce) { .dbgwin { transition: none; } }
 .dbgwin-bg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; filter: drop-shadow(0 24px 44px rgb(0 0 0 / .30)); }
 .dbgwin-bg path { fill: rgb(255 255 255 / var(--lg-alpha)); stroke: rgb(0 0 0 / .12); stroke-width: 1; }
 .dbgwin-clip { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; -webkit-backdrop-filter: blur(6px) saturate(160%); backdrop-filter: blur(6px) saturate(160%); box-shadow: inset 0 1px 0 rgb(255 255 255 / .6), inset 0 -1px 0 rgb(255 255 255 / .15), inset 0 0 0 1px rgb(255 255 255 / .2); }
@@ -265,7 +268,7 @@ button, input { font: inherit; color: inherit; }
 html.lg-off .bar, html.lg-off .rail, html.lg-off .wiz, html.lg-off dialog.lb, html.lg-off .now, html.lg-off .dbgwin-clip { -webkit-backdrop-filter: none; backdrop-filter: none; }
 @media (prefers-reduced-transparency: reduce) { .dbgwin-bg path { fill: #fbfbfd; } .dbgwin-clip, .bar, .rail, .wiz, dialog.lb, .now { -webkit-backdrop-filter: none; backdrop-filter: none; } .bar, .wiz, dialog.lb, .now { background: var(--color-paper); } .rail { background: var(--color-paper-2); } }
 .dbgwin[hidden] { display: none; }
-.dbgwin.mini { height: auto !important; min-height: 0; }
+.dbgwin.mini { min-height: 0; }
 .dbgwin.mini .dbgwin-body, .dbgwin.mini .dbgwin-resize { display: none; }
 .dbgwin-bar { position: relative; display: flex; align-items: center; justify-content: center; padding: 10px 12px; background: linear-gradient(180deg, rgb(255 255 255 / .50), rgb(255 255 255 / .22)); border-bottom: 1px solid rgb(0 0 0 / .06); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
 .dbgwin-bar:active { cursor: grabbing; }
@@ -2532,22 +2535,28 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
   }
   document.getElementById('dbgClose').addEventListener('click', closeDbg);
   document.getElementById('dbgMini').addEventListener('click', () => {
-    if (win.classList.contains('mini')) { win.classList.remove('mini'); if (win.dataset.h) win.style.height = win.dataset.h + 'px'; }
-    else { win.dataset.h = Math.round(win.getBoundingClientRect().height); win.classList.add('mini'); }
-    savePos();
+    if (win.classList.contains('mini')) {
+      win.classList.remove('mini');
+      if (win.dataset.h) {
+        win.style.height = win.dataset.h + 'px';
+        const r = win.getBoundingClientRect();
+        try { store.set('dbgwin', JSON.stringify({ x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Number(win.dataset.h) })); } catch {}
+      }
+    }
+    else { win.dataset.h = Math.round(win.getBoundingClientRect().height); win.classList.add('mini'); win.style.height = document.getElementById('dbgBar').offsetHeight + 'px'; savePos(); }
   });
   document.getElementById('dbgZoom').addEventListener('click', () => {
     if (win.classList.contains('zoom')) {
       win.classList.remove('zoom');
-      try { const g = JSON.parse(win.dataset.geo); win.style.left = g.x + 'px'; win.style.top = g.y + 'px'; win.style.right = 'auto'; win.style.width = g.w + 'px'; win.style.height = g.h + 'px'; } catch {}
+      try { const g = JSON.parse(win.dataset.geo); win.style.left = g.x + 'px'; win.style.top = g.y + 'px'; win.style.right = 'auto'; win.style.width = g.w + 'px'; win.style.height = g.h + 'px'; store.set('dbgwin', win.dataset.geo); } catch {}
     } else {
       const r = win.getBoundingClientRect();
       win.dataset.geo = JSON.stringify({ x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) });
       win.classList.add('zoom');
       win.style.left = '12px'; win.style.top = '12px'; win.style.right = 'auto';
       win.style.width = (innerWidth - 24) + 'px'; win.style.height = (innerHeight - 24) + 'px';
+      savePos();
     }
-    savePos();
   });
   const tintEl = document.getElementById('dbgTint'), tintVal = document.getElementById('dbgTintVal');
   tintEl.value = lgTransVal; tintVal.textContent = lgTransVal;
@@ -2597,12 +2606,13 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
   });
   const savePos = () => { if (win.classList.contains('zoom') && win.dataset.geo) { store.set('dbgwin', win.dataset.geo); return; } const r = win.getBoundingClientRect(); const h = win.classList.contains('mini') && win.dataset.h ? Number(win.dataset.h) : Math.round(r.height); store.set('dbgwin', JSON.stringify({ x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h })); };
   const dragWith = (onMove) => {
-    const move = (ev) => onMove(ev), up = () => { removeEventListener('pointermove', move); removeEventListener('pointerup', up); savePos(); };
+    const move = (ev) => onMove(ev), up = () => { removeEventListener('pointermove', move); removeEventListener('pointerup', up); win.classList.remove('dragging', 'resizing'); savePos(); setTimeout(savePos, 450); };
     addEventListener('pointermove', move); addEventListener('pointerup', up);
   };
   document.getElementById('dbgBar').addEventListener('pointerdown', (e) => {
     if (e.target.closest('button')) return;
     e.preventDefault();
+    win.classList.add('dragging');
     const r = win.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;
     win.style.left = r.left + 'px'; win.style.top = r.top + 'px'; win.style.right = 'auto'; win.style.bottom = 'auto';
     dragWith((ev) => {
@@ -2612,6 +2622,7 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
   });
   document.getElementById('dbgResize').addEventListener('pointerdown', (e) => {
     e.preventDefault();
+    win.classList.add('resizing');
     const r = win.getBoundingClientRect();
     dragWith((ev) => {
       win.style.width = Math.min(Math.max(260, ev.clientX - r.left), innerWidth - r.left - 4) + 'px';
