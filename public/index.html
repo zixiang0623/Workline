@@ -2536,7 +2536,6 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
   }
   document.getElementById('dbgClose').addEventListener('click', closeDbg);
   document.getElementById('dbgMini').addEventListener('click', () => {
-    if (win.classList.contains('zoom')) return;
     if (win.classList.contains('mini')) {
       win.classList.remove('mini');
       if (win.dataset.h) {
@@ -2545,7 +2544,18 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
         try { store.set('dbgwin', JSON.stringify({ x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Number(win.dataset.h) })); } catch {}
       }
     }
-    else { win.dataset.h = Math.round(win.getBoundingClientRect().height); win.classList.add('mini'); win.style.height = document.getElementById('dbgBar').offsetHeight + 'px'; savePos(); }
+    else {
+      let fullH = 0, fromZoom = false;
+      if (win.classList.contains('zoom')) {
+        /* 最大化中は先に最大化を解除してから畳む。ジオメトリは dataset.geo が正本 */
+        win.classList.remove('zoom'); fromZoom = true;
+        try { const g = JSON.parse(win.dataset.geo); win.style.left = g.x + 'px'; win.style.top = g.y + 'px'; win.style.right = 'auto'; win.style.width = g.w + 'px'; win.style.height = g.h + 'px'; store.set('dbgwin', win.dataset.geo); fullH = g.h; } catch {}
+      }
+      win.dataset.h = fullH || Math.round(win.getBoundingClientRect().height);
+      win.classList.add('mini');
+      win.style.height = document.getElementById('dbgBar').offsetHeight + 'px';
+      if (!fromZoom) savePos();
+    }
   });
   document.getElementById('dbgZoom').addEventListener('click', () => {
     if (win.classList.contains('zoom')) {
