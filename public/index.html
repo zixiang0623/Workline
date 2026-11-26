@@ -126,6 +126,15 @@
   --color-focus: oklch(78% 0.1 195); --color-success: oklch(72% 0.11 160);
 }
 :root[data-theme="shinkai"] body::before { content: ""; position: fixed; inset: 0 0 auto 0; height: 6px; z-index: 400; pointer-events: none; background: radial-gradient(circle at 6px 4px, oklch(78% 0.1 195 / 0.8) 1.2px, transparent 1.9px) 0 0 / 22px 6px repeat-x, radial-gradient(circle at 16px 2px, oklch(90% 0.02 200 / 0.6) 0.9px, transparent 1.5px) 6px 0 / 30px 6px repeat-x; }
+/* ダイナミック: 最初から使えるテーマ。色はスクリプトが時刻に合わせて少しずつ差し替える(ここは昼の色で、JSが動かない時の予備) */
+:root[data-theme="dynamic"] {
+  --color-paper: oklch(98.5% 0.004 235); --color-paper-2: oklch(96.5% 0.006 235); --color-paper-3: oklch(93.5% 0.008 235);
+  --color-ink: oklch(27% 0.02 250); --color-ink-2: oklch(40% 0.02 250); --color-muted: oklch(47% 0.016 250);
+  --color-rule: oklch(90% 0.008 240);
+  --color-accent: oklch(50% 0.115 205); --color-accent-ink: oklch(98.5% 0.004 235); --color-accent-soft: oklch(94.5% 0.035 205);
+  --color-focus: oklch(50% 0.115 205); --color-success: oklch(48% 0.12 150);
+}
+:root[data-theme="dynamic"] body::before { content: ""; position: fixed; inset: 0 0 auto 0; height: 4px; z-index: 400; pointer-events: none; background: linear-gradient(90deg, var(--dyn-a, oklch(80% 0.07 205)), var(--dyn-b, oklch(88% 0.05 200)), var(--dyn-c, oklch(72% 0.09 190))); }
 #themeDlg { width: min(64rem, calc(100% - 2rem)); }
 .theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); gap: var(--space-sm); margin-top: var(--space-sm); }
 @media (max-width: 40rem) { .theme-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -860,6 +869,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
 <symbol id="i-circle-dashed" viewBox="0 0 24 24"><path d="M10.1 2.182a10 10 0 0 1 3.8 0" /> <path d="M13.9 21.818a10 10 0 0 1-3.8 0" /> <path d="M17.609 3.721a10 10 0 0 1 2.69 2.7" /> <path d="M2.182 13.9a10 10 0 0 1 0-3.8" /> <path d="M20.279 17.609a10 10 0 0 1-2.7 2.69" /> <path d="M21.818 10.1a10 10 0 0 1 0 3.8" /> <path d="M3.721 6.391a10 10 0 0 1 2.7-2.69" /> <path d="M6.391 20.279a10 10 0 0 1-2.69-2.7" /></symbol>
 <symbol id="i-circle-minus" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="M8 12h8" /></symbol>
 <symbol id="i-audio-lines" viewBox="0 0 24 24"><path d="M2 10v3" /> <path d="M6 6v11" /> <path d="M10 3v18" /> <path d="M14 8v7" /> <path d="M18 5v13" /> <path d="M22 10v3" /></symbol>
+<symbol id="i-sun-moon" viewBox="0 0 24 24"><path d="M12 2v2"/><path d="M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715"/><path d="M16 12a4 4 0 0 0-4-4"/><path d="m19 5-1.256 1.256"/><path d="M20 12h2"/></symbol>
 <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z" /> <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" /> <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" /> <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" /> <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" /></symbol>
 <symbol id="i-tree-pine" viewBox="0 0 24 24"><path d="m17 14 3 3.3a1 1 0 0 1-.7 1.7H4.7a1 1 0 0 1-.7-1.7L7 14h-.3a1 1 0 0 1-.7-1.7L9 9h-.2A1 1 0 0 1 8 7.3L12 3l4 4.3a1 1 0 0 1-.8 1.7H15l3 3.3a1 1 0 0 1-.7 1.7H17Z" /> <path d="M12 22v-3" /></symbol>
 <symbol id="i-gift" viewBox="0 0 24 24"><path d="M12 7v14" /> <path d="M20 11v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8" /> <path d="M7.5 7a1 1 0 0 1 0-5A4.8 8 0 0 1 12 7a4.8 8 0 0 1 4.5-5 1 1 0 0 1 0 5" /> <rect x="3" y="7" width="18" height="4" rx="1" /></symbol>
@@ -2147,6 +2157,7 @@ function applySound() {
 // 効果音の種類: Beep(コードで作った合成音) / Earshot(public/sfx のファイル)。押すと切り替わり、新しい方の音を1回鳴らす。
 // テーマに専用の音があるあいだは、そのテーマの音が優先される(押せなくなり、標準に戻すと選べる)
 const THEMES = {
+  dynamic: { name: 'ダイナミック', short: 'ダイナミック', icon: 'sun-moon', builtin: true, color: '#f7f9fa' },
   xmas: { name: 'クリスマス', short: 'Xmas', icon: 'tree-pine', sound: 'xmas', color: '#fbf8f0' },
   newyear: { name: 'お正月', short: 'お正月', icon: 'gift', sound: 'newyear', color: '#fdfaf0' },
   sakura: { name: '桜', short: '桜', icon: 'flower-2', sound: 'sakura', color: '#fdf2f3' },
@@ -2155,6 +2166,37 @@ const THEMES = {
   neko: { name: 'ねこ', short: 'ねこ', icon: 'cat', sound: 'neko', color: '#fdfaf1' },
   shinkai: { name: '深海', short: '深海', icon: 'fish', sound: 'shinkai', color: '#10222e' },
 };
+/* ---- ダイナミックテーマ: 最初から使える。時刻に合わせて色を少しずつ変える ----
+   夜も「暗い紙」までにして、文字のコントラスト(4.5:1以上)は一日中保つ */
+function themeOk(id) { return id === 'default' || !!(THEMES[id] && (THEMES[id].builtin || S.themes.includes(id))); }
+const DYN_DAY = { hex: '#f7f9fa', paper: [98.5, .004, 235], paper2: [96.5, .006, 235], paper3: [93.5, .008, 235], ink: [27, .02, 250], ink2: [40, .02, 250], muted: [47, .016, 250], rule: [90, .008, 240], accent: [50, .115, 205], accentInk: [98.5, .004, 235], accentSoft: [94.5, .035, 205], focus: [50, .115, 205], success: [48, .12, 150], band: [[80, .07, 205], [88, .05, 200], [72, .09, 190]] };
+const DYN_DAWN = { hex: '#fdf3e3', paper: [96.5, .02, 60], paper2: [94, .024, 55], paper3: [90.5, .03, 50], ink: [28, .03, 45], ink2: [42, .03, 45], muted: [50, .025, 45], rule: [87, .03, 60], accent: [52, .14, 35], accentInk: [98.5, .01, 60], accentSoft: [93, .05, 45], focus: [52, .14, 35], success: [46, .11, 150], band: [[70, .12, 40], [82, .09, 20], [90, .05, 60]] };
+const DYN_DUSK = { hex: '#fbeedd', paper: [96, .03, 55], paper2: [93.5, .036, 50], paper3: [89.5, .045, 45], ink: [27, .035, 35], ink2: [41, .034, 35], muted: [49, .03, 35], rule: [86, .04, 55], accent: [52, .16, 30], accentInk: [98.5, .012, 55], accentSoft: [92.5, .06, 40], focus: [52, .16, 30], success: [46, .11, 150], band: [[58, .16, 30], [66, .13, 350], [72, .09, 300]] };
+const DYN_NIGHT = { hex: '#c7c2e4', paper: [83, .025, 275], paper2: [80, .028, 275], paper3: [76, .03, 275], ink: [23, .03, 270], ink2: [36, .028, 270], muted: [44, .024, 270], rule: [68, .03, 275], accent: [44, .10, 285], accentInk: [95, .02, 275], accentSoft: [74, .045, 280], focus: [44, .10, 285], success: [42, .11, 160], band: [[38, .06, 280], [45, .07, 265], [52, .06, 300]] };
+const DYN_STOPS = [[0, DYN_NIGHT], [4.5, DYN_NIGHT], [6.5, DYN_DAWN], [9.5, DYN_DAY], [16, DYN_DAY], [18, DYN_DUSK], [19.5, DYN_NIGHT], [24, DYN_NIGHT]];
+const DYN_VARS = [['--color-paper', 'paper'], ['--color-paper-2', 'paper2'], ['--color-paper-3', 'paper3'], ['--color-ink', 'ink'], ['--color-ink-2', 'ink2'], ['--color-muted', 'muted'], ['--color-rule', 'rule'], ['--color-accent', 'accent'], ['--color-accent-ink', 'accentInk'], ['--color-accent-soft', 'accentSoft'], ['--color-focus', 'focus'], ['--color-success', 'success']];
+const dynLerp = (a, b, p) => { let dh = b[2] - a[2]; if (dh > 180) dh -= 360; if (dh < -180) dh += 360; return [a[0] + (b[0] - a[0]) * p, a[1] + (b[1] - a[1]) * p, a[2] + dh * p]; };
+const dynCss = (v) => `oklch(${v[0].toFixed(2)}% ${v[1].toFixed(4)} ${v[2].toFixed(1)})`;
+function dynApply() {
+  const now = new Date(), t = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+  let i = 0; while (i < DYN_STOPS.length - 2 && t >= DYN_STOPS[i + 1][0]) i++;
+  const [t0, A] = DYN_STOPS[i], [t1, B] = DYN_STOPS[i + 1], p = t1 > t0 ? Math.min(1, Math.max(0, (t - t0) / (t1 - t0))) : 0;
+  const root = document.documentElement;
+  for (const [cssVar, key] of DYN_VARS) root.style.setProperty(cssVar, dynCss(dynLerp(A[key], B[key], p)));
+  root.style.setProperty('--dyn-a', dynCss(dynLerp(A.band[0], B.band[0], p)));
+  root.style.setProperty('--dyn-b', dynCss(dynLerp(A.band[1], B.band[1], p)));
+  root.style.setProperty('--dyn-c', dynCss(dynLerp(A.band[2], B.band[2], p)));
+  document.querySelector('meta[name="theme-color"]').setAttribute('content', (p < 0.5 ? A : B).hex);
+}
+let dynTimer = null;
+function dynStart() { dynApply(); if (!dynTimer) dynTimer = setInterval(dynApply, 60000); }
+function dynStop() {
+  if (dynTimer) { clearInterval(dynTimer); dynTimer = null; }
+  const root = document.documentElement;
+  for (const [cssVar] of DYN_VARS) root.style.removeProperty(cssVar);
+  root.style.removeProperty('--dyn-a'); root.style.removeProperty('--dyn-b'); root.style.removeProperty('--dyn-c');
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && S.theme === 'dynamic') dynApply(); });
 const sfxName = (m) => m === 'earshot' ? 'Earshot' : (Object.values(THEMES).find((t) => t.sound === m) || {}).name || 'Beep';
 function applySfxMode() {
   const e = S.sfx === 'earshot', themed = !!(THEMES[S.theme] && THEMES[S.theme].sound), b = document.getElementById('sfxMode');
@@ -2170,17 +2212,18 @@ document.getElementById('sfxMode').addEventListener('click', async () => {
 });
 /* ---- テーマ: シリアルコードで獲得(Durable Object に記録)。見た目と音をまとめて切り替える ---- */
 function applyTheme() {
-  if (!S.themes.includes(S.theme)) S.theme = 'default';
+  if (!themeOk(S.theme)) S.theme = 'default';
   const t = THEMES[S.theme], root = document.documentElement;
   if (t) root.setAttribute('data-theme', S.theme); else root.removeAttribute('data-theme');
   document.querySelector('meta[name="theme-color"]').setAttribute('content', t ? t.color : '#f7f9fa');
   S.sfx = (t && t.sound) || S.sfxBase;
   if (S.sound && S.sfx === 'earshot') loadSamples();
   applySfxMode(); renderThemeBtn(); renderSfxTest(); applyMode();
+  if (S.theme === 'dynamic') dynStart(); else dynStop();
 }
 function renderThemeBtn() {
   const b = document.getElementById('themeBtn'), t = THEMES[S.theme];
-  b.hidden = S.themes.length === 0;   // 獲得したテーマが1つでもあるときだけ出す
+  b.hidden = false;   // 標準とダイナミックは最初から使えるので、ボタンは常に出す
   document.getElementById('themeBtnT').textContent = 'テーマ: ' + (t ? t.name : '標準');
   b.querySelector('use').setAttribute('href', '#i-' + (t ? t.icon : 'palette'));
   b.title = 'テーマを選ぶ';
@@ -2242,6 +2285,7 @@ renderRailBadges();
 /* ---- テーマ切り替えダイアログ(サムネイル付き) ---- */
 const THUMB = {
   default: { paper: 'oklch(98.5% 0.004 235)', ink: 'oklch(27% 0.02 250)', accent: 'oklch(50% 0.115 205)', band: '' },
+  dynamic: { paper: 'oklch(98.5% 0.004 235)', ink: 'oklch(27% 0.02 250)', accent: 'oklch(50% 0.115 205)', band: 'linear-gradient(90deg, oklch(62% 0.13 40), oklch(80% 0.07 205) 45%, oklch(55% 0.15 30) 72%, oklch(45% 0.1 285))' },
   xmas: { paper: 'oklch(98.4% 0.009 95)', ink: 'oklch(25% 0.02 30)', accent: 'oklch(46% 0.17 25)', band: 'repeating-linear-gradient(135deg, oklch(46% 0.17 25) 0 10px, oklch(98.4% 0.009 95) 10px 14px, oklch(41% 0.1 155) 14px 24px, oklch(98.4% 0.009 95) 24px 28px)' },
   newyear: { paper: 'oklch(98.2% 0.016 80)', ink: 'oklch(25% 0.035 35)', accent: 'oklch(46% 0.2 28)', band: 'repeating-linear-gradient(90deg, oklch(46% 0.2 28) 0 14px, oklch(98.2% 0.016 80) 14px 28px)', bandShadow: 'inset 0 -1px 0 oklch(72% 0.12 85)' },
   sakura: { paper: 'oklch(98.5% 0.012 10)', ink: 'oklch(27% 0.03 10)', accent: 'oklch(52% 0.14 5)', band: 'radial-gradient(circle, oklch(78% 0.09 5) 1.6px, transparent 2.2px) 0 0 / 15px 4px repeat-x, linear-gradient(90deg, oklch(90% 0.05 5), oklch(95% 0.03 5))' },
@@ -2251,7 +2295,7 @@ const THUMB = {
   shinkai: { paper: 'oklch(22% 0.03 210)', ink: 'oklch(90% 0.02 200)', accent: 'oklch(78% 0.1 195)', band: 'radial-gradient(circle at 6px 4px, oklch(78% 0.1 195 / 0.8) 1.2px, transparent 1.9px) 0 0 / 22px 6px repeat-x, radial-gradient(circle at 16px 2px, oklch(90% 0.02 200 / 0.6) 0.9px, transparent 1.5px) 6px 0 / 30px 6px repeat-x' },
 };
 function renderThemeGrid() {
-  const entries = [['default', { name: '標準', icon: 'palette' }], ...Object.entries(THEMES)].filter(([id]) => id === 'default' || S.themes.includes(id));
+  const entries = [['default', { name: '標準', icon: 'palette' }], ...Object.entries(THEMES)].filter(([id]) => themeOk(id));
   document.getElementById('themeGrid').innerHTML = entries.map(([id, t]) => {
     const th = THUMB[id] || THUMB.default;
     const cur = S.theme === id;
