@@ -257,7 +257,7 @@ button, input { font: inherit; color: inherit; }
 .badge-cell.locked .badge-name { color: var(--color-muted); font-weight: 400; }
 .badge-name { font-weight: 700; color: var(--color-ink); }
 .badge-empty { grid-column: 1 / -1; font-size: var(--text-sm); color: var(--color-muted); line-height: 1.6; }
-.dbgwin { position: fixed; right: 1rem; top: 4rem; z-index: 600; width: 34rem; height: 30rem; min-width: 27rem; min-height: 12rem; max-width: calc(100vw - 1rem); max-height: calc(100vh - 1rem); display: flex; flex-direction: column; background: transparent; color: #1d1d1f; border: none; box-shadow: none; overflow: visible; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Hiragino Sans", "Helvetica Neue", Arial, sans-serif; font-size: 13px; }
+.dbgwin { position: fixed; right: 1rem; top: 4rem; z-index: 600; width: 34rem; height: 30rem; min-width: min(27rem, calc(100vw - 1rem)); min-height: 12rem; max-width: calc(100vw - 1rem); max-height: calc(100vh - 1rem); display: flex; flex-direction: column; background: transparent; color: #1d1d1f; border: none; box-shadow: none; overflow: visible; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Hiragino Sans", "Helvetica Neue", Arial, sans-serif; font-size: 13px; }
 .dbgwin-bg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; filter: drop-shadow(0 24px 44px rgb(0 0 0 / .30)); }
 .dbgwin-bg path { fill: rgb(255 255 255 / var(--lg-alpha)); stroke: rgb(0 0 0 / .12); stroke-width: 1; }
 .dbgwin-clip { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; -webkit-backdrop-filter: blur(6px) saturate(160%); backdrop-filter: blur(6px) saturate(160%); box-shadow: inset 0 1px 0 rgb(255 255 255 / .6), inset 0 -1px 0 rgb(255 255 255 / .15), inset 0 0 0 1px rgb(255 255 255 / .2); }
@@ -2510,6 +2510,15 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     bodyEl.innerHTML = DBG_ROWS.map(([k, f]) => row(k, f())).join('');
     heroVer.textContent = document.getElementById('railVer').textContent || '—';
   }
+  function clampDbg() {
+    if (win.classList.contains('mini') || win.classList.contains('zoom')) return;
+    const r = win.getBoundingClientRect();
+    const w = Math.min(r.width, innerWidth - 16), h = Math.min(r.height, innerHeight - 16);
+    const x = Math.min(Math.max(8, r.left), Math.max(8, innerWidth - w - 8));
+    const y = Math.min(Math.max(8, r.top), Math.max(8, innerHeight - h - 8));
+    win.style.left = x + 'px'; win.style.top = y + 'px'; win.style.right = 'auto'; win.style.bottom = 'auto';
+    win.style.width = w + 'px'; win.style.height = h + 'px';
+  }
   function closeDbg() { win.hidden = true; if (refresh) { clearInterval(refresh); refresh = null; } }
   function openDbg() {
     if (!win.hidden) { closeDbg(); return; }
@@ -2517,7 +2526,7 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     let sidePref = ''; try { sidePref = store.get('dbgside', ''); } catch {}
     win.classList.toggle('side-closed', sidePref ? sidePref === 'closed' : innerWidth < 640);
     try { const p = JSON.parse(store.get('dbgwin', '')); if (p && p.w >= 260) { win.style.left = p.x + 'px'; win.style.top = p.y + 'px'; win.style.right = 'auto'; win.style.width = p.w + 'px'; win.style.height = p.h + 'px'; } } catch {}
-    renderDbg(); requestAnimationFrame(() => { shape(); lgApply(clip, win); }); refresh = setInterval(renderDbg, 1000);
+    renderDbg(); requestAnimationFrame(() => { clampDbg(); shape(); lgApply(clip, win); }); refresh = setInterval(renderDbg, 1000);
   }
   document.getElementById('dbgClose').addEventListener('click', closeDbg);
   document.getElementById('dbgMini').addEventListener('click', () => {
@@ -2565,6 +2574,7 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
   try { const c = store.get('dbgcat', 'info'); if (DBG_CATS.some((x) => x.id === c)) dbgCatInit = c; } catch {}
   selectCat(dbgCatInit);
   document.getElementById('dbgSideBtn').addEventListener('click', () => { const closed = win.classList.toggle('side-closed'); try { store.set('dbgside', closed ? 'closed' : 'open'); } catch {} });
+  addEventListener('orientationchange', () => { if (!win.hidden) setTimeout(clampDbg, 60); });
   document.getElementById('dbgSound').addEventListener('click', () => { const was = S.sound; S.sound = true; sfx.done(); S.sound = was; });
   document.getElementById('dbgThemeReset').addEventListener('click', () => setTheme('default'));
   const copyBtn = document.getElementById('dbgCopy');
