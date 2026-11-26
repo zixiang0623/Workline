@@ -256,18 +256,24 @@ button, input { font: inherit; color: inherit; }
 .badge-cell.locked .badge-name { color: var(--color-muted); font-weight: 400; }
 .badge-name { font-weight: 700; color: var(--color-ink); }
 .badge-empty { grid-column: 1 / -1; font-size: var(--text-sm); color: var(--color-muted); line-height: 1.6; }
-.dbgwin { position: fixed; right: 1rem; top: 4rem; z-index: 600; width: 22rem; height: 26rem; min-width: 16rem; min-height: 12rem; max-width: calc(100vw - 1rem); max-height: calc(100vh - 1rem); display: flex; flex-direction: column; background: var(--color-paper); color: var(--color-ink); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); box-shadow: 0 18px 40px -14px rgb(0 0 0 / .35); overflow: hidden; }
+.dbgwin { position: fixed; right: 1rem; top: 4rem; z-index: 600; width: 22rem; height: 26rem; min-width: 16rem; min-height: 12rem; max-width: calc(100vw - 1rem); max-height: calc(100vh - 1rem); display: flex; flex-direction: column; background: var(--color-paper); color: var(--color-ink); border: var(--rule-hair) solid var(--color-rule); border-radius: 64px; box-shadow: 0 18px 40px -14px rgb(0 0 0 / .35); overflow: hidden; }
 .dbgwin[hidden] { display: none; }
-.dbgwin-bar { display: flex; align-items: center; gap: var(--space-xs); padding: var(--space-xs) var(--space-sm); background: var(--color-paper-2); border-bottom: var(--rule-hair) solid var(--color-rule); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.dbgwin.mini { height: auto !important; min-height: 0; }
+.dbgwin.mini .dbgwin-body, .dbgwin.mini .dbgwin-actions, .dbgwin.mini .dbgwin-resize { display: none; }
+.dbgwin-bar { display: flex; align-items: center; gap: var(--space-xs); padding: 16px 22px 12px 24px; background: var(--color-paper-2); border-bottom: var(--rule-hair) solid var(--color-rule); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
 .dbgwin-bar:active { cursor: grabbing; }
+.dbgwin-btns { display: inline-flex; gap: 8px; margin-right: 6px; }
+.dbgwin-dot { width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgb(0 0 0 / .14); display: inline-grid; place-items: center; font-size: 14px; font-weight: 700; line-height: 1; padding: 0; cursor: pointer; color: rgb(0 0 0 / .5); font-family: inherit; }
+.dbgwin-dot.close { background: #ff5f57; }
+.dbgwin-dot.mini { background: #febc2e; }
+.dbgwin-dot:hover { filter: brightness(1.06); }
 .dbgwin-title { font-weight: 700; }
 .dbgwin-ver { color: var(--color-muted); font-size: var(--text-xs); }
-.dbgwin-close { margin-left: auto; }
-.dbgwin-body { flex: 1; padding: var(--space-sm); overflow: auto; font-size: var(--text-sm); line-height: 1.7; }
+.dbgwin-body { flex: 1; padding: var(--space-sm) 22px; overflow: auto; font-size: var(--text-sm); line-height: 1.7; }
 .dbg-row { display: flex; justify-content: space-between; gap: var(--space-md); padding: 1px 0; }
 .dbg-k { color: var(--color-muted); flex: none; }
-.dbgwin-actions { display: flex; flex-wrap: wrap; gap: var(--space-xs); padding: var(--space-sm); border-top: var(--rule-hair) solid var(--color-rule); }
-.dbgwin-resize { position: absolute; right: 0; bottom: 0; width: 18px; height: 18px; cursor: nwse-resize; touch-action: none; background: linear-gradient(135deg, transparent 52%, var(--color-muted) 52%, var(--color-muted) 60%, transparent 60%, transparent 72%, var(--color-muted) 72%, var(--color-muted) 80%, transparent 80%); opacity: .55; }
+.dbgwin-actions { display: flex; flex-wrap: wrap; gap: var(--space-xs); padding: var(--space-sm) 22px 18px; border-top: var(--rule-hair) solid var(--color-rule); }
+.dbgwin-resize { position: absolute; right: 14px; bottom: 14px; width: 18px; height: 18px; cursor: nwse-resize; touch-action: none; background: linear-gradient(135deg, transparent 52%, var(--color-muted) 52%, var(--color-muted) 60%, transparent 60%, transparent 72%, var(--color-muted) 72%, var(--color-muted) 80%, transparent 80%); opacity: .55; }
 .scrim { position: fixed; inset: 0; z-index: var(--z-scrim); background: var(--color-scrim); opacity: 0; }
 
 /* ---- agents (which AI is working) ---- */
@@ -1088,9 +1094,12 @@ dialog.lb::backdrop { background: var(--color-scrim); }
 </dialog>
 <section class="dbgwin" id="dbgWin" hidden aria-label="デバッグ">
   <div class="dbgwin-bar" id="dbgBar">
+    <span class="dbgwin-btns">
+      <button class="dbgwin-dot close" id="dbgClose" type="button" aria-label="閉じる">×</button>
+      <button class="dbgwin-dot mini" id="dbgMini" type="button" aria-label="最小化">−</button>
+    </span>
     <span class="dbgwin-title">デバッグ</span>
     <span class="dbgwin-ver" id="dbgVer"></span>
-    <button class="icon-btn dbgwin-close" id="dbgClose" type="button" aria-label="閉じる"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
   </div>
   <div class="dbgwin-body" id="dbgBody"></div>
   <div class="dbgwin-actions">
@@ -2340,11 +2349,16 @@ renderRailBadges();
     renderDbg(); refresh = setInterval(renderDbg, 2000);
   }
   document.getElementById('dbgClose').addEventListener('click', closeDbg);
+  document.getElementById('dbgMini').addEventListener('click', () => {
+    if (win.classList.contains('mini')) { win.classList.remove('mini'); if (win.dataset.h) win.style.height = win.dataset.h + 'px'; }
+    else { win.dataset.h = Math.round(win.getBoundingClientRect().height); win.classList.add('mini'); }
+    savePos();
+  });
   document.getElementById('railVer').addEventListener('click', () => {
     const now = Date.now(); taps = taps.filter((t) => now - t < 2000); taps.push(now);
     if (taps.length >= 5) { taps = []; openDbg(); }
   });
-  const savePos = () => { const r = win.getBoundingClientRect(); store.set('dbgwin', JSON.stringify({ x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) })); };
+  const savePos = () => { const r = win.getBoundingClientRect(); const h = win.classList.contains('mini') && win.dataset.h ? Number(win.dataset.h) : Math.round(r.height); store.set('dbgwin', JSON.stringify({ x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h })); };
   const dragWith = (onMove) => {
     const move = (ev) => onMove(ev), up = () => { removeEventListener('pointermove', move); removeEventListener('pointerup', up); savePos(); };
     addEventListener('pointermove', move); addEventListener('pointerup', up);
