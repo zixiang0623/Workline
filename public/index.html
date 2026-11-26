@@ -1120,11 +1120,6 @@ dialog.lb::backdrop { background: var(--color-scrim); }
   </div>
   <div class="dbgwin-body" id="dbgBody"></div>
   <div class="dbgwin-scale">
-    <label for="dbgScale">屈折の強さ</label>
-    <input type="range" id="dbgScale" min="0" max="300" step="10" value="120">
-    <span id="dbgScaleVal">120</span>
-  </div>
-  <div class="dbgwin-scale">
     <label for="dbgTint">透明度</label>
     <input type="range" id="dbgTint" min="0" max="100" step="1" value="60">
     <span id="dbgTintVal">60</span>
@@ -2385,12 +2380,7 @@ function makeDisplacementMap(w, h, r, bezel) {
   ctx.putImageData(img, 0, 0);
   return canvas.toDataURL();
 }
-let lgScaleVal = (() => { try { const v = Number(store.get('lgscale', 120)); return Number.isFinite(v) ? Math.min(300, Math.max(0, v)) : 120; } catch { return 120; } })();
-function lgSetScale(v) {
-  lgScaleVal = v;
-  try { store.set('lgscale', v); } catch {}
-  lgState.forEach((rec) => rec.dm.setAttribute('scale', String(v)));
-}
+const LG_SCALE = 120;
 let lgTransVal = (() => { try { const v = Number(store.get('lgtrans', 60)); return Number.isFinite(v) ? Math.min(100, Math.max(0, v)) : 60; } catch { return 60; } })();
 const lgEnabled = () => lgTransVal > 0;
 function lgApplyOpacity() {
@@ -2416,7 +2406,7 @@ function lgApply(surface, sizeEl) {
     const fe = document.createElementNS('http://www.w3.org/2000/svg', 'feImage');
     fe.setAttribute('x', '0'); fe.setAttribute('y', '0'); fe.setAttribute('preserveAspectRatio', 'none'); fe.setAttribute('result', 'map');
     const dm = document.createElementNS('http://www.w3.org/2000/svg', 'feDisplacementMap');
-    dm.setAttribute('in', 'SourceGraphic'); dm.setAttribute('in2', 'map'); dm.setAttribute('scale', String(lgScaleVal)); dm.setAttribute('xChannelSelector', 'R'); dm.setAttribute('yChannelSelector', 'G');
+    dm.setAttribute('in', 'SourceGraphic'); dm.setAttribute('in2', 'map'); dm.setAttribute('scale', String(LG_SCALE)); dm.setAttribute('xChannelSelector', 'R'); dm.setAttribute('yChannelSelector', 'G');
     f.appendChild(fe); f.appendChild(dm); lgDefs.appendChild(f);
     rec = { fe, dm, id, sizeEl }; lgState.set(surface, rec);
   }
@@ -2500,9 +2490,6 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     }
     savePos();
   });
-  const scaleEl = document.getElementById('dbgScale'), scaleVal = document.getElementById('dbgScaleVal');
-  scaleEl.value = lgScaleVal; scaleVal.textContent = lgScaleVal;
-  scaleEl.addEventListener('input', () => { lgSetScale(Number(scaleEl.value)); scaleVal.textContent = scaleEl.value; });
   const tintEl = document.getElementById('dbgTint'), tintVal = document.getElementById('dbgTintVal');
   tintEl.value = lgTransVal; tintVal.textContent = lgTransVal;
   tintEl.addEventListener('input', () => { lgSetTrans(Number(tintEl.value)); tintVal.textContent = tintEl.value; });
