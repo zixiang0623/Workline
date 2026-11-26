@@ -277,11 +277,15 @@ html.lg-off .bar, html.lg-off .rail, html.lg-off .wiz, html.lg-off dialog.lb, ht
 .dbgwin-dot span { opacity: 0; transition: opacity .12s; }
 .dbgwin-bar:hover .dbgwin-dot span, .dbgwin-dot:focus-visible span { opacity: 1; }
 .dbgwin-title { font-weight: 600; color: #26262b; font-size: 13px; }
+.dbgwin-sidebtn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; display: grid; place-items: center; border: none; background: none; color: #6e6e73; cursor: pointer; border-radius: 6px; padding: 0; }
+.dbgwin-sidebtn:hover { background: rgb(0 0 0 / .06); }
+.dbgwin-sidebtn .ic { width: 15px; height: 15px; }
+.dbgwin.side-closed .dbg-side { display: none; }
 .dbgwin-body { flex: 1; display: flex; min-height: 0; background: rgb(238 238 242 / .45); }
 .dbg-side { width: 10.75rem; flex: none; display: flex; flex-direction: column; gap: 8px; padding: 10px 8px; border-right: 1px solid rgb(0 0 0 / .06); background: rgb(255 255 255 / .25); overflow: auto; }
 .dbg-side-hero { display: flex; gap: 8px; align-items: center; padding: 4px 6px 6px; border-radius: 8px; cursor: pointer; }
 .dbg-side-hero:hover { background: rgb(0 0 0 / .04); }
-.dbg-side-tile { width: 30px; height: 30px; border-radius: 7px; background: linear-gradient(180deg, #4f9cf9, #0071e3); color: #fff; font-weight: 700; display: grid; place-items: center; font-size: 14px; flex: none; box-shadow: inset 0 1px 0 rgb(255 255 255 / .4); }
+.dbg-side-tile { width: 30px; height: 30px; border-radius: 7px; flex: none; display: block; }
 .dbg-side-meta { display: flex; flex-direction: column; min-width: 0; }
 .dbg-side-name { font-weight: 600; font-size: 12.5px; color: #1d1d1f; }
 .dbg-side-sub { font-size: 10.5px; color: #86868b; }
@@ -1139,11 +1143,12 @@ dialog.lb::backdrop { background: var(--color-scrim); }
       <button class="dbgwin-dot zoom" id="dbgZoom" type="button" aria-label="拡大・縮小"><span>+</span></button>
     </span>
     <span class="dbgwin-title">デバッグ</span>
+    <button class="dbgwin-sidebtn" id="dbgSideBtn" type="button" aria-label="サイドバーの表示切り替え"><svg class="ic" aria-hidden="true"><use href="#i-panel-left-open"/></svg></button>
   </div>
   <div class="dbgwin-body">
     <aside class="dbg-side">
       <div class="dbg-side-hero" id="dbgSideHero">
-        <span class="dbg-side-tile">W</span>
+        <img class="dbg-side-tile" src="/favicon.svg" alt="">
         <span class="dbg-side-meta"><span class="dbg-side-name">Workline</span><span class="dbg-side-sub" id="dbgHeroVer">—</span></span>
       </div>
       <div class="dbg-search"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg><input type="search" id="dbgSearch" placeholder="検索" aria-label="設定項目を検索"></div>
@@ -2487,7 +2492,7 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     ['バージョン', () => esc(document.getElementById('railVer').textContent || '—')],
     ['接続', () => ws && ws.readyState === 1 ? '接続中' : '切断'],
     ['タスク', () => { const t = [...S.tasks.values()]; return `${t.length}件（ルート${t.filter(isRoot).length}・実行中${t.filter((x) => x.status === 'running').length}）`; }],
-    ['ステップ', () => `${[...S.tasks.values()].reduce((n, t) => n + (t.steps ? t.steps.length : 0), 0)}件`],
+    ['ステップ', () => `${[...S.tasks.values()].reduce((n, t) => n + (!t.steps ? 0 : typeof t.steps.size === 'number' ? t.steps.size : Array.isArray(t.steps) ? t.steps.length : 0), 0)}件`],
     ['司令・要求', () => { const d = [...S.dirs.values()]; return `${d.length}件（未処理${d.filter((x) => x.status === 'posted' || x.status === 'accepted').length}）`; }],
     ['伝言', () => `${S.notes.size}件`],
     ['確認待ち', () => `${S.approvals.size}件`],
@@ -2509,6 +2514,8 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
   function openDbg() {
     if (!win.hidden) { closeDbg(); return; }
     win.hidden = false;
+    let sidePref = ''; try { sidePref = store.get('dbgside', ''); } catch {}
+    win.classList.toggle('side-closed', sidePref ? sidePref === 'closed' : innerWidth < 640);
     try { const p = JSON.parse(store.get('dbgwin', '')); if (p && p.w >= 260) { win.style.left = p.x + 'px'; win.style.top = p.y + 'px'; win.style.right = 'auto'; win.style.width = p.w + 'px'; win.style.height = p.h + 'px'; } } catch {}
     renderDbg(); requestAnimationFrame(() => { shape(); lgApply(clip, win); }); refresh = setInterval(renderDbg, 1000);
   }
@@ -2557,6 +2564,7 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
   let dbgCatInit = 'info';
   try { const c = store.get('dbgcat', 'info'); if (DBG_CATS.some((x) => x.id === c)) dbgCatInit = c; } catch {}
   selectCat(dbgCatInit);
+  document.getElementById('dbgSideBtn').addEventListener('click', () => { const closed = win.classList.toggle('side-closed'); try { store.set('dbgside', closed ? 'closed' : 'open'); } catch {} });
   document.getElementById('dbgSound').addEventListener('click', () => { const was = S.sound; S.sound = true; sfx.done(); S.sound = was; });
   document.getElementById('dbgThemeReset').addEventListener('click', () => setTheme('default'));
   const copyBtn = document.getElementById('dbgCopy');
