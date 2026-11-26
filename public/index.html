@@ -2374,9 +2374,9 @@ renderRailBadges();
     const now = Date.now(); taps = taps.filter((t) => now - t < 2000); taps.push(now);
     if (taps.length >= 5) { taps = []; openDbg(); }
   });
-  /* ショートカット: Ctrl+` (バッククォート)。ブラウザの標準操作に割り当てがなく、通常のWeb操作とぶつからない */
+  /* ショートカット: Ctrl+; 。ブラウザの標準操作に割り当てがなく、通常のWeb操作とぶつからない */
   addEventListener('keydown', (e) => {
-    if (e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey && !e.isComposing && e.code === 'Backquote') { e.preventDefault(); openDbg(); }
+    if (e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey && !e.isComposing && e.code === 'Semicolon') { e.preventDefault(); openDbg(); }
   });
   const savePos = () => { const r = win.getBoundingClientRect(); const h = win.classList.contains('mini') && win.dataset.h ? Number(win.dataset.h) : Math.round(r.height); store.set('dbgwin', JSON.stringify({ x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h })); };
   const dragWith = (onMove) => {
