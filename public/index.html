@@ -256,6 +256,18 @@ button, input { font: inherit; color: inherit; }
 .badge-cell.locked .badge-name { color: var(--color-muted); font-weight: 400; }
 .badge-name { font-weight: 700; color: var(--color-ink); }
 .badge-empty { grid-column: 1 / -1; font-size: var(--text-sm); color: var(--color-muted); line-height: 1.6; }
+.dbgwin { position: fixed; right: 1rem; top: 4rem; z-index: 600; width: 22rem; height: 26rem; min-width: 16rem; min-height: 12rem; max-width: calc(100vw - 1rem); max-height: calc(100vh - 1rem); display: flex; flex-direction: column; background: var(--color-paper); color: var(--color-ink); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); box-shadow: 0 18px 40px -14px rgb(0 0 0 / .35); overflow: hidden; }
+.dbgwin[hidden] { display: none; }
+.dbgwin-bar { display: flex; align-items: center; gap: var(--space-xs); padding: var(--space-xs) var(--space-sm); background: var(--color-paper-2); border-bottom: var(--rule-hair) solid var(--color-rule); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.dbgwin-bar:active { cursor: grabbing; }
+.dbgwin-title { font-weight: 700; }
+.dbgwin-ver { color: var(--color-muted); font-size: var(--text-xs); }
+.dbgwin-close { margin-left: auto; }
+.dbgwin-body { flex: 1; padding: var(--space-sm); overflow: auto; font-size: var(--text-sm); line-height: 1.7; }
+.dbg-row { display: flex; justify-content: space-between; gap: var(--space-md); padding: 1px 0; }
+.dbg-k { color: var(--color-muted); flex: none; }
+.dbgwin-actions { display: flex; flex-wrap: wrap; gap: var(--space-xs); padding: var(--space-sm); border-top: var(--rule-hair) solid var(--color-rule); }
+.dbgwin-resize { position: absolute; right: 0; bottom: 0; width: 18px; height: 18px; cursor: nwse-resize; touch-action: none; background: linear-gradient(135deg, transparent 52%, var(--color-muted) 52%, var(--color-muted) 60%, transparent 60%, transparent 72%, var(--color-muted) 72%, var(--color-muted) 80%, transparent 80%); opacity: .55; }
 .scrim { position: fixed; inset: 0; z-index: var(--z-scrim); background: var(--color-scrim); opacity: 0; }
 
 /* ---- agents (which AI is working) ---- */
@@ -1074,6 +1086,21 @@ dialog.lb::backdrop { background: var(--color-scrim); }
     <div class="badge-list" id="badgeList"></div>
   </div>
 </dialog>
+<section class="dbgwin" id="dbgWin" hidden aria-label="デバッグ">
+  <div class="dbgwin-bar" id="dbgBar">
+    <span class="dbgwin-title">デバッグ</span>
+    <span class="dbgwin-ver" id="dbgVer"></span>
+    <button class="icon-btn dbgwin-close" id="dbgClose" type="button" aria-label="閉じる"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="dbgwin-body" id="dbgBody"></div>
+  <div class="dbgwin-actions">
+    <button class="btn small" id="dbgUnlock" type="button"><span>テーマ・バッジ全解放</span></button>
+    <button class="btn small" id="dbgReset" type="button"><span>解放をリセット</span></button>
+    <button class="btn small" id="dbgReload" type="button"><span>画面を再読み込み</span></button>
+    <button class="btn small" id="dbgClear" type="button"><span>ローカル設定クリア</span></button>
+  </div>
+  <div class="dbgwin-resize" id="dbgResize"></div>
+</section>
 <dialog class="lb" id="lightbox" aria-label="スクリーンショットの拡大表示">
   <div class="lb-bar"><span class="lb-cap" id="lbCap"></span><span class="num lb-n" id="lbN"></span>
     <button class="icon-btn" id="lbPrev" type="button" aria-label="前の画像"><svg class="ic" aria-hidden="true"><use href="#i-chevron-left"/></svg></button>
@@ -2282,6 +2309,89 @@ function renderBadgeList() {
   document.getElementById('railBadges').addEventListener('click', () => { renderBadgeList(); dlg.showModal(); });
 }
 renderRailBadges();
+/* ---- デバッグウィンドウ: バージョン表示を5回タップで開く。タイトルバーを掴んで移動、右下のつまみでリサイズ ---- */
+{
+  const win = document.getElementById('dbgWin'), bodyEl = document.getElementById('dbgBody');
+  let taps = [], refresh = null;
+  const row = (k, v) => `<div class="dbg-row"><span class="dbg-k">${k}</span><span>${v}</span></div>`;
+  function renderDbg() {
+    const tasks = [...S.tasks.values()], roots = tasks.filter(isRoot), running = tasks.filter((t) => t.status === 'running');
+    const steps = tasks.reduce((n, t) => n + (t.steps ? t.steps.length : 0), 0);
+    const dirs = [...S.dirs.values()], open = dirs.filter((d) => d.status === 'posted' || d.status === 'accepted');
+    const agents = [...S.agents.values()].sort((a, b) => b.lastSeen - a.lastSeen).slice(0, 6)
+      .map((a) => `${esc(a.name)}（${a.lastSeen ? new Date(a.lastSeen).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '—'}）`).join('、');
+    document.getElementById('dbgVer').textContent = document.getElementById('railVer').textContent || '';
+    bodyEl.innerHTML =
+      row('接続', ws && ws.readyState === 1 ? '接続中' : '切断')
+      + row('タスク', `${tasks.length}件（ルート${roots.length}・実行中${running.length}）`)
+      + row('ステップ', `${steps}件`)
+      + row('司令・要求', `${dirs.length}件（未処理${open.length}）`)
+      + row('伝言', `${S.notes.size}件`)
+      + row('確認待ち', `${S.approvals.size}件`)
+      + row('テーマ', `${(THEMES[S.theme] || { name: '標準' }).name}（解放済み${S.themes.length}）`)
+      + row('バッジ', `解放済み${S.badges.length}`)
+      + row('エージェント', agents || '—');
+  }
+  function closeDbg() { win.hidden = true; if (refresh) { clearInterval(refresh); refresh = null; } }
+  function openDbg() {
+    if (!win.hidden) { closeDbg(); return; }
+    win.hidden = false;
+    try { const p = JSON.parse(store.get('dbgwin', '')); if (p && p.w >= 260) { win.style.left = p.x + 'px'; win.style.top = p.y + 'px'; win.style.right = 'auto'; win.style.width = p.w + 'px'; win.style.height = p.h + 'px'; } } catch {}
+    renderDbg(); refresh = setInterval(renderDbg, 2000);
+  }
+  document.getElementById('dbgClose').addEventListener('click', closeDbg);
+  document.getElementById('railVer').addEventListener('click', () => {
+    const now = Date.now(); taps = taps.filter((t) => now - t < 2000); taps.push(now);
+    if (taps.length >= 5) { taps = []; openDbg(); }
+  });
+  const savePos = () => { const r = win.getBoundingClientRect(); store.set('dbgwin', JSON.stringify({ x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) })); };
+  const dragWith = (onMove) => {
+    const move = (ev) => onMove(ev), up = () => { removeEventListener('pointermove', move); removeEventListener('pointerup', up); savePos(); };
+    addEventListener('pointermove', move); addEventListener('pointerup', up);
+  };
+  document.getElementById('dbgBar').addEventListener('pointerdown', (e) => {
+    if (e.target.closest('button')) return;
+    e.preventDefault();
+    const r = win.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;
+    win.style.left = r.left + 'px'; win.style.top = r.top + 'px'; win.style.right = 'auto'; win.style.bottom = 'auto';
+    dragWith((ev) => {
+      win.style.left = Math.min(Math.max(-r.width + 90, ev.clientX - dx), innerWidth - 60) + 'px';
+      win.style.top = Math.min(Math.max(0, ev.clientY - dy), innerHeight - 36) + 'px';
+    });
+  });
+  document.getElementById('dbgResize').addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    const r = win.getBoundingClientRect();
+    dragWith((ev) => {
+      win.style.width = Math.min(Math.max(260, ev.clientX - r.left), innerWidth - r.left - 4) + 'px';
+      win.style.height = Math.min(Math.max(200, ev.clientY - r.top), innerHeight - r.top - 4) + 'px';
+    });
+  });
+  const dbgPost = async (action) => {
+    const r = await fetch('/api/debug', { method: 'POST', headers: { 'content-type': 'application/json', ...authHeaders() }, body: JSON.stringify({ action }) });
+    const j = await r.json(); if (!j.ok) throw new Error(j.error || 'failed'); return j;
+  };
+  const arm = (btn, label, fn) => {
+    if (btn.dataset.armed) { delete btn.dataset.armed; btn.querySelector('span').textContent = label; fn(); }
+    else { btn.dataset.armed = '1'; btn.querySelector('span').textContent = '本当に実行？'; setTimeout(() => { delete btn.dataset.armed; btn.querySelector('span').textContent = label; }, 3000); }
+  };
+  document.getElementById('dbgUnlock').addEventListener('click', async (e) => {
+    const btn = e.currentTarget; btn.disabled = true;
+    try { const j = await dbgPost('unlock-all'); setThemes(j.themes); setBadges(j.badges); btn.querySelector('span').textContent = '全解放した'; }
+    catch { btn.querySelector('span').textContent = '失敗しました'; }
+    renderDbg();
+    setTimeout(() => { btn.disabled = false; btn.querySelector('span').textContent = 'テーマ・バッジ全解放'; }, 1600);
+  });
+  document.getElementById('dbgReset').addEventListener('click', (e) => arm(e.currentTarget, '解放をリセット', async () => {
+    try { const j = await dbgPost('reset-unlocks'); setThemes(j.themes); setBadges(j.badges); } catch {}
+    renderDbg();
+  }));
+  document.getElementById('dbgReload').addEventListener('click', () => location.reload());
+  document.getElementById('dbgClear').addEventListener('click', (e) => arm(e.currentTarget, 'ローカル設定クリア', () => {
+    for (const k of Object.keys(localStorage)) if (k.startsWith('workline.')) localStorage.removeItem(k);
+    location.reload();
+  }));
+}
 /* ---- テーマ切り替えダイアログ(サムネイル付き) ---- */
 const THUMB = {
   default: { paper: 'oklch(98.5% 0.004 235)', ink: 'oklch(27% 0.02 250)', accent: 'oklch(50% 0.115 205)', band: '' },

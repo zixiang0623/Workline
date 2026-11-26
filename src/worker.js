@@ -4,7 +4,7 @@ import { DurableObject } from "cloudflare:workers";
 import { SHOT_MAX, findIcon, parseAgent, safeFetch, slugify, sniffShot } from "./agents.js";
 import { publicKey, pushEnabled, sendPush, validEndpoint } from "./push.js";
 
-const VERSION = "2.12.0";
+const VERSION = "2.13.0";
 const ALIASES = { getRequest: "getConfirmation" }; // 旧名(askUser の結果取得)。人間からの「要求」とは別物
 const PROTOCOLS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 
@@ -696,6 +696,17 @@ async function handleTheme(request, env, url) {
   return json({ ok: true, ...(await bd.themeRedeem(theme)) });
 }
 
+// デバッグウィンドウ用: テーマとバッジの全解放/リセット。キーはなし(開き方自体を隠す)
+async function handleDebug(request, env, url) {
+  return userPost(request, env, url, async (bd, b) => {
+    switch (b.action) {
+      case "unlock-all": return bd.unlockAll();
+      case "reset-unlocks": return bd.resetUnlocks();
+      default: throw new Error("unknown action");
+    }
+  });
+}
+
 // ビューアーから人間が送るもの(from は常に "user")の共通の入口: POST のみ・同一オリジン・閲覧トークン
 async function userPost(request, env, url, run) {
   if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers: { allow: "POST" } });
@@ -859,6 +870,7 @@ export default {
       if (path === "/api/purge") return await handlePurge(request, env, url);
       if (path === "/api/push") return await handlePush(request, env, url);
       if (path === "/api/theme") return await handleTheme(request, env, url);
+      if (path === "/api/debug") return await handleDebug(request, env, url);
       if (path === "/api/health") return json({ ok: true, name: "workline", version: VERSION });
     } catch (e) {
       return json({ error: String(e?.message || e) }, 500);
@@ -1096,6 +1108,26 @@ export class Board extends DurableObject {
     const badges = this.badgeList();
     if (!had) this.broadcast({ t: "badge", badges }); // 開いている他の端末にも、獲得したことを知らせる
     return { badge: id, already: had, badges };
+  }
+
+  // デバッグ用: テーマとバッジを全部解放する
+  unlockAll() {
+    const now = Date.now();
+    for (const id of Object.values(THEME_CODES)) this.sql.exec("INSERT OR IGNORE INTO themes (id, unlocked_at) VALUES (?, ?)", id, now);
+    for (const id of Object.values(BADGE_CODES)) this.sql.exec("INSERT OR IGNORE INTO badges (id, unlocked_at) VALUES (?, ?)", id, now);
+    const themes = this.themeList(), badges = this.badgeList();
+    this.broadcast({ t: "theme", themes });
+    this.broadcast({ t: "badge", badges });
+    return { ok: true, themes, badges };
+  }
+  // デバッグ用: 解放状態を全部消す(コード引き換えの初回体験を試すため)
+  resetUnlocks() {
+    this.sql.exec("DELETE FROM themes");
+    this.sql.exec("DELETE FROM badges");
+    const themes = this.themeList(), badges = this.badgeList();
+    this.broadcast({ t: "theme", themes });
+    this.broadcast({ t: "badge", badges });
+    return { ok: true, themes, badges };
   }
 
   /* --- WebSocket --- */
