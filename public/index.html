@@ -231,13 +231,15 @@ button, input { font: inherit; color: inherit; }
 .rail-copy { margin: 0; font-size: var(--text-xs); color: var(--color-muted); text-align: center; }
 .rail-badges { display: flex; justify-content: center; align-items: center; gap: var(--space-xs); margin: 0 auto; padding: var(--space-2xs) var(--space-xs); border: 0; border-radius: var(--radius-ctl); background: transparent; color: var(--color-accent); cursor: pointer; font: inherit; }
 .rail-badges:hover { background: var(--color-paper-2); }
-.rail-badge { display: inline-grid; place-items: center; width: 1.7rem; height: 1.7rem; border: var(--rule-hair) solid var(--color-rule); border-radius: 50%; background: linear-gradient(180deg, var(--color-paper), var(--color-paper-3)); box-shadow: inset 0 1px 1px rgb(255 255 255 / .45), inset 0 -2px 3px rgb(0 0 0 / .14), 0 1px 2px rgb(0 0 0 / .2); }
+.rail-badge { display: inline-grid; place-items: center; position: relative; overflow: hidden; width: 1.7rem; height: 1.7rem; border: var(--rule-hair) solid var(--color-rule); border-radius: 50%; background: linear-gradient(180deg, var(--color-paper) 0%, var(--color-paper-2) 55%, var(--color-paper-3) 100%); box-shadow: inset 0 2px 2px rgb(255 255 255 / .65), inset 0 -4px 6px rgb(0 0 0 / .22), 0 3px 6px rgb(0 0 0 / .28), 0 1px 2px rgb(0 0 0 / .22); }
+.rail-badge::after { content: ""; position: absolute; left: 10%; right: 10%; top: 4%; height: 48%; border-radius: 50%; background: radial-gradient(ellipse at 50% 0%, rgb(255 255 255 / .55), rgb(255 255 255 / 0) 70%); pointer-events: none; }
 .rail-badge .ic { width: 1rem; height: 1rem; }
 .rail-badge-more { color: var(--color-muted); }
 #badgeDlg { width: min(30rem, calc(100% - 2rem)); }
 .badge-list { display: flex; flex-direction: column; gap: var(--space-sm); margin-top: var(--space-sm); }
 .badge-row { display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-xs) var(--space-sm); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); background: var(--color-paper-2); }
-.badge-ic { display: inline-grid; place-items: center; flex: none; width: 2.4rem; height: 2.4rem; border: var(--rule-hair) solid var(--color-rule); border-radius: 50%; background: linear-gradient(180deg, var(--color-paper), var(--color-paper-3)); box-shadow: inset 0 1px 1px rgb(255 255 255 / .45), inset 0 -3px 4px rgb(0 0 0 / .14), 0 2px 3px rgb(0 0 0 / .2); color: var(--color-accent); }
+.badge-ic { display: inline-grid; place-items: center; position: relative; overflow: hidden; flex: none; width: 2.4rem; height: 2.4rem; border: var(--rule-hair) solid var(--color-rule); border-radius: 50%; background: linear-gradient(180deg, var(--color-paper) 0%, var(--color-paper-2) 55%, var(--color-paper-3) 100%); box-shadow: inset 0 2px 2px rgb(255 255 255 / .65), inset 0 -5px 7px rgb(0 0 0 / .22), 0 4px 8px rgb(0 0 0 / .28), 0 1px 2px rgb(0 0 0 / .22); color: var(--color-accent); }
+.badge-ic::after { content: ""; position: absolute; left: 10%; right: 10%; top: 4%; height: 48%; border-radius: 50%; background: radial-gradient(ellipse at 50% 0%, rgb(255 255 255 / .55), rgb(255 255 255 / 0) 70%); pointer-events: none; }
 .badge-ic .ic { width: 1.25rem; height: 1.25rem; }
 .badge-name { font-weight: 700; color: var(--color-ink); }
 .badge-desc { font-size: var(--text-xs); color: var(--color-muted); line-height: 1.55; }
