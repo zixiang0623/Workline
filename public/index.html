@@ -180,7 +180,7 @@ button, input { font: inherit; color: inherit; }
 .skip:focus-visible { top: var(--space-xs); }
 
 /* ---- top bar ---- */
-.bar { position: sticky; top: 0; z-index: var(--z-sticky); height: var(--bar-h); display: flex; align-items: center; gap: var(--space-xs); padding-inline: var(--space-md); background: var(--color-glass); -webkit-backdrop-filter: blur(18px) saturate(160%); backdrop-filter: blur(18px) saturate(160%); border-bottom: var(--rule-hair) solid var(--color-rule); }
+.bar { position: sticky; top: 0; z-index: var(--z-sticky); height: var(--bar-h); display: flex; align-items: center; gap: var(--space-xs); padding-inline: var(--space-md); background: var(--color-glass); -webkit-backdrop-filter: blur(6px) saturate(160%); backdrop-filter: blur(6px) saturate(160%); border-bottom: var(--rule-hair) solid var(--color-rule); box-shadow: inset 0 1px 0 rgb(255 255 255 / .5), inset 0 -1px 0 rgb(255 255 255 / .12); }
 .brand { display: flex; align-items: center; gap: var(--space-xs); font-weight: 700; font-size: var(--text-md); letter-spacing: 0; }
 .brand .ic { width: 20px; height: 20px; color: var(--color-accent); }
 .bar-spacer { flex: 1; }
@@ -211,11 +211,11 @@ button, input { font: inherit; color: inherit; }
 
 /* ---- shell ---- */
 .shell { display: grid; grid-template-columns: var(--rail-w) minmax(0, 1fr); align-items: start; }
-.rail { position: sticky; top: var(--bar-h); height: calc(100dvh - var(--bar-h)); overflow: auto; display: flex; flex-direction: column; background: var(--color-paper-2); border-right: var(--rule-hair) solid var(--color-rule); }
+.rail { position: sticky; top: var(--bar-h); height: calc(100dvh - var(--bar-h)); overflow: auto; display: flex; flex-direction: column; background: color-mix(in oklab, var(--color-paper-2) 62%, transparent); -webkit-backdrop-filter: blur(6px) saturate(160%); backdrop-filter: blur(6px) saturate(160%); border-right: var(--rule-hair) solid var(--color-rule); box-shadow: inset -1px 0 0 rgb(255 255 255 / .22), inset 0 1px 0 rgb(255 255 255 / .45); }
 .rail-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-xs); padding: var(--space-md) var(--space-md) var(--space-xs); }
 .rail-head h2 { font-size: var(--text-sm); font-weight: 700; color: var(--color-ink-2); }
-.chip { display: inline-flex; align-items: center; gap: var(--space-xs); min-height: 32px; padding: 0 var(--space-sm); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-pill); background: var(--color-paper); color: var(--color-ink-2); font-size: var(--text-xs); cursor: pointer; transition: background var(--dur-micro), color var(--dur-micro), transform var(--dur-micro) var(--ease-out); }
-.chip:hover { background: var(--color-paper-3); }
+.chip { display: inline-flex; align-items: center; gap: var(--space-xs); min-height: 32px; padding: 0 var(--space-sm); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-pill); background: color-mix(in oklab, var(--color-paper) 55%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / .55); color: var(--color-ink-2); font-size: var(--text-xs); cursor: pointer; transition: background var(--dur-micro), color var(--dur-micro), transform var(--dur-micro) var(--ease-out); }
+.chip:hover { background: color-mix(in oklab, var(--color-paper-3) 65%, transparent); }
 .chip:active { transform: scale(0.96); }
 .chip[aria-pressed="true"] { background: var(--color-accent-soft); border-color: var(--color-accent); color: var(--color-accent); }
 .tasklist { list-style: none; display: flex; flex-direction: column; gap: var(--space-3xs); padding: var(--space-xs); flex: 1; }
@@ -260,9 +260,8 @@ button, input { font: inherit; color: inherit; }
 .dbgwin-bg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; filter: drop-shadow(0 24px 44px rgb(0 0 0 / .30)); }
 .dbgwin-bg path { fill: rgb(255 255 255 / .30); stroke: rgb(0 0 0 / .12); stroke-width: 1; }
 .dbgwin-clip { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; -webkit-backdrop-filter: blur(6px) saturate(160%); backdrop-filter: blur(6px) saturate(160%); box-shadow: inset 0 1px 0 rgb(255 255 255 / .6), inset 0 -1px 0 rgb(255 255 255 / .15), inset 0 0 0 1px rgb(255 255 255 / .2); }
-.dbgwin-clip.refracting { backdrop-filter: url(#lg-refract) blur(1px) saturate(160%); }
 .dbgwin-clip::before { content: ""; position: absolute; inset: 0; z-index: 5; pointer-events: none; background: radial-gradient(120% 70% at 25% 0%, rgb(255 255 255 / .35), transparent 55%); }
-@media (prefers-reduced-transparency: reduce) { .dbgwin-bg path { fill: #fbfbfd; } .dbgwin-clip { -webkit-backdrop-filter: none; backdrop-filter: none; } }
+@media (prefers-reduced-transparency: reduce) { .dbgwin-bg path { fill: #fbfbfd; } .dbgwin-clip, .bar, .rail, .wiz, dialog.lb, .now { -webkit-backdrop-filter: none; backdrop-filter: none; } .bar, .wiz, dialog.lb, .now { background: var(--color-paper); } .rail { background: var(--color-paper-2); } }
 .dbgwin[hidden] { display: none; }
 .dbgwin.mini { height: auto !important; min-height: 0; }
 .dbgwin.mini .dbgwin-body, .dbgwin.mini .dbgwin-actions, .dbgwin.mini .dbgwin-resize { display: none; }
@@ -410,8 +409,8 @@ button, input { font: inherit; color: inherit; }
 .seg[data-k="note"], .use-chip[data-k="note"] .sw { background: var(--k-note); }
 
 /* ---- buttons / fields ---- */
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-xs); min-height: 40px; padding: 0 var(--space-md); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-ctl); background: var(--color-paper); color: var(--color-ink); font-size: var(--text-sm); cursor: pointer; transition: background var(--dur-micro), border-color var(--dur-micro), color var(--dur-micro), transform var(--dur-micro) var(--ease-out); }
-.btn:hover { background: var(--color-paper-3); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-xs); min-height: 40px; padding: 0 var(--space-md); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-ctl); background: color-mix(in oklab, var(--color-paper) 55%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / .55), 0 1px 2px rgb(0 0 0 / .04); color: var(--color-ink); font-size: var(--text-sm); cursor: pointer; transition: background var(--dur-micro), border-color var(--dur-micro), color var(--dur-micro), transform var(--dur-micro) var(--ease-out); }
+.btn:hover { background: color-mix(in oklab, var(--color-paper-3) 65%, transparent); }
 .btn:active { transform: scale(0.97); }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .btn[data-done="true"] { border-color: var(--color-success); color: var(--color-success); }
@@ -448,7 +447,7 @@ button, input { font: inherit; color: inherit; }
 .stats dt { font-size: var(--text-xs); color: var(--color-muted); }
 .stats dd { font-family: var(--font-data); font-size: var(--text-sm); }
 
-.now { position: sticky; top: calc(var(--bar-h) + var(--space-xs)); z-index: var(--z-raised); display: flex; flex-direction: column; gap: var(--space-2xs); padding: var(--space-md) var(--space-lg); background: var(--color-glass); -webkit-backdrop-filter: blur(20px) saturate(170%); backdrop-filter: blur(20px) saturate(170%); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); box-shadow: var(--shadow-sheet); }
+.now { position: sticky; top: calc(var(--bar-h) + var(--space-xs)); z-index: var(--z-raised); display: flex; flex-direction: column; gap: var(--space-2xs); padding: var(--space-md) var(--space-lg); background: color-mix(in oklab, var(--color-paper) 58%, transparent); -webkit-backdrop-filter: blur(6px) saturate(160%); backdrop-filter: blur(6px) saturate(160%); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); box-shadow: inset 0 1px 0 rgb(255 255 255 / .6), inset 0 0 0 1px rgb(255 255 255 / .2), var(--shadow-sheet); }
 .now[data-status="running"] { border-color: var(--color-accent); }
 .now:not([data-status="running"]) { position: static; box-shadow: none; background: var(--color-paper-2); }
 .now[data-status="done"] { border-color: var(--color-success); }
@@ -468,7 +467,7 @@ button, input { font: inherit; color: inherit; }
 .idle .ic { margin-top: var(--space-2xs); }
 .idle b { font-family: var(--font-data); font-weight: 500; }
 
-.plan { margin-top: var(--space-md); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); background: var(--color-paper); }
+.plan { margin-top: var(--space-md); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); background: color-mix(in oklab, var(--color-paper) 72%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / .5); }
 .plan > summary { display: flex; align-items: center; gap: var(--space-xs); min-height: 44px; padding: 0 var(--space-md); cursor: pointer; list-style: none; font-size: var(--text-sm); font-weight: 500; border-radius: var(--radius-card); }
 .plan > summary::-webkit-details-marker { display: none; }
 .plan > summary:hover { background: var(--color-paper-2); }
@@ -536,7 +535,7 @@ button, input { font: inherit; color: inherit; }
 .pending li .nm small { display: block; color: var(--color-muted); }
 .pending li[data-state="error"] .nm small { color: var(--color-error); }
 .c-form[data-drop], .reqbox[data-drop] { outline: 2px dashed var(--color-accent); outline-offset: var(--space-xs); }
-dialog.lb { width: min(96%, 1240px); max-width: 1240px; max-height: 94dvh; padding: 0; border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); background: var(--color-paper); color: var(--color-ink); overflow: hidden; }
+dialog.lb { width: min(96%, 1240px); max-width: 1240px; max-height: 94dvh; padding: 0; border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); background: color-mix(in oklab, var(--color-paper) 62%, transparent); -webkit-backdrop-filter: blur(6px) saturate(160%); backdrop-filter: blur(6px) saturate(160%); color: var(--color-ink); box-shadow: inset 0 1px 0 rgb(255 255 255 / .6), inset 0 0 0 1px rgb(255 255 255 / .2); overflow: hidden; }
 dialog.lb::backdrop { background: var(--color-scrim); }
 .lb-bar { display: flex; align-items: center; gap: var(--space-xs); padding: var(--space-xs) var(--space-sm); border-bottom: var(--rule-hair) solid var(--color-rule); }
 .lb-cap { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-sm); color: var(--color-ink-2); }
@@ -568,7 +567,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
 .btn.danger { border-color: var(--color-error); color: var(--color-error); }
 .btn.danger:hover { background: var(--color-error-soft); }
 .btn.danger:disabled { border-color: var(--color-rule); color: var(--color-muted); background: transparent; }
-.wiz { width: min(34rem, calc(100% - 2rem)); max-height: calc(100dvh - 2rem); padding: 0; border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); background: var(--color-paper); color: var(--color-ink); box-shadow: var(--shadow-sheet); overflow: auto; }
+.wiz { width: min(34rem, calc(100% - 2rem)); max-height: calc(100dvh - 2rem); padding: 0; border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); background: radial-gradient(120% 70% at 25% 0%, rgb(255 255 255 / .30), transparent 55%), color-mix(in oklab, var(--color-paper) 62%, transparent); -webkit-backdrop-filter: blur(6px) saturate(160%); backdrop-filter: blur(6px) saturate(160%); color: var(--color-ink); box-shadow: inset 0 1px 0 rgb(255 255 255 / .6), inset 0 0 0 1px rgb(255 255 255 / .2), var(--shadow-sheet); overflow: auto; }
 .wiz::backdrop { background: var(--color-scrim); }
 .wiz-in { display: flex; flex-direction: column; gap: var(--space-md); padding: var(--space-lg); }
 .wiz-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); }
@@ -724,7 +723,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
 .kids .tnode[data-depth="3"] { margin-left: calc(var(--space-md) * 2); }
 .kids .tnode[data-depth="4"] { margin-left: calc(var(--space-md) * 3); }
 .kids .tnode[data-depth="5"] { margin-left: calc(var(--space-md) * 4); }
-.dir { display: flex; flex-direction: column; gap: var(--space-xs); padding: var(--space-sm) var(--space-md); border: var(--rule-hair) solid var(--color-rule); border-left: 3px solid var(--color-rule); border-radius: var(--radius-card); background: var(--color-paper); }
+.dir { display: flex; flex-direction: column; gap: var(--space-xs); padding: var(--space-sm) var(--space-md); border: var(--rule-hair) solid var(--color-rule); border-left: 3px solid var(--color-rule); border-radius: var(--radius-card); background: color-mix(in oklab, var(--color-paper) 72%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / .5); }
 .dir[data-s="posted"] { border-left-color: var(--color-warn-rule); }
 .dir[data-s="accepted"] { border-left-color: var(--color-accent); }
 .dir[data-s="done"] { border-left-color: var(--color-success); }
@@ -831,7 +830,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
 .spec p { margin: 0; font-size: var(--text-sm); white-space: pre-wrap; overflow-wrap: anywhere; }
 .spec ul { margin: 0; padding-left: 1.2em; font-size: var(--text-sm); overflow-wrap: anywhere; }
 .board { display: flex; flex-direction: column; gap: var(--space-sm); max-height: min(60dvh, 38rem); min-height: 8rem; overflow-y: auto; overscroll-behavior: contain; padding: var(--space-sm); margin-bottom: var(--space-md); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); background: var(--color-paper-2); }
-.note { display: flex; flex-direction: column; gap: var(--space-2xs); padding: var(--space-sm) var(--space-md); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-ctl); background: var(--color-paper); }
+.note { display: flex; flex-direction: column; gap: var(--space-2xs); padding: var(--space-sm) var(--space-md); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-ctl); background: color-mix(in oklab, var(--color-paper) 72%, transparent); box-shadow: inset 0 1px 0 rgb(255 255 255 / .5); }
 .note[data-from="user"] { border-color: color-mix(in oklab, var(--color-accent) 45%, var(--color-rule)); }
 .note[data-new] { box-shadow: inset 3px 0 0 var(--color-accent); }
 .note-top { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2xs) var(--space-xs); font-size: var(--text-sm); }
@@ -1103,12 +1102,6 @@ dialog.lb::backdrop { background: var(--color-scrim); }
   </div>
 </dialog>
 <section class="dbgwin" id="dbgWin" hidden aria-label="デバッグ">
-  <svg width="0" height="0" aria-hidden="true" style="position:absolute">
-    <filter id="lg-refract" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
-      <feImage id="lgMap" x="0" y="0" preserveAspectRatio="none" result="map" />
-      <feDisplacementMap in="SourceGraphic" in2="map" scale="60" xChannelSelector="R" yChannelSelector="G" />
-    </filter>
-  </svg>
   <svg class="dbgwin-bg" aria-hidden="true"><path id="dbgBgPath" d=""/></svg>
   <div class="dbgwin-clip">
   <div class="dbgwin-bar" id="dbgBar">
@@ -2340,6 +2333,74 @@ function renderBadgeList() {
   document.getElementById('railBadges').addEventListener('click', () => { renderBadgeList(); dlg.showModal(); });
 }
 renderRailBadges();
+/* Liquid Glassの屈折 (liquidglassdesign.com の作法): 角丸までの距離(SDF)から変位マップを作り、feDisplacementMapで背景を曲げる。描けるのはChromiumだけ。scaleはバカ高く300 */
+const isChromium = navigator.userAgentData?.brands?.some((b) => b.brand === 'Chromium') ?? false;
+const lgReduced = matchMedia('(prefers-reduced-transparency: reduce)').matches;
+function makeDisplacementMap(w, h, r, bezel) {
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  const img = ctx.createImageData(w, h);
+  const sdf = (x, y) => {
+    const qx = Math.abs(x - w / 2) - (w / 2 - r);
+    const qy = Math.abs(y - h / 2) - (h / 2 - r);
+    return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - r;
+  };
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const inset = -sdf(x, y);
+      let dx = 0, dy = 0;
+      if (inset > 0 && inset < bezel) {
+        const nx = sdf(x + 1, y) - sdf(x - 1, y);
+        const ny = sdf(x, y + 1) - sdf(x, y - 1);
+        const len = Math.hypot(nx, ny) || 1;
+        const t = 1 - inset / bezel;
+        const strength = t * t;
+        dx = (-nx / len) * strength;
+        dy = (-ny / len) * strength;
+      }
+      const i = (y * w + x) * 4;
+      img.data[i] = 128 + dx * 127;
+      img.data[i + 1] = 128 + dy * 127;
+      img.data[i + 2] = 128;
+      img.data[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  return canvas.toDataURL();
+}
+const lgDefs = (() => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('width', '0'); s.setAttribute('height', '0'); s.style.position = 'absolute'; document.body.appendChild(s); return s; })();
+let lgSeq = 0;
+const lgState = new Map(), lgTimers = new Map();
+function lgApply(surface, sizeEl) {
+  if (!isChromium || lgReduced) return;
+  const src = sizeEl || surface;
+  const w = src.clientWidth, h = src.clientHeight; if (!w || !h) return;
+  let rec = lgState.get(surface);
+  if (!rec) {
+    const id = 'lgf' + (++lgSeq);
+    const f = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+    f.setAttribute('id', id); f.setAttribute('x', '0'); f.setAttribute('y', '0'); f.setAttribute('width', '100%'); f.setAttribute('height', '100%'); f.setAttribute('color-interpolation-filters', 'sRGB');
+    const fe = document.createElementNS('http://www.w3.org/2000/svg', 'feImage');
+    fe.setAttribute('x', '0'); fe.setAttribute('y', '0'); fe.setAttribute('preserveAspectRatio', 'none'); fe.setAttribute('result', 'map');
+    const dm = document.createElementNS('http://www.w3.org/2000/svg', 'feDisplacementMap');
+    dm.setAttribute('in', 'SourceGraphic'); dm.setAttribute('in2', 'map'); dm.setAttribute('scale', '300'); dm.setAttribute('xChannelSelector', 'R'); dm.setAttribute('yChannelSelector', 'G');
+    f.appendChild(fe); f.appendChild(dm); lgDefs.appendChild(f);
+    rec = { fe }; lgState.set(surface, rec);
+    surface.style.backdropFilter = `url(#${id}) blur(1px) saturate(160%)`;
+  }
+  const rad = parseFloat(getComputedStyle(src).borderTopLeftRadius) || 20;
+  const bezel = Math.min(28, Math.max(8, Math.floor(Math.min(w, h) / 3)));
+  rec.fe.setAttribute('width', w);
+  rec.fe.setAttribute('height', h);
+  rec.fe.setAttribute('href', makeDisplacementMap(w, h, Math.min(rad, 40), bezel));
+}
+function lgSchedule(surface, sizeEl) { if (lgTimers.has(surface)) clearTimeout(lgTimers.get(surface)); lgTimers.set(surface, setTimeout(() => lgApply(surface, sizeEl), 150)); }
+function lgWatch(surface, sizeEl) { if (!surface || !isChromium) return; new ResizeObserver(() => lgSchedule(surface, sizeEl)).observe(sizeEl || surface); lgSchedule(surface, sizeEl); }
+lgWatch(document.querySelector('.bar'));
+lgWatch(document.getElementById('now'));
+document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
+
 /* ---- デバッグウィンドウ: バージョン表示を5回タップで開く。タイトルバーを掴んで移動、右下のつまみでリサイズ ---- */
 {
   const win = document.getElementById('dbgWin'), bodyEl = document.getElementById('dbgBody');
@@ -2352,53 +2413,7 @@ renderRailBadges();
     bgPath.setAttribute('d', d);
     clip.style.clipPath = `path("${d}")`;
   };
-  /* Liquid Glassの屈折 (liquidglassdesign.com の作法): 角丸までの距離(SDF)から変位マップを作り、feDisplacementMapで背景を曲げる。描けるのはChromiumだけ */
-  const lgMap = document.getElementById('lgMap');
-  const isChromium = navigator.userAgentData?.brands?.some((b) => b.brand === 'Chromium') ?? false;
-  function makeDisplacementMap(w, h, r, bezel) {
-    const canvas = document.createElement('canvas');
-    canvas.width = w; canvas.height = h;
-    const ctx = canvas.getContext('2d');
-    const img = ctx.createImageData(w, h);
-    const sdf = (x, y) => {
-      const qx = Math.abs(x - w / 2) - (w / 2 - r);
-      const qy = Math.abs(y - h / 2) - (h / 2 - r);
-      return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - r;
-    };
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const inset = -sdf(x, y);
-        let dx = 0, dy = 0;
-        if (inset > 0 && inset < bezel) {
-          const nx = sdf(x + 1, y) - sdf(x - 1, y);
-          const ny = sdf(x, y + 1) - sdf(x, y - 1);
-          const len = Math.hypot(nx, ny) || 1;
-          const t = 1 - inset / bezel;
-          const strength = t * t;
-          dx = (-nx / len) * strength;
-          dy = (-ny / len) * strength;
-        }
-        const i = (y * w + x) * 4;
-        img.data[i] = 128 + dx * 127;
-        img.data[i + 1] = 128 + dy * 127;
-        img.data[i + 2] = 128;
-        img.data[i + 3] = 255;
-      }
-    }
-    ctx.putImageData(img, 0, 0);
-    return canvas.toDataURL();
-  }
-  const lgUpdate = () => {
-    if (!isChromium || win.hidden) return;
-    const w = win.clientWidth, h = win.clientHeight; if (!w || !h) return;
-    lgMap.setAttribute('width', w);
-    lgMap.setAttribute('height', h);
-    lgMap.setAttribute('href', makeDisplacementMap(w, h, 20, 28));
-    clip.classList.add('refracting');
-  };
-  let lgTimer = null;
-  const lgSchedule = () => { if (lgTimer) clearTimeout(lgTimer); lgTimer = setTimeout(lgUpdate, 150); };
-  new ResizeObserver(() => { shape(); lgSchedule(); }).observe(win);
+  new ResizeObserver(() => { shape(); lgSchedule(clip, win); }).observe(win);
   const t0 = Date.now();
   let taps = [], refresh = null;
   const row = (k, v) => `<div class="dbg-row"><span class="dbg-k">${k}</span><span>${v}</span></div>`;
@@ -2431,7 +2446,7 @@ renderRailBadges();
     if (!win.hidden) { closeDbg(); return; }
     win.hidden = false;
     try { const p = JSON.parse(store.get('dbgwin', '')); if (p && p.w >= 260) { win.style.left = p.x + 'px'; win.style.top = p.y + 'px'; win.style.right = 'auto'; win.style.width = p.w + 'px'; win.style.height = p.h + 'px'; } } catch {}
-    renderDbg(); requestAnimationFrame(() => { shape(); lgUpdate(); }); refresh = setInterval(renderDbg, 1000);
+    renderDbg(); requestAnimationFrame(() => { shape(); lgApply(clip, win); }); refresh = setInterval(renderDbg, 1000);
   }
   document.getElementById('dbgClose').addEventListener('click', closeDbg);
   document.getElementById('dbgMini').addEventListener('click', () => {
