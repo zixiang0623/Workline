@@ -239,6 +239,7 @@ button, input { font: inherit; color: inherit; }
 .badge-row { display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-xs) var(--space-sm); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); background: var(--color-paper-2); }
 .badge-ic { display: inline-grid; place-items: center; flex: none; width: 2.4rem; height: 2.4rem; border: var(--rule-hair) solid var(--color-rule); border-radius: 50%; background: linear-gradient(165deg, color-mix(in oklch, var(--color-paper) 72%, #ffffff) 0%, color-mix(in oklch, var(--color-paper-3) 52%, #a7b0b8) 38%, color-mix(in oklch, var(--color-paper) 62%, #e9edf0) 54%, color-mix(in oklch, var(--color-paper-3) 58%, #828b93) 100%); box-shadow: inset 0 1px 1px rgb(255 255 255 / .45), inset 0 -3px 4px rgb(0 0 0 / .14), 0 2px 3px rgb(0 0 0 / .2); color: var(--color-accent); }
 .badge-ic .ic { width: 1.25rem; height: 1.25rem; filter: drop-shadow(0 1px 0 rgb(255 255 255 / .4)); }
+.rail-badge.gold, .badge-ic.gold { background: linear-gradient(165deg, #fff7cf 0%, #dcb13e 38%, #ffec8f 54%, #a87e14 100%); color: #7c5c0d; }
 .badge-name { font-weight: 700; color: var(--color-ink); }
 .badge-desc { font-size: var(--text-xs); color: var(--color-muted); line-height: 1.55; }
 .badge-empty { font-size: var(--text-sm); color: var(--color-muted); line-height: 1.6; }
@@ -2194,15 +2195,23 @@ function setThemes(list) {
 try { S.themes = (JSON.parse(store.get('themes', '[]')) || []).filter((id) => THEMES[id]); } catch { S.themes = []; }
 /* ---- バッジ: シリアルコードで獲得(Durable Object に記録)。レール下部に最大2つ+…で出し、ダイアログで一覧 ---- */
 const BADGES = {
-  founder: { name: '創設者', icon: 'star', desc: 'Worklineを作った人に贈られる、最初のバッジ' },
+  founder: { name: '創設者', icon: 'star', gold: true, desc: 'Worklineを作った人に贈られる、最初のバッジ' },
+  legend: { name: 'レジェンド', icon: 'shield-check', gold: true, desc: 'めったに配られない、伝説級のバッジ' },
+  contributor: { name: 'コントリビューター', icon: 'wrench', gold: true, desc: 'Worklineへの貢献(報告・提案・開発)に贈られるバッジ' },
+  master: { name: '作業の達人', icon: 'list-checks', gold: true, desc: 'たくさんの作業を見届けてきた達人のバッジ' },
   qiita: { name: 'Qiita読者', icon: 'book-open', desc: 'Qiitaの「Workline完全ガイド」読者への特典バッジ' },
-  contributor: { name: 'コントリビューター', icon: 'wrench', desc: 'Worklineへの貢献(報告・提案・開発)に贈られるバッジ' },
+  early: { name: 'アーリーアダプター', icon: 'clock', desc: 'Worklineを早い時期から使ってくれている人のバッジ' },
+  wall: { name: '壁掛け', icon: 'image', desc: '壁掛けモードでWorklineを飾っている人のバッジ' },
+  tester: { name: 'テスター', icon: 'flask-conical', desc: '新機能を試して感想をくれる人のバッジ' },
+  idea: { name: 'アイデアマン', icon: 'brain', desc: '機能のアイデアを出してくれた人のバッジ' },
+  supporter: { name: 'サポーター', icon: 'users', desc: 'Worklineを紹介・応援してくれる人のバッジ' },
+  bug: { name: 'バグハンター', icon: 'search', desc: 'バグを見つけて教えてくれた人のバッジ' },
 };
 function renderRailBadges() {
   const w = document.getElementById('railBadges');
   const ids = S.badges.filter((id) => BADGES[id]);
   w.hidden = ids.length === 0;
-  w.innerHTML = ids.slice(0, 2).map((id) => `<span class="rail-badge" title="${esc(BADGES[id].name)}バッジ">${icon(BADGES[id].icon)}</span>`).join('')
+  w.innerHTML = ids.slice(0, 2).map((id) => `<span class="rail-badge${BADGES[id].gold ? ' gold' : ''}" title="${esc(BADGES[id].name)}バッジ">${icon(BADGES[id].icon)}</span>`).join('')
     + (ids.length > 2 ? `<span class="rail-badge rail-badge-more" title="ほか ${ids.length - 2} 個">${icon('ellipsis')}</span>` : '');
   w.setAttribute('aria-label', `獲得したバッジ ${ids.length} 個。押すと一覧を開く`);
 }
@@ -2216,7 +2225,7 @@ try { S.badges = (JSON.parse(store.get('badges', '[]')) || []).filter((id) => BA
 function renderBadgeList() {
   const ids = S.badges.filter((id) => BADGES[id]);
   document.getElementById('badgeList').innerHTML = ids.length
-    ? ids.map((id) => `<div class="badge-row"><span class="badge-ic">${icon(BADGES[id].icon)}</span><span><span class="badge-name">${esc(BADGES[id].name)}バッジ</span><br><span class="badge-desc">${esc(BADGES[id].desc)}</span></span></div>`).join('')
+    ? ids.map((id) => `<div class="badge-row"><span class="badge-ic${BADGES[id].gold ? ' gold' : ''}">${icon(BADGES[id].icon)}</span><span><span class="badge-name">${esc(BADGES[id].name)}バッジ</span><br><span class="badge-desc">${esc(BADGES[id].desc)}</span></span></div>`).join('')
     : '<p class="badge-empty">まだバッジがありません。シリアルコードを入力すると、ここに集まります。</p>';
 }
 {
