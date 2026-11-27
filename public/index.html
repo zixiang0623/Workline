@@ -1287,6 +1287,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
       <div class="dbg-pane" data-pane="notes" hidden>
         <div class="dbg-pane-t">リリースノート</div>
         <div id="dbgNotes"></div>
+        <p class="dbg-note" style="margin-top:10px">出典: GitHub の「リリースノート.md」（取得できないときは内蔵の予備を表示します）</p>
       </div>
     </div>
   </div>
@@ -2778,6 +2779,7 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     fetch('/api/health').then((r) => r.json()).then((j) => { dbgHealth = `正常（v${j.version}）`; }).catch(() => { dbgHealth = '応答なし'; });
     if (window.WLNotify && WLNotify.refresh) WLNotify.refresh();
     try { if (store.get('dbgcat', 'info') === 'share') loadShare(); } catch {}
+    setTimeout(() => { try { loadRemoteNotes(); } catch {} }, 0);
   }
   document.getElementById('dbgClose').addEventListener('click', closeDbg);
   document.getElementById('dbgMini').addEventListener('click', () => {
@@ -3013,8 +3015,9 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
   document.getElementById('dbgGoNotes').addEventListener('click', () => selectCat('notes'));
   document.getElementById('dbgOpenSfx2').addEventListener('click', () => { closeDbg(); document.getElementById('sfxTestBtn').click(); });
   document.getElementById('dbgOpenNotify').addEventListener('click', () => { if (window.WLNotify) WLNotify.open(); });
-  /* リリースノートはこの配列が正本。版を上げたら先頭に足す */
+  /* リリースノートの正本は GitHub の「リリースノート.md」。この配列は取得できないときの予備 */
   const RELEASE_NOTES = [
+    ['2.27.5', '2026-11-27', ['リリースノートを、GitHub の「リリースノート.md」から読み込むようにした（取得できないときは、内蔵の予備を表示する）']],
     ['2.27.4', '2026-11-27', ['司令・要求の未読が、タブを見ているだけで自動で消えてしまう問題を直した。未読は「すべて既読にする」か項目を開くまで残る']],
     ['2.27.3', '2026-11-27', ['新機能: タスク検索を追加した（レールの上から、題名・AI名・モデル・番号で絞り込める）', 'デバッグ兼設定に「サウンド」「通知」のカテゴリを追加し、項目も増やした', 'デバッグのサイドバーがスライドして開閉するようになった']],
     ['2.27.2', '2026-11-27', ['デバッグを「デバッグ兼設定」として育て始めた（情報・接続に項目を追加、データの書き出しを追加）', '検索がカテゴリ名だけでなく、項目の中身まで届くようにした']],
@@ -3027,7 +3030,26 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     ['2.23.3', '2026-11-26', ['お正月テーマの完了音を、宮城道雄「春の海」の琴の冒頭にした']],
     ['2.22.0', '2026-11-26', ['さくらテーマの完了音に「さくらさくら」の一節を入れた']],
   ];
-  document.getElementById('dbgNotes').innerHTML = RELEASE_NOTES.map(([v, d, items], i) => `<div class="dbg-card"${i ? ' style="margin-top:10px"' : ''}><div class="dbg-row"><span class="dbg-k">v${v}</span><span class="dbg-v">${d}</span></div>${items.map((t) => `<div class="dbg-row"><span class="dbg-note">${esc(t)}</span></div>`).join('')}</div>`).join('');
+  const renderNotes = (notes) => { document.getElementById('dbgNotes').innerHTML = notes.map(([v, d, items], i) => `<div class="dbg-card"${i ? ' style="margin-top:10px"' : ''}><div class="dbg-row"><span class="dbg-k">v${v}</span><span class="dbg-v">${d}</span></div>${items.map((t) => `<div class="dbg-row"><span class="dbg-note">${esc(t)}</span></div>`).join('')}</div>`).join(''); };
+  renderNotes(RELEASE_NOTES);
+  let notesLoaded = false;
+  const loadRemoteNotes = () => {
+    if (notesLoaded) return; notesLoaded = true;
+    fetch('https://raw.githubusercontent.com/zixiang0623/Workline/main/' + encodeURIComponent('リリースノート.md'), { cache: 'no-store' })
+      .then((r) => { if (!r.ok) throw new Error(r.status); return r.text(); })
+      .then((md) => {
+        const out = []; let cur = null;
+        for (const line of md.split('\n')) {
+          const h = line.match(/^##\s+v?(\d+\.\d+\.\d+)\s*[—–-]\s*(\d{4}-\d{2}-\d{2})/);
+          if (h) { cur = [h[1], h[2], []]; out.push(cur); continue; }
+          const b = line.match(/^[-・*]\s+(.+)/);
+          if (b && cur) cur[2].push(b[1].trim());
+        }
+        const valid = out.filter((n) => n[2].length);
+        if (valid.length) renderNotes(valid);
+      })
+      .catch(() => { /* 届かないときは内蔵の予備のまま */ });
+  };
 }
 /* ---- テーマ切り替えダイアログ(サムネイル付き) ---- */
 const THUMB = {
