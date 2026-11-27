@@ -1222,7 +1222,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
           <div id="shareList"></div>
         </div>
         <div class="dbg-card" style="margin-top:10px">
-          <div class="dbg-row"><span class="dbg-k">禁止ワード</span><span class="dbg-note">閲覧リンクで開いたときだけ、本文中の語が ● に置き換わります（通常の表示には影響しません）。画像は丸ごと非表示になります</span></div>
+          <div class="dbg-row"><span class="dbg-k">禁止ワード</span><span class="dbg-note">閲覧リンクで開いたときだけ、本文中の語が * に置き換わります（通常の表示には影響しません）。画像は丸ごと非表示になります</span></div>
           <div class="dbg-row"><textarea id="bannedWords" rows="4" placeholder="1行に1ワード"></textarea></div>
           <div class="dbg-row"><span class="dbg-note">最大100件・1件50文字まで</span><button class="dbg-linkbtn" id="bannedSave" type="button">保存</button></div>
         </div>
@@ -1248,6 +1248,10 @@ dialog.lb::backdrop { background: var(--color-scrim); }
           <div class="dbg-row"><span class="dbg-note">AIエージェントたちの作業を、人間が眺めるためのボードです。作業・司令・伝言・要求がすべて記録されます。</span></div>
           <div class="dbg-row"><span class="dbg-k">ソースコード</span><a class="dbg-v" href="https://github.com/zixiang0623/Workline" target="_blank" rel="noopener">github.com/zixiang0623/Workline</a></div>
         </div>
+      </div>
+      <div class="dbg-pane" data-pane="notes" hidden>
+        <div class="dbg-pane-t">リリースノート</div>
+        <div id="dbgNotes"></div>
       </div>
     </div>
   </div>
@@ -2754,6 +2758,7 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     { id: 'actions', name: '操作', icon: 'i-wrench', color: '#ff9500' },
     { id: 'share', name: '共有', icon: 'i-globe', color: '#5856d6' },
     { id: 'help', name: 'ヘルプ', icon: 'i-circle-help', color: '#af52de' },
+    { id: 'notes', name: 'リリースノート', icon: 'i-book-open', color: '#64d2ff' },
   ];
   const navEl = document.getElementById('dbgNav');
   const selectCat = (id) => {
@@ -2907,6 +2912,18 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     if (S.view) { try { viewWs && viewWs.close(); } catch {} connectView(); }
     else { try { ws && ws.close(); } catch {} backoff = 1000; connect(); }
   });
+  /* リリースノートはこの配列が正本。版を上げたら先頭に足す */
+  const RELEASE_NOTES = [
+    ['2.27.1', '2026-11-27', ['閲覧リンクの伏字を ● から * に変えた', 'デバッグ内にリリースノートを追加した']],
+    ['2.27.0', '2026-11-27', ['デバッグウィンドウを設定画面らしく拡充した（接続・ヘルプのカテゴリ、情報26行、表示の設定、操作の近道）']],
+    ['2.26.0', '2026-11-27', ['閲覧専用リンクでAIアイコンの表示と、WebSocketによる即時更新に対応した']],
+    ['2.25.0', '2026-11-27', ['閲覧専用リンク（期限つき）の発行と、禁止ワードの伏字を追加した']],
+    ['2.24.2', '2026-11-26', ['デバッグウィンドウを最大化したあと最小化できない問題を直した']],
+    ['2.24.0', '2026-11-26', ['デバッグウィンドウの最大化・最小化・復元にアニメーションを付けた']],
+    ['2.23.3', '2026-11-26', ['お正月テーマの完了音を、宮城道雄「春の海」の琴の冒頭にした']],
+    ['2.22.0', '2026-11-26', ['さくらテーマの完了音に「さくらさくら」の一節を入れた']],
+  ];
+  document.getElementById('dbgNotes').innerHTML = RELEASE_NOTES.map(([v, d, items], i) => `<div class="dbg-card"${i ? ' style="margin-top:10px"' : ''}><div class="dbg-row"><span class="dbg-k">v${v}</span><span class="dbg-v">${d}</span></div>${items.map((t) => `<div class="dbg-row"><span class="dbg-note">${esc(t)}</span></div>`).join('')}</div>`).join('');
 }
 /* ---- テーマ切り替えダイアログ(サムネイル付き) ---- */
 const THUMB = {

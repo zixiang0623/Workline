@@ -4,7 +4,7 @@ import { DurableObject } from "cloudflare:workers";
 import { SHOT_MAX, findIcon, parseAgent, safeFetch, slugify, sniffShot } from "./agents.js";
 import { publicKey, pushEnabled, sendPush, validEndpoint } from "./push.js";
 
-const VERSION = "2.27.0";
+const VERSION = "2.27.1";
 const ALIASES = { getRequest: "getConfirmation" }; // 旧名(askUser の結果取得)。人間からの「要求」とは別物
 const PROTOCOLS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 
@@ -390,12 +390,12 @@ function safeEqual(a, b) {
   return r === 0;
 }
 
-// 閲覧専用リンク用: オブジェクト中の文字列から禁止ワードを ● に置き換える(キー名・数値・真偽値はそのまま)
+// 閲覧専用リンク用: オブジェクト中の文字列から禁止ワードを * に置き換える(キー名・数値・真偽値はそのまま)
 function maskStrings(v, words) {
   if (!words.length) return v;
   if (typeof v === "string") {
     let s = v;
-    for (const w of words) if (w && s.includes(w)) s = s.split(w).join("●".repeat(Math.min([...w].length, 10)));
+    for (const w of words) if (w && s.includes(w)) s = s.split(w).join("*".repeat(Math.min([...w].length, 10)));
     return s;
   }
   if (Array.isArray(v)) return v.map((x) => maskStrings(x, words));
