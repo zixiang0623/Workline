@@ -318,6 +318,8 @@ html.lg-off .bar, html.lg-off .rail, html.lg-off .wiz, html.lg-off dialog.lb, ht
 .dbg-row input[type="range"] { flex: 1; min-width: 0; accent-color: #0071e3; }
 .dbg-note { flex: 1; font-size: 11px; color: #86868b; line-height: 1.5; }
 .dbg-kbd { font: 600 11px ui-monospace, SFMono-Regular, monospace; background: #e8e8ed; border: 1px solid #d2d2d7; border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; color: #1d1d1f; white-space: nowrap; }
+.dbg-row.hit { background: rgba(0,113,227,.13); border-radius: 8px; }
+.dbg-row.dim { opacity: .32; }
 html.no-anim *, html.no-anim *::before, html.no-anim *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 .dbg-linkbtn { flex: none; border: none; background: none; color: #0071e3; font: inherit; font-size: 12px; cursor: pointer; padding: 2px 0; }
 .dbg-linkbtn.danger { color: #d70015; }
@@ -1155,7 +1157,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
     <div class="badge-list" id="badgeList"></div>
   </div>
 </dialog>
-<section class="dbgwin" id="dbgWin" hidden aria-label="デバッグ">
+<section class="dbgwin" id="dbgWin" hidden aria-label="デバッグ兼設定">
   <svg class="dbgwin-bg" aria-hidden="true"><path id="dbgBgPath" d=""/></svg>
   <div class="dbgwin-clip">
   <div class="dbgwin-bar" id="dbgBar">
@@ -1164,7 +1166,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
       <button class="dbgwin-dot mini" id="dbgMini" type="button" aria-label="最小化"><span>−</span></button>
       <button class="dbgwin-dot zoom" id="dbgZoom" type="button" aria-label="拡大・縮小"><span>+</span></button>
     </span>
-    <span class="dbgwin-title">デバッグ</span>
+    <span class="dbgwin-title">デバッグ兼設定</span>
     <button class="dbgwin-sidebtn" id="dbgSideBtn" type="button" aria-label="サイドバーの表示切り替え"><svg class="ic" aria-hidden="true"><use href="#i-panel-left-open"/></svg></button>
   </div>
   <div class="dbgwin-body">
@@ -1206,6 +1208,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
           <button class="dbg-row dbg-act" id="dbgThemeReset" type="button"><span>テーマを標準に戻す</span><span class="dbg-chev">›</span></button>
           <button class="dbg-row dbg-act" id="dbgCopy" type="button"><span>状態をコピー</span><span class="dbg-chev">›</span></button>
           <button class="dbg-row dbg-act" id="dbgRefetch" type="button"><span>最新の状態を取り直す</span><span class="dbg-chev">›</span></button>
+          <button class="dbg-row dbg-act" id="dbgExport" type="button"><span>データを書き出す</span><span class="dbg-chev">›</span></button>
           <button class="dbg-row dbg-act" id="dbgOpenBadges" type="button"><span>バッジ一覧を開く</span><span class="dbg-chev">›</span></button>
           <button class="dbg-row dbg-act" id="dbgOpenSfx" type="button"><span>効果音テストを開く</span><span class="dbg-chev">›</span></button>
           <button class="dbg-row dbg-act" id="dbgWall" type="button"><span>壁掛けモードを開く</span><span class="dbg-chev">›</span></button>
@@ -2658,6 +2661,8 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     ['透明度', () => `${lgTransVal}（デフォルト 60）`],
     ['エージェント', () => [...S.agents.values()].sort((a, b) => b.lastSeen - a.lastSeen).slice(0, 6).map((a) => `${esc(a.name)}（${a.lastSeen ? new Date(a.lastSeen).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '—'}）`).join('、') || '—'],
     ['画面', () => `${innerWidth}×${innerHeight}（DPR ${devicePixelRatio}）`],
+    ['CPUコア数', () => `${navigator.hardwareConcurrency || '—'}コア`],
+    ['端末のメモリ', () => navigator.deviceMemory ? `約${navigator.deviceMemory} GB` : '不明'],
     ['ブラウザ', () => { const ua = navigator.userAgent; return /Edg\//.test(ua) ? 'Edge' : /Chrome\//.test(ua) ? 'Chrome' : /Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : '不明'; }],
     ['開いてから', () => { const el = Math.floor((Date.now() - t0) / 1000); return el >= 3600 ? `${Math.floor(el / 3600)}時間${Math.floor(el % 3600 / 60)}分` : el >= 60 ? `${Math.floor(el / 60)}分${el % 60}秒` : `${el}秒`; }],
     ['回線', () => navigator.onLine ? 'オンライン' : 'オフライン'],
@@ -2677,6 +2682,7 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     ['状態', () => ({ live: '接続中（ライブ）', retry: '再接続中', denied: '拒否されました', error: 'エラー', boot: '接続中' }[S.conn] || S.conn || '—')],
     ['接続先', () => location.host],
     ['プロトコル', () => location.protocol === 'https:' ? 'wss（暗号化）' : 'ws'],
+    ['回線の種類', () => (navigator.connection && navigator.connection.effectiveType) || '不明'],
     ['最終受信', () => S.lastAt ? `${new Date(S.lastAt).toLocaleTimeString('ja-JP')}（${Math.max(0, Math.round((Date.now() - S.lastAt) / 1000))}秒前）` : '—'],
     ['応答時間', () => S.pingMs ? `${S.pingMs} ミリ秒` : '未測定'],
     ['モード', () => S.view ? '閲覧専用リンク' : '通常'],
@@ -2686,6 +2692,7 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     bodyEl.innerHTML = DBG_ROWS.map(([k, f]) => row(k, f())).join('');
     if (connEl) connEl.innerHTML = DBG_CONN.map(([k, f]) => row(k, f())).join('');
     heroVer.textContent = document.getElementById('railVer').textContent || '—';
+    if (dbgQuery) applyDbgSearch();
   }
   function clampDbg() {
     if (win.classList.contains('mini') || win.classList.contains('zoom')) return;
@@ -2770,10 +2777,21 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
   navEl.innerHTML = DBG_CATS.map((c) => `<button class="dbg-nav-it" type="button" data-cat="${c.id}"><span class="dbg-nav-ic" style="background:${c.color}"><svg class="ic" aria-hidden="true"><use href="#${c.icon}"/></svg></span>${c.name}</button>`).join('');
   navEl.querySelectorAll('.dbg-nav-it').forEach((b) => b.addEventListener('click', () => selectCat(b.dataset.cat)));
   document.getElementById('dbgSideHero').addEventListener('click', () => selectCat('info'));
-  document.getElementById('dbgSearch').addEventListener('input', (e) => {
-    const q = e.target.value.trim();
-    navEl.querySelectorAll('.dbg-nav-it').forEach((b) => { b.style.display = !q || b.textContent.includes(q) ? '' : 'none'; });
-  });
+  let dbgQuery = '';
+  const applyDbgSearch = () => {
+    const q = dbgQuery;
+    navEl.querySelectorAll('.dbg-nav-it').forEach((b) => {
+      const pane = document.querySelector(`.dbg-pane[data-pane="${b.dataset.cat}"]`);
+      const hit = !q || b.textContent.includes(q) || (pane && pane.textContent.includes(q));
+      b.style.display = hit ? '' : 'none';
+    });
+    document.querySelectorAll('.dbg-pane .dbg-row').forEach((r) => {
+      const hit = !!q && r.textContent.includes(q);
+      r.classList.toggle('hit', hit);
+      r.classList.toggle('dim', !!q && !hit);
+    });
+  };
+  document.getElementById('dbgSearch').addEventListener('input', (e) => { dbgQuery = e.target.value.trim(); applyDbgSearch(); });
   let dbgCatInit = 'info';
   try { const c = store.get('dbgcat', 'info'); if (DBG_CATS.some((x) => x.id === c)) dbgCatInit = c; } catch {}
   selectCat(dbgCatInit);
@@ -2912,8 +2930,18 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     if (S.view) { try { viewWs && viewWs.close(); } catch {} connectView(); }
     else { try { ws && ws.close(); } catch {} backoff = 1000; connect(); }
   });
+  document.getElementById('dbgExport').addEventListener('click', () => {
+    const tasks = [...S.tasks.values()].map((t) => ({ ...t, steps: t.steps ? [...t.steps.values()] : [] }));
+    const data = { exportedAt: new Date().toISOString(), version: document.getElementById('railVer').textContent || '', tasks, agents: [...S.agents.values()], shots: S.shots.length };
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+    const d = new Date(), pad = (n) => String(n).padStart(2, '0');
+    a.download = `workline-export-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.json`;
+    a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  });
   /* リリースノートはこの配列が正本。版を上げたら先頭に足す */
   const RELEASE_NOTES = [
+    ['2.27.2', '2026-11-27', ['デバッグを「デバッグ兼設定」として育て始めた（情報・接続に項目を追加、データの書き出しを追加）', '検索がカテゴリ名だけでなく、項目の中身まで届くようにした']],
     ['2.27.1', '2026-11-27', ['閲覧リンクの伏字を ● から * に変えた', 'デバッグ内にリリースノートを追加した']],
     ['2.27.0', '2026-11-27', ['デバッグウィンドウを設定画面らしく拡充した（接続・ヘルプのカテゴリ、情報26行、表示の設定、操作の近道）']],
     ['2.26.0', '2026-11-27', ['閲覧専用リンクでAIアイコンの表示と、WebSocketによる即時更新に対応した']],
