@@ -289,9 +289,13 @@ html.lg-off .bar, html.lg-off .rail, html.lg-off .wiz, html.lg-off dialog.lb, ht
 .dbgwin-sidebtn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; display: grid; place-items: center; border: none; background: none; color: #6e6e73; cursor: pointer; border-radius: 6px; padding: 0; }
 .dbgwin-sidebtn:hover { background: rgb(0 0 0 / .06); }
 .dbgwin-sidebtn .ic { width: 15px; height: 15px; }
-.dbgwin.side-closed .dbg-side { display: none; }
+.dbgwin.side-closed .dbg-side { width: 0; padding-left: 0; padding-right: 0; opacity: 0; border-right-color: transparent; pointer-events: none; }
+.dbg-side > * { width: 9.75rem; flex: none; }
+.dbgwin .dbg-side > #dbgSearch { width: 9.75rem; }
+@media (prefers-reduced-motion: reduce) { .dbg-side { transition: none; } }
+html.no-anim .dbg-side { transition: none; }
 .dbgwin-body { flex: 1; display: flex; min-height: 0; background: rgb(238 238 242 / .45); }
-.dbg-side { width: 10.75rem; flex: none; display: flex; flex-direction: column; gap: 8px; padding: 10px 8px; border-right: 1px solid rgb(0 0 0 / .06); background: rgb(255 255 255 / .25); overflow: auto; }
+.dbg-side { width: 10.75rem; flex: none; display: flex; flex-direction: column; gap: 8px; padding: 10px 8px; border-right: 1px solid rgb(0 0 0 / .06); background: rgb(255 255 255 / .25); overflow: hidden auto; transition: width .34s cubic-bezier(.32,.9,.28,1), padding .34s cubic-bezier(.32,.9,.28,1), opacity .26s ease, border-color .3s ease; }
 .dbg-side-hero { display: flex; gap: 8px; align-items: center; padding: 4px 6px 6px; border-radius: 8px; cursor: pointer; }
 .dbg-side-hero:hover { background: rgb(0 0 0 / .04); }
 .dbg-side-tile { width: 30px; height: 30px; border-radius: 7px; flex: none; display: block; }
@@ -354,6 +358,10 @@ button.dbg-act.danger { color: #d70015; }
 .head-top { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-xs) var(--space-md); }
 .s-by { display: inline-flex; align-items: center; gap: var(--space-2xs); color: var(--color-ink-2); }
 .agent-filter { display: flex; flex-wrap: wrap; gap: var(--space-xs); padding: 0 var(--space-md) var(--space-xs); }
+.rail-search { padding: 0 var(--space-md) var(--space-xs); }
+.rail-search input { width: 100%; box-sizing: border-box; font: inherit; font-size: var(--text-sm); color: var(--color-ink); background: var(--color-paper-2); border: 1px solid var(--color-paper-3); border-radius: 8px; padding: 6px 10px; }
+.rail-search input:focus { outline: 2px solid var(--color-accent); outline-offset: -1px; }
+.rail-empty { padding: 10px var(--space-md); color: var(--color-ink-2); font-size: var(--text-sm); }
 .agent-filter .num { font-family: var(--font-data); }
 .trow-meta { align-items: center; }
 .trow-when { flex: none; font-family: var(--font-data); }
@@ -1041,6 +1049,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
       <h2>作業</h2>
       <span class="rail-tools"><button class="chip" id="modeBtn" type="button" aria-label="一覧の表示を切り替える"></button><button class="chip" id="followBtn" type="button" aria-pressed="true"><svg class="ic" aria-hidden="true"><use href="#i-radio"/></svg><span>最新を追う</span></button></span>
     </div>
+    <div class="rail-search"><input id="taskSearch" type="search" placeholder="タスクを検索" aria-label="タスクを検索"></div>
     <div class="agent-filter" id="agentFilter" role="group" aria-label="AIで絞り込み" hidden></div>
     <ul class="tasklist" id="taskList"></ul>
     <div class="rail-foot">
@@ -1193,10 +1202,31 @@ dialog.lb::backdrop { background: var(--color-scrim); }
           <div class="dbg-row"><span class="dbg-k">効果音</span><select id="dbgSoundSel" aria-label="効果音"><option value="1">オン</option><option value="0">オフ</option></select></div>
           <div class="dbg-row"><span class="dbg-k">アニメーション</span><select id="dbgAnimSel" aria-label="アニメーション"><option value="0">標準</option><option value="1">減らす</option></select></div>
           <div class="dbg-row"><span class="dbg-k">文字サイズ</span><select id="dbgFontSel" aria-label="文字サイズ"><option value="16">標準</option><option value="18">大きめ</option><option value="20">特大</option></select></div>
+          <div class="dbg-row"><span class="dbg-k">ステップの並び順</span><select id="dbgOrderSel" aria-label="ステップの並び順"><option value="new">新しい順</option><option value="old">古い順</option></select></div>
           <div class="dbg-row"><span class="dbg-note">アニメーションを「減らす」にすると、画面の動きがほぼ止まります。この端末にだけ保存されます</span></div>
         </div>
         <div class="dbg-card" style="margin-top:10px">
           <button class="dbg-row dbg-act" id="dbgOpenTheme" type="button"><span>テーマを変更</span><span class="dbg-chev">›</span></button>
+        </div>
+      </div>
+      <div class="dbg-pane" data-pane="sound" hidden>
+        <div class="dbg-pane-t">サウンド</div>
+        <div class="dbg-card">
+          <div class="dbg-row"><span class="dbg-k">効果音</span><select id="dbgSoundSel2" aria-label="効果音"><option value="on">オン</option><option value="off">オフ</option></select></div>
+          <div class="dbg-row"><span class="dbg-k">基本の音</span><select id="dbgSfxSel" aria-label="基本の音"><option value="beep">電子音</option><option value="earshot">サンプル音</option></select></div>
+          <div class="dbg-row"><span class="dbg-k">テーマの音</span><span class="dbg-v" id="dbgThemeSound">—</span></div>
+          <div class="dbg-note" style="padding:2px 10px 8px">テーマに専用の音がある場合は、そちらが優先されます</div>
+        </div>
+        <div class="dbg-card" style="margin-top:10px">
+          <button type="button" class="dbg-row dbg-act" id="dbgOpenSfx2"><span>効果音テストを開く</span><span class="dbg-chev">›</span></button>
+        </div>
+      </div>
+      <div class="dbg-pane" data-pane="notify" hidden>
+        <div class="dbg-pane-t">通知</div>
+        <div class="dbg-card" id="dbgNotify"></div>
+        <div class="dbg-card" style="margin-top:10px">
+          <button type="button" class="dbg-row dbg-act" id="dbgOpenNotify"><span>通知の設定を開く</span><span class="dbg-chev">›</span></button>
+          <div class="dbg-note" style="padding:2px 10px 8px">通知のオン・オフや種類ごとの設定は、ベルのダイアログで変更できます</div>
         </div>
       </div>
       <div class="dbg-pane" data-pane="actions" hidden>
@@ -1209,6 +1239,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
           <button class="dbg-row dbg-act" id="dbgCopy" type="button"><span>状態をコピー</span><span class="dbg-chev">›</span></button>
           <button class="dbg-row dbg-act" id="dbgRefetch" type="button"><span>最新の状態を取り直す</span><span class="dbg-chev">›</span></button>
           <button class="dbg-row dbg-act" id="dbgExport" type="button"><span>データを書き出す</span><span class="dbg-chev">›</span></button>
+          <button class="dbg-row dbg-act" id="dbgGoShare" type="button"><span>閲覧リンクを作る</span><span class="dbg-chev">›</span></button>
           <button class="dbg-row dbg-act" id="dbgOpenBadges" type="button"><span>バッジ一覧を開く</span><span class="dbg-chev">›</span></button>
           <button class="dbg-row dbg-act" id="dbgOpenSfx" type="button"><span>効果音テストを開く</span><span class="dbg-chev">›</span></button>
           <button class="dbg-row dbg-act" id="dbgWall" type="button"><span>壁掛けモードを開く</span><span class="dbg-chev">›</span></button>
@@ -1250,6 +1281,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
           <div class="dbg-row"><span class="dbg-k">Workline について</span></div>
           <div class="dbg-row"><span class="dbg-note">AIエージェントたちの作業を、人間が眺めるためのボードです。作業・司令・伝言・要求がすべて記録されます。</span></div>
           <div class="dbg-row"><span class="dbg-k">ソースコード</span><a class="dbg-v" href="https://github.com/zixiang0623/Workline" target="_blank" rel="noopener">github.com/zixiang0623/Workline</a></div>
+          <button class="dbg-row dbg-act" id="dbgGoNotes" type="button"><span>リリースノートを開く</span><span class="dbg-chev">›</span></button>
         </div>
       </div>
       <div class="dbg-pane" data-pane="notes" hidden>
@@ -1319,7 +1351,7 @@ const FINISH_TEXT = { done: '作業が完了しました', failed: '作業が失
 /* ================= state ================= */
 const S = {
   tasks: new Map(), sel: null, maxId: 0, follow: true, agents: new Map(), filter: '', fsig: '', mode: store.get('mode', 'tree'), scope: store.get('scope', 'self'), fold: new Map(), rsig: '', ssig: '', chips: '',
-  newestFirst: store.get('order', 'new') === 'new', sound: store.get('sound', '0') === '1', sfx: store.get('sfx', 'beep') === 'earshot' ? 'earshot' : 'beep', sfxBase: store.get('sfx', 'beep') === 'earshot' ? 'earshot' : 'beep', theme: store.get('theme', 'default'), themes: [],
+  query: '', newestFirst: store.get('order', 'new') === 'new', sound: store.get('sound', '0') === '1', sfx: store.get('sfx', 'beep') === 'earshot' ? 'earshot' : 'beep', sfxBase: store.get('sfx', 'beep') === 'earshot' ? 'earshot' : 'beep', theme: store.get('theme', 'default'), themes: [],
   conn: 'connecting', offset: 0, auth: null, token: store.get('token', ''), planOpen: true, view: '', viewTimer: 0,
   sig: '', expanded: new Set(), lastNow: '', lastProgress: 0, rows: new Map(), stepEls: new Map(), booted: false,
 };
@@ -1336,7 +1368,7 @@ function avatar(id, size = 20) {
 }
 // no icon could be fetched: drop the broken image and let the initial letter show
 document.addEventListener('error', (e) => { const t = e.target; if (t && t.tagName === 'IMG' && t.closest('.av')) t.remove(); }, true);
-const matches = (t) => !S.filter || t.agent === S.filter;
+const matches = (t) => (!S.filter || t.agent === S.filter) && (!S.query || `${t.title || ''} ${t.agent || ''} ${t.model || ''} #${t.id}`.toLowerCase().includes(S.query));
 const isRoot = (t) => t.parentId == null;
 // "latest" is the newest session (root task). Sub-agents joining a session never pull the view away from it.
 const latest = () => { let m = 0; for (const t of S.tasks.values()) if (isRoot(t) && matches(t) && t.id > m) m = t.id; return m; };
@@ -1756,6 +1788,7 @@ async function boot() {
   }
 }
 
+let reconnects = 0;
 function connect() {
   if (S.view) return; // 閲覧専用リンクの接続は connectView が担当する
   clearTimeout(retryTimer);
@@ -1778,6 +1811,7 @@ function connect() {
   };
   ws.onclose = () => {
     if (mine !== ws) return;
+    reconnects++;
     clearInterval(pingTimer);
     if (S.conn !== 'denied') setConn('retry');
     if (!pollTimer) pollTimer = setInterval(async () => { try { handle(await fetchSnapshot(), true); } catch {} }, 5000);
@@ -1953,7 +1987,7 @@ function rowHtml(t, extra = '') {
 
 function renderRail() {
   const all = [...S.tasks.values()];
-  const sig = JSON.stringify([S.mode, S.filter, S.sel, [...S.fold], all.map((t) => [t.id, t.status, t.parentId, t.agentNo, t.agent, t.model, t.title, isStale(t) ? 1 : 0])]);
+  const sig = JSON.stringify([S.mode, S.filter, S.query, S.sel, [...S.fold], all.map((t) => [t.id, t.status, t.parentId, t.agentNo, t.agent, t.model, t.title, isStale(t) ? 1 : 0])]);
   if (sig === S.rsig) return;
   S.rsig = sig;
   const keep = document.activeElement?.closest?.('#taskList') ? document.activeElement.dataset.id || document.activeElement.dataset.fold : null;
@@ -1978,6 +2012,7 @@ function renderRail() {
       html += `</li>`;
     }
   }
+  if (!html && S.query) html = `<li class="tnode"><div class="rail-empty">「${esc(S.query)}」に合うタスクはありません</div></li>`;
   el.list.innerHTML = html;
   if (keep) el.list.querySelector(`[data-id="${keep}"],[data-fold="${keep}"]`)?.focus({ preventScroll: true });
 }
@@ -2401,6 +2436,7 @@ el.filter.addEventListener('click', (e) => {
 
 /* ================= toolbar ================= */
 function setFollow(on) { S.follow = on; el.follow.setAttribute('aria-pressed', String(on)); }
+document.getElementById('taskSearch').addEventListener('input', (e) => { S.query = e.target.value.trim().toLowerCase(); S.rsig = ''; railDirty(); });
 el.follow.addEventListener('click', () => {
   const on = !S.follow; setFollow(on);
   if (on && latest()) select(latest(), { keepFollow: true });
@@ -2647,6 +2683,7 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
   let taps = [], refresh = null;
   const row = (k, v) => `<div class="dbg-row"><span class="dbg-k">${k}</span><span class="dbg-v">${v}</span></div>`;
   /* 情報の行はこの配列が正本。行を増やすときはここに1行足すだけ */
+  let dbgBattery = '—', dbgHealth = '—';
   const DBG_ROWS = [
     ['バージョン', () => esc(document.getElementById('railVer').textContent || '—')],
     ['接続', () => ws && ws.readyState === 1 ? '接続中' : '切断'],
@@ -2674,8 +2711,10 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     ['タイムゾーン', () => Intl.DateTimeFormat().resolvedOptions().timeZone || '—'],
     ['タッチ操作', () => navigator.maxTouchPoints > 0 ? `対応（${navigator.maxTouchPoints}点）` : 'なし'],
     ['端末の配色', () => matchMedia('(prefers-color-scheme: dark)').matches ? 'ダーク' : 'ライト'],
+    ['画面の向き', () => innerWidth >= innerHeight ? '横向き' : '縦向き'],
     ['動きを減らす（端末）', () => reduced ? 'オン' : 'オフ'],
     ['保存量', () => { let n = 0; try { for (const k of Object.keys(localStorage)) n += (localStorage.getItem(k) || '').length + k.length; } catch {} return `約${(n / 1024).toFixed(1)} KB`; }],
+    ['バッテリー', () => dbgBattery],
   ];
   /* 接続の行も同じ作り。行を増やすときはここに足すだけ */
   const DBG_CONN = [
@@ -2686,11 +2725,26 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     ['最終受信', () => S.lastAt ? `${new Date(S.lastAt).toLocaleTimeString('ja-JP')}（${Math.max(0, Math.round((Date.now() - S.lastAt) / 1000))}秒前）` : '—'],
     ['応答時間', () => S.pingMs ? `${S.pingMs} ミリ秒` : '未測定'],
     ['モード', () => S.view ? '閲覧専用リンク' : '通常'],
+    ['再接続', () => `${reconnects}回`],
+    ['サーバー', () => dbgHealth],
   ];
   const connEl = document.getElementById('dbgConn');
+  const notifyEl = document.getElementById('dbgNotify');
+  const nPref = (k) => { const n = window.WLNotify && WLNotify.state; return n && n.srv && n.srv.prefs ? (n.srv.prefs[k] ? 'オン' : 'オフ') : '—'; };
+  const DBG_NOTIFY = [
+    ['通知の許可', () => !('Notification' in window) ? '未対応' : ({ granted: '許可済み', denied: '拒否', default: '未設定' }[Notification.permission] || Notification.permission)],
+    ['プッシュ購読', () => { const n = window.WLNotify && WLNotify.state; return n && n.srv ? (n.srv.subscribed ? '登録済み' : '未登録') : '—'; }],
+    ['登録デバイス', () => { const n = window.WLNotify && WLNotify.state; return n && n.srv ? `${n.srv.devices || 0}台` : '—'; }],
+    ['この端末', () => { const n = window.WLNotify && WLNotify.state; return n ? (n.local ? 'ローカル通知あり' : 'プッシュのみ') : '—'; }],
+    ['確認待ちの通知', () => nPref('approval')],
+    ['伝言の通知', () => nPref('note')],
+    ['完了の通知', () => nPref('done')],
+    ['失敗の通知', () => nPref('failed')],
+  ];
   function renderDbg() {
     bodyEl.innerHTML = DBG_ROWS.map(([k, f]) => row(k, f())).join('');
     if (connEl) connEl.innerHTML = DBG_CONN.map(([k, f]) => row(k, f())).join('');
+    if (notifyEl) notifyEl.innerHTML = DBG_NOTIFY.map(([k, f]) => row(k, f())).join('');
     heroVer.textContent = document.getElementById('railVer').textContent || '—';
     if (dbgQuery) applyDbgSearch();
   }
@@ -2713,6 +2767,16 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     try { const p = JSON.parse(store.get('dbgwin', '')); if (p && p.w >= 260) { win.style.left = p.x + 'px'; win.style.top = p.y + 'px'; win.style.right = 'auto'; win.style.width = p.w + 'px'; win.style.height = p.h + 'px'; } } catch {}
     renderDbg(); requestAnimationFrame(() => { clampDbg(); shape(); lgApply(clip, win); }); refresh = setInterval(renderDbg, 1000);
     try { document.getElementById('dbgSoundSel').value = S.sound ? '1' : '0'; document.getElementById('dbgAnimSel').value = store.get('noanim', '0'); document.getElementById('dbgFontSel').value = store.get('fsize', '16'); } catch {}
+    try {
+      document.getElementById('dbgSoundSel2').value = S.sound ? 'on' : 'off';
+      document.getElementById('dbgSfxSel').value = S.sfxBase;
+      document.getElementById('dbgOrderSel').value = S.newestFirst ? 'new' : 'old';
+      const t = THEMES[S.theme];
+      document.getElementById('dbgThemeSound').textContent = t ? `${t.name}（${t.sound ? '専用の音' : '基本の音'}）` : '標準（基本の音）';
+    } catch {}
+    if (navigator.getBattery) navigator.getBattery().then((b) => { dbgBattery = `${Math.round(b.level * 100)}%${b.charging ? '（充電中）' : ''}`; }).catch(() => {});
+    fetch('/api/health').then((r) => r.json()).then((j) => { dbgHealth = `正常（v${j.version}）`; }).catch(() => { dbgHealth = '応答なし'; });
+    if (window.WLNotify && WLNotify.refresh) WLNotify.refresh();
     try { if (store.get('dbgcat', 'info') === 'share') loadShare(); } catch {}
   }
   document.getElementById('dbgClose').addEventListener('click', closeDbg);
@@ -2762,6 +2826,8 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     { id: 'info', name: '情報', icon: 'i-clipboard-list', color: '#8e8e93' },
     { id: 'conn', name: '接続', icon: 'i-wifi', color: '#34c759' },
     { id: 'display', name: '表示', icon: 'i-palette', color: '#0071e3' },
+    { id: 'sound', name: 'サウンド', icon: 'i-volume-2', color: '#ff6482' },
+    { id: 'notify', name: '通知', icon: 'i-bell', color: '#ff3b30' },
     { id: 'actions', name: '操作', icon: 'i-wrench', color: '#ff9500' },
     { id: 'share', name: '共有', icon: 'i-globe', color: '#5856d6' },
     { id: 'help', name: 'ヘルプ', icon: 'i-circle-help', color: '#af52de' },
@@ -2913,7 +2979,7 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
   });
   /* 表示の好み・接続・各種画面への近道 */
   const soundSel = document.getElementById('dbgSoundSel'), animSel = document.getElementById('dbgAnimSel'), fontSel = document.getElementById('dbgFontSel');
-  soundSel.addEventListener('change', () => { S.sound = soundSel.value === '1'; try { store.set('sound', soundSel.value); } catch {} applySound(); if (S.sound) sfx.done(); });
+  soundSel.addEventListener('change', () => { S.sound = soundSel.value === '1'; try { store.set('sound', soundSel.value); } catch {} applySound(); const s2 = document.getElementById('dbgSoundSel2'); if (s2) s2.value = S.sound ? 'on' : 'off'; if (S.sound) sfx.done(); });
   animSel.addEventListener('change', () => { try { store.set('noanim', animSel.value); } catch {} applyAnimPref(); });
   fontSel.addEventListener('change', () => { try { store.set('fsize', fontSel.value); } catch {} applyFontPref(); });
   document.getElementById('dbgOpenTheme').addEventListener('click', () => { closeDbg(); document.getElementById('themeBtn').click(); });
@@ -2939,8 +3005,17 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     a.download = `workline-export-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.json`;
     a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   });
+  const soundSel2 = document.getElementById('dbgSoundSel2'), sfxSel = document.getElementById('dbgSfxSel'), orderSel = document.getElementById('dbgOrderSel');
+  soundSel2.addEventListener('change', () => { S.sound = soundSel2.value === 'on'; try { store.set('sound', S.sound ? '1' : '0'); } catch {} applySound(); soundSel.value = S.sound ? '1' : '0'; if (S.sound) sfx.done(); });
+  sfxSel.addEventListener('change', () => { S.sfxBase = sfxSel.value; try { store.set('sfx', S.sfxBase); } catch {} S.sfx = (THEMES[S.theme] && THEMES[S.theme].sound) || S.sfxBase; applySfxMode(); });
+  orderSel.addEventListener('change', () => { S.newestFirst = orderSel.value === 'new'; try { store.set('order', S.newestFirst ? 'new' : 'old'); } catch {} applyOrder(); });
+  document.getElementById('dbgGoShare').addEventListener('click', () => selectCat('share'));
+  document.getElementById('dbgGoNotes').addEventListener('click', () => selectCat('notes'));
+  document.getElementById('dbgOpenSfx2').addEventListener('click', () => { closeDbg(); document.getElementById('sfxTestBtn').click(); });
+  document.getElementById('dbgOpenNotify').addEventListener('click', () => { if (window.WLNotify) WLNotify.open(); });
   /* リリースノートはこの配列が正本。版を上げたら先頭に足す */
   const RELEASE_NOTES = [
+    ['2.27.3', '2026-11-27', ['新機能: タスク検索を追加した（レールの上から、題名・AI名・モデル・番号で絞り込める）', 'デバッグ兼設定に「サウンド」「通知」のカテゴリを追加し、項目も増やした', 'デバッグのサイドバーがスライドして開閉するようになった']],
     ['2.27.2', '2026-11-27', ['デバッグを「デバッグ兼設定」として育て始めた（情報・接続に項目を追加、データの書き出しを追加）', '検索がカテゴリ名だけでなく、項目の中身まで届くようにした']],
     ['2.27.1', '2026-11-27', ['閲覧リンクの伏字を ● から * に変えた', 'デバッグ内にリリースノートを追加した']],
     ['2.27.0', '2026-11-27', ['デバッグウィンドウを設定画面らしく拡充した（接続・ヘルプのカテゴリ、情報26行、表示の設定、操作の近道）']],
