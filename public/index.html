@@ -1268,6 +1268,11 @@ dialog.lb::backdrop { background: var(--color-scrim); }
           <button class="dbg-row dbg-act" id="dbgPing" type="button"><span>応答時間を測る</span><span class="dbg-chev">›</span></button>
           <button class="dbg-row dbg-act" id="dbgReconnect" type="button"><span>再接続する</span><span class="dbg-chev">›</span></button>
         </div>
+        <div class="dbg-card" style="margin-top:10px">
+          <button class="dbg-row dbg-act" id="dbgDoHealth" type="button"><span>DOの健康診断をする</span><span class="dbg-chev">›</span></button>
+          <div id="dbgDoOut"></div>
+          <div class="dbg-note" style="padding:2px 10px 8px">サーバー側の保存物（Durable Object）の件数と容量を数えます。読み取りだけです</div>
+        </div>
       </div>
       <div class="dbg-pane" data-pane="help" hidden>
         <div class="dbg-pane-t">ヘルプ</div>
@@ -2994,6 +2999,37 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     s.textContent = '取り直した'; setTimeout(() => { s.textContent = old; }, 1500);
   });
   document.getElementById('dbgPing').addEventListener('click', () => { const sock = S.view ? viewWs : ws; if (sock && sock.readyState === 1) { S.pingSentAt = Date.now(); try { sock.send('ping'); } catch {} } });
+  document.getElementById('dbgDoHealth').addEventListener('click', async (e) => {
+    const btn = e.currentTarget, out = document.getElementById('dbgDoOut');
+    btn.disabled = true;
+    const t0 = Date.now();
+    try {
+      const j = await dbgPost('do-health');
+      const h = j.health, took = Date.now() - t0;
+      const kb = (n) => n == null ? '不明' : n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${(n / 1024).toFixed(1)} KB`;
+      const day = (t) => t ? new Date(t).toLocaleDateString('ja-JP') : '—';
+      const rows = [
+        ['応答時間', `${took} ミリ秒`],
+        ['タスク', `${h.tasks}件（ルート ${h.roots}件）`],
+        ['実行中のまま', `${h.running}件（うち24時間以上放置 ${h.staleRunning}件）`],
+        ['ステップ', `${h.steps}件`],
+        ['司令・要求', `${h.directives}件（未受領 ${h.dirsPosted}・作業中 ${h.dirsAccepted}）`],
+        ['伝言', `${h.notes}件`],
+        ['確認待ち', `${h.approvalsPending}件`],
+        ['停止命令（未達）', `${h.stopsPending}件`],
+        ['AI', `${h.agents}件`],
+        ['画像', `${h.shots}件（${kb(h.shotBytes)}）`],
+        ['プッシュ購読', `${h.pushSubs}件`],
+        ['閲覧リンク', `${h.shareLinks}件`],
+        ['解放済み', `テーマ ${h.themes}・バッジ ${h.badges}`],
+        ['データベース容量', kb(h.dbBytes)],
+        ['最古のタスク', day(h.oldestTaskAt)],
+        ['最後の更新', day(h.newestTaskAt)],
+      ];
+      out.innerHTML = rows.map(([k, v]) => row(k, v)).join('');
+    } catch { out.innerHTML = row('結果', '取得できませんでした'); }
+    btn.disabled = false;
+  });
   document.getElementById('dbgReconnect').addEventListener('click', () => {
     if (S.view) { try { viewWs && viewWs.close(); } catch {} connectView(); }
     else { try { ws && ws.close(); } catch {} backoff = 1000; connect(); }
@@ -3017,6 +3053,7 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
   document.getElementById('dbgOpenNotify').addEventListener('click', () => { if (window.WLNotify) WLNotify.open(); });
   /* リリースノートの正本は GitHub の「リリースノート.md」。この配列は取得できないときの予備 */
   const RELEASE_NOTES = [
+    ['2.27.6', '2026-11-27', ['デバッグ兼設定の「接続」に、DO（Durable Object）の健康診断を追加した。タスクや司令の件数、画像やデータベースの容量、放置された実行中タスクの数などが見える']],
     ['2.27.5', '2026-11-27', ['リリースノートを、GitHub の「リリースノート.md」から読み込むようにした（取得できないときは、内蔵の予備を表示する）']],
     ['2.27.4', '2026-11-27', ['司令・要求の未読が、タブを見ているだけで自動で消えてしまう問題を直した。未読は「すべて既読にする」か項目を開くまで残る']],
     ['2.27.3', '2026-11-27', ['新機能: タスク検索を追加した（レールの上から、題名・AI名・モデル・番号で絞り込める）', 'デバッグ兼設定に「サウンド」「通知」のカテゴリを追加し、項目も増やした', 'デバッグのサイドバーがスライドして開閉するようになった']],

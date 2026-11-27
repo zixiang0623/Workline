@@ -4,7 +4,7 @@ import { DurableObject } from "cloudflare:workers";
 import { SHOT_MAX, findIcon, parseAgent, safeFetch, slugify, sniffShot } from "./agents.js";
 import { publicKey, pushEnabled, sendPush, validEndpoint } from "./push.js";
 
-const VERSION = "2.27.5";
+const VERSION = "2.27.6";
 const ALIASES = { getRequest: "getConfirmation" }; // 旧名(askUser の結果取得)。人間からの「要求」とは別物
 const PROTOCOLS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 
@@ -727,6 +727,7 @@ async function handleDebug(request, env, url) {
       case "share-revoke": return bd.shareRevoke(b);
       case "banned-get": return { ok: true, words: await bd.bannedList() };
       case "banned-set": return bd.bannedSet(b);
+      case "do-health": return { ok: true, health: await bd.healthReport() };
       default: throw new Error("unknown action");
     }
   });
@@ -1168,6 +1169,40 @@ export class Board extends DurableObject {
     this.broadcast({ t: "theme", themes });
     this.broadcast({ t: "badge", badges });
     return { ok: true, themes, badges };
+  }
+
+  /* --- DOの健康診断: 件数・容量・放置の兆候を数えるだけ(読み取り専用) --- */
+  healthReport() {
+    const one = (sql, ...args) => { const r = this.sql.exec(sql, ...args).toArray()[0]; return r ? Object.values(r)[0] : 0; };
+    const now = Date.now();
+    let dbBytes = null;
+    try { dbBytes = this.sql.databaseSize; } catch { dbBytes = null; }
+    const oldest = this.sql.exec("SELECT started_at FROM tasks ORDER BY started_at ASC LIMIT 1").toArray()[0];
+    const newest = this.sql.exec("SELECT updated_at FROM tasks ORDER BY updated_at DESC LIMIT 1").toArray()[0];
+    return {
+      tasks: one("SELECT COUNT(*) FROM tasks"),
+      roots: one("SELECT COUNT(*) FROM tasks WHERE parent_id IS NULL"),
+      running: one("SELECT COUNT(*) FROM tasks WHERE status = 'running'"),
+      staleRunning: one("SELECT COUNT(*) FROM tasks WHERE status = 'running' AND updated_at < ?", now - 24 * 3600 * 1000),
+      steps: one("SELECT COUNT(*) FROM steps"),
+      directives: one("SELECT COUNT(*) FROM directives"),
+      dirsPosted: one("SELECT COUNT(*) FROM directives WHERE status = 'posted'"),
+      dirsAccepted: one("SELECT COUNT(*) FROM directives WHERE status = 'accepted'"),
+      notes: one("SELECT COUNT(*) FROM notes"),
+      approvalsPending: one("SELECT COUNT(*) FROM approvals WHERE status = 'pending'"),
+      stopsPending: one("SELECT COUNT(*) FROM messages WHERE control IS NOT NULL AND status = 'pending'"),
+      agents: one("SELECT COUNT(*) FROM agents"),
+      shots: one("SELECT COUNT(*) FROM shots"),
+      shotBytes: one("SELECT COALESCE(SUM(size), 0) FROM shots"),
+      pushSubs: one("SELECT COUNT(*) FROM push_subs"),
+      shareLinks: one("SELECT COUNT(*) FROM share_links"),
+      themes: one("SELECT COUNT(*) FROM themes"),
+      badges: one("SELECT COUNT(*) FROM badges"),
+      dbBytes,
+      oldestTaskAt: oldest ? oldest.started_at : null,
+      newestTaskAt: newest ? newest.updated_at : null,
+      checkedAt: now,
+    };
   }
 
   /* --- 閲覧専用リンクと禁止ワード(どちらもログではなく設定なので、全リセットでも残す) --- */
