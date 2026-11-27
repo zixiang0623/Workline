@@ -3015,6 +3015,7 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
   document.getElementById('dbgOpenNotify').addEventListener('click', () => { if (window.WLNotify) WLNotify.open(); });
   /* リリースノートはこの配列が正本。版を上げたら先頭に足す */
   const RELEASE_NOTES = [
+    ['2.27.4', '2026-11-27', ['司令・要求の未読が、タブを見ているだけで自動で消えてしまう問題を直した。未読は「すべて既読にする」か項目を開くまで残る']],
     ['2.27.3', '2026-11-27', ['新機能: タスク検索を追加した（レールの上から、題名・AI名・モデル・番号で絞り込める）', 'デバッグ兼設定に「サウンド」「通知」のカテゴリを追加し、項目も増やした', 'デバッグのサイドバーがスライドして開閉するようになった']],
     ['2.27.2', '2026-11-27', ['デバッグを「デバッグ兼設定」として育て始めた（情報・接続に項目を追加、データの書き出しを追加）', '検索がカテゴリ名だけでなく、項目の中身まで届くようにした']],
     ['2.27.1', '2026-11-27', ['閲覧リンクの伏字を ● から * に変えた', 'デバッグ内にリリースノートを追加した']],
@@ -3697,7 +3698,7 @@ $('#tabs').addEventListener('keydown', (e) => {
   if (e.key === 'ArrowRight') j = (i + 1) % 4; else if (e.key === 'ArrowLeft') j = (i + 3) % 4; else if (e.key === 'Home') j = 0; else if (e.key === 'End') j = 3;
   if (j >= 0) { e.preventDefault(); setTab(TAB_IDS[j], { focus: true }); }
 });
-let armTimer = 0, markTimer = 0;
+let armTimer = 0;
 function commsRender(t = S.tasks.get(S.sel)) {
   const unreadAll = [...S.dirs.values()].filter(isUnread).length;
   const cnt = $('#inboxCnt'); cnt.hidden = !unreadAll; cnt.textContent = unreadAll; cnt.setAttribute('aria-label', `未読の司令・要求 ${unreadAll}件`);
@@ -3712,12 +3713,12 @@ function commsRender(t = S.tasks.get(S.sel)) {
   const badge = (id, n) => { const b = $(id); b.hidden = !n; b.textContent = n; };
   badge('#cnt-dir', dirs.filter(isUnread).length); badge('#cnt-req', reqs.filter(isUnread).length); badge('#cnt-note', [...S.notes.values()].filter(noteUnread).length);
   applyTab();
-  if (S.tab === 'dir') { dirRender(t); scheduleRead(dirs); }
-  else if (S.tab === 'req') { reqRender(t); scheduleRead(reqs); }
+  if (S.tab === 'dir') dirRender(t);
+  else if (S.tab === 'req') reqRender(t);
   else if (S.tab === 'note') { noteRender(t); noteMarkSeen(); }
 }
-// 見えているタブの司令・要求は、少し見たら既読にする
-function scheduleRead(list) { if (!list.some(isUnread)) return; clearTimeout(markTimer); markTimer = setTimeout(() => markRead(list), 1500); }
+// 未読は自動では消さない(見ているだけで既読になると、届いた合図がすぐ消えてしまう)。
+// 消すのは「すべて既読にする」か、inbox で項目を開いたときだけ。
 
 /* ---- 操作 ---- */
 async function commsPost(body, path = '/api/message') {
