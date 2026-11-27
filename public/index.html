@@ -317,6 +317,8 @@ html.lg-off .bar, html.lg-off .rail, html.lg-off .wiz, html.lg-off dialog.lb, ht
 .dbg-num { font-family: var(--font-data); min-width: 2ch; text-align: right; }
 .dbg-row input[type="range"] { flex: 1; min-width: 0; accent-color: #0071e3; }
 .dbg-note { flex: 1; font-size: 11px; color: #86868b; line-height: 1.5; }
+.dbg-kbd { font: 600 11px ui-monospace, SFMono-Regular, monospace; background: #e8e8ed; border: 1px solid #d2d2d7; border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; color: #1d1d1f; white-space: nowrap; }
+html.no-anim *, html.no-anim *::before, html.no-anim *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 .dbg-linkbtn { flex: none; border: none; background: none; color: #0071e3; font: inherit; font-size: 12px; cursor: pointer; padding: 2px 0; }
 .dbg-linkbtn.danger { color: #d70015; }
 .dbg-card input[type="text"], .dbg-card textarea, .dbg-card select { font: inherit; font-size: 12px; color: #1d1d1f; background: rgb(255 255 255 / .9); border: 1px solid rgb(0 0 0 / .12); border-radius: 6px; padding: 4px 8px; box-sizing: border-box; }
@@ -1185,6 +1187,15 @@ dialog.lb::backdrop { background: var(--color-scrim); }
           <div class="dbg-row"><span class="dbg-k">透明度</span><input type="range" id="dbgTint" min="0" max="100" step="1" value="60"><span class="dbg-v dbg-num" id="dbgTintVal">60</span></div>
           <div class="dbg-row"><span class="dbg-note">デフォルトは 60。0 にすると Liquid Glass が無効になります</span><button class="dbg-linkbtn" id="dbgTintReset" type="button">デフォルトに戻す</button></div>
         </div>
+        <div class="dbg-card" style="margin-top:10px">
+          <div class="dbg-row"><span class="dbg-k">効果音</span><select id="dbgSoundSel" aria-label="効果音"><option value="1">オン</option><option value="0">オフ</option></select></div>
+          <div class="dbg-row"><span class="dbg-k">アニメーション</span><select id="dbgAnimSel" aria-label="アニメーション"><option value="0">標準</option><option value="1">減らす</option></select></div>
+          <div class="dbg-row"><span class="dbg-k">文字サイズ</span><select id="dbgFontSel" aria-label="文字サイズ"><option value="16">標準</option><option value="18">大きめ</option><option value="20">特大</option></select></div>
+          <div class="dbg-row"><span class="dbg-note">アニメーションを「減らす」にすると、画面の動きがほぼ止まります。この端末にだけ保存されます</span></div>
+        </div>
+        <div class="dbg-card" style="margin-top:10px">
+          <button class="dbg-row dbg-act" id="dbgOpenTheme" type="button"><span>テーマを変更</span><span class="dbg-chev">›</span></button>
+        </div>
       </div>
       <div class="dbg-pane" data-pane="actions" hidden>
         <div class="dbg-pane-t">操作</div>
@@ -1194,6 +1205,10 @@ dialog.lb::backdrop { background: var(--color-scrim); }
           <button class="dbg-row dbg-act" id="dbgSound" type="button"><span>効果音テスト</span><span class="dbg-chev">›</span></button>
           <button class="dbg-row dbg-act" id="dbgThemeReset" type="button"><span>テーマを標準に戻す</span><span class="dbg-chev">›</span></button>
           <button class="dbg-row dbg-act" id="dbgCopy" type="button"><span>状態をコピー</span><span class="dbg-chev">›</span></button>
+          <button class="dbg-row dbg-act" id="dbgRefetch" type="button"><span>最新の状態を取り直す</span><span class="dbg-chev">›</span></button>
+          <button class="dbg-row dbg-act" id="dbgOpenBadges" type="button"><span>バッジ一覧を開く</span><span class="dbg-chev">›</span></button>
+          <button class="dbg-row dbg-act" id="dbgOpenSfx" type="button"><span>効果音テストを開く</span><span class="dbg-chev">›</span></button>
+          <button class="dbg-row dbg-act" id="dbgWall" type="button"><span>壁掛けモードを開く</span><span class="dbg-chev">›</span></button>
           <button class="dbg-row dbg-act" id="dbgReload" type="button"><span>画面を再読み込み</span><span class="dbg-chev">›</span></button>
           <button class="dbg-row dbg-act danger" id="dbgClear" type="button"><span>ローカル設定クリア</span><span class="dbg-chev">›</span></button>
         </div>
@@ -1210,6 +1225,28 @@ dialog.lb::backdrop { background: var(--color-scrim); }
           <div class="dbg-row"><span class="dbg-k">禁止ワード</span><span class="dbg-note">閲覧リンクで開いたときだけ、本文中の語が ● に置き換わります（通常の表示には影響しません）。画像は丸ごと非表示になります</span></div>
           <div class="dbg-row"><textarea id="bannedWords" rows="4" placeholder="1行に1ワード"></textarea></div>
           <div class="dbg-row"><span class="dbg-note">最大100件・1件50文字まで</span><button class="dbg-linkbtn" id="bannedSave" type="button">保存</button></div>
+        </div>
+      </div>
+      <div class="dbg-pane" data-pane="conn" hidden>
+        <div class="dbg-pane-t">接続</div>
+        <div class="dbg-card" id="dbgConn"></div>
+        <div class="dbg-card" style="margin-top:10px">
+          <button class="dbg-row dbg-act" id="dbgPing" type="button"><span>応答時間を測る</span><span class="dbg-chev">›</span></button>
+          <button class="dbg-row dbg-act" id="dbgReconnect" type="button"><span>再接続する</span><span class="dbg-chev">›</span></button>
+        </div>
+      </div>
+      <div class="dbg-pane" data-pane="help" hidden>
+        <div class="dbg-pane-t">ヘルプ</div>
+        <div class="dbg-card">
+          <div class="dbg-row"><span class="dbg-k">デバッグを開く</span><span class="dbg-kbd">Ctrl + ;</span></div>
+          <div class="dbg-row"><span class="dbg-k">デバッグを開く（別法）</span><span class="dbg-v">左下のバージョンを5回タップ</span></div>
+          <div class="dbg-row"><span class="dbg-k">ダイアログを閉じる</span><span class="dbg-kbd">Esc</span></div>
+          <div class="dbg-row"><span class="dbg-k">画像をめくる</span><span><span class="dbg-kbd">←</span> <span class="dbg-kbd">→</span></span></div>
+        </div>
+        <div class="dbg-card" style="margin-top:10px">
+          <div class="dbg-row"><span class="dbg-k">Workline について</span></div>
+          <div class="dbg-row"><span class="dbg-note">AIエージェントたちの作業を、人間が眺めるためのボードです。作業・司令・伝言・要求がすべて記録されます。</span></div>
+          <div class="dbg-row"><span class="dbg-k">ソースコード</span><a class="dbg-v" href="https://github.com/zixiang0623/Workline" target="_blank" rel="noopener">github.com/zixiang0623/Workline</a></div>
         </div>
       </div>
     </div>
@@ -1333,7 +1370,7 @@ const el = {
 };
 
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const motion = () => !reduced && !!window.gsap;
+const motion = () => !reduced && store.get('noanim', '0') !== '1' && !!window.gsap;
 
 /* ================= sound (synthesized with Web Audio, no files; off by default, one switch for everything) ================= */
 let actx = null, master = null, noiseBuf = null;
@@ -1729,7 +1766,7 @@ function connect() {
     }, 25000);
   };
   ws.onmessage = (e) => {
-    if (e.data === 'pong') { lastPong = Date.now(); return; }
+    if (e.data === 'pong') { lastPong = Date.now(); if (S.pingSentAt) { S.pingMs = Date.now() - S.pingSentAt; S.pingSentAt = 0; } return; }
     try { const j = JSON.parse(e.data); handle(j, j.t === 'snapshot'); window.WLNotify && WLNotify.onMessage(j); } catch (err) { console.error(err); }
   };
   ws.onclose = () => {
@@ -1771,7 +1808,7 @@ function connectView() {
     if (S.viewExp) { const ms = S.viewExp - Date.now(); if (ms > 0) setTimeout(() => { try { ws.close(); } catch {} }, ms + 500); }
   };
   ws.onmessage = (e) => {
-    if (e.data === 'pong') { viewPong = Date.now(); return; }
+    if (e.data === 'pong') { viewPong = Date.now(); if (S.pingSentAt) { S.pingMs = Date.now() - S.pingSentAt; S.pingSentAt = 0; } return; }
     try {
       const j = JSON.parse(e.data);
       if (j.t === 'view-expired') { viewDead = true; setConn('denied'); showState('expired'); try { ws.close(); } catch {} return; }
@@ -1813,6 +1850,7 @@ function upsertStep(s) {
 }
 
 function handle(msg, quiet = false) {
+  S.lastAt = Date.now();
   if (msg.t === 'theme') { setThemes(msg.themes); return; }
   if (msg.t === 'badge') { setBadges(msg.badges); return; }
   if (commsHandle(msg)) return;
@@ -2548,6 +2586,10 @@ function lgApplyOpacity() {
   lgState.forEach((rec, surface) => { if (lgEnabled()) lgApply(surface, rec.sizeEl); else surface.style.backdropFilter = ''; });
 }
 function lgSetTrans(v) { lgTransVal = v; try { store.set('lgtrans', v); } catch {} lgApplyOpacity(); }
+/* 表示の好み(デバッグの「表示」から変更する): アニメーションを減らす / 文字サイズ */
+function applyAnimPref() { document.documentElement.classList.toggle('no-anim', store.get('noanim', '0') === '1'); }
+function applyFontPref() { const v = store.get('fsize', '16'); document.documentElement.style.fontSize = v === '16' ? '' : v + 'px'; }
+applyAnimPref(); applyFontPref();
 const lgDefs = (() => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('width', '0'); s.setAttribute('height', '0'); s.style.position = 'absolute'; document.body.appendChild(s); return s; })();
 let lgSeq = 0;
 const lgState = new Map(), lgTimers = new Map();
@@ -2615,9 +2657,30 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     ['ブラウザ', () => { const ua = navigator.userAgent; return /Edg\//.test(ua) ? 'Edge' : /Chrome\//.test(ua) ? 'Chrome' : /Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : '不明'; }],
     ['開いてから', () => { const el = Math.floor((Date.now() - t0) / 1000); return el >= 3600 ? `${Math.floor(el / 3600)}時間${Math.floor(el % 3600 / 60)}分` : el >= 60 ? `${Math.floor(el / 60)}分${el % 60}秒` : `${el}秒`; }],
     ['回線', () => navigator.onLine ? 'オンライン' : 'オフライン'],
+    ['完了タスク', () => `${[...S.tasks.values()].filter((x) => x.status === 'done').length}件`],
+    ['画像', () => `${S.shots.length}件`],
+    ['最終受信', () => S.lastAt ? `${new Date(S.lastAt).toLocaleTimeString('ja-JP')}（${Math.max(0, Math.round((Date.now() - S.lastAt) / 1000))}秒前）` : '—'],
+    ['ホスト', () => location.host],
+    ['言語', () => navigator.language || '—'],
+    ['タイムゾーン', () => Intl.DateTimeFormat().resolvedOptions().timeZone || '—'],
+    ['タッチ操作', () => navigator.maxTouchPoints > 0 ? `対応（${navigator.maxTouchPoints}点）` : 'なし'],
+    ['端末の配色', () => matchMedia('(prefers-color-scheme: dark)').matches ? 'ダーク' : 'ライト'],
+    ['動きを減らす（端末）', () => reduced ? 'オン' : 'オフ'],
+    ['保存量', () => { let n = 0; try { for (const k of Object.keys(localStorage)) n += (localStorage.getItem(k) || '').length + k.length; } catch {} return `約${(n / 1024).toFixed(1)} KB`; }],
   ];
+  /* 接続の行も同じ作り。行を増やすときはここに足すだけ */
+  const DBG_CONN = [
+    ['状態', () => ({ live: '接続中（ライブ）', retry: '再接続中', denied: '拒否されました', error: 'エラー', boot: '接続中' }[S.conn] || S.conn || '—')],
+    ['接続先', () => location.host],
+    ['プロトコル', () => location.protocol === 'https:' ? 'wss（暗号化）' : 'ws'],
+    ['最終受信', () => S.lastAt ? `${new Date(S.lastAt).toLocaleTimeString('ja-JP')}（${Math.max(0, Math.round((Date.now() - S.lastAt) / 1000))}秒前）` : '—'],
+    ['応答時間', () => S.pingMs ? `${S.pingMs} ミリ秒` : '未測定'],
+    ['モード', () => S.view ? '閲覧専用リンク' : '通常'],
+  ];
+  const connEl = document.getElementById('dbgConn');
   function renderDbg() {
     bodyEl.innerHTML = DBG_ROWS.map(([k, f]) => row(k, f())).join('');
+    if (connEl) connEl.innerHTML = DBG_CONN.map(([k, f]) => row(k, f())).join('');
     heroVer.textContent = document.getElementById('railVer').textContent || '—';
   }
   function clampDbg() {
@@ -2638,6 +2701,7 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     win.classList.toggle('side-closed', sidePref ? sidePref === 'closed' : innerWidth < 640);
     try { const p = JSON.parse(store.get('dbgwin', '')); if (p && p.w >= 260) { win.style.left = p.x + 'px'; win.style.top = p.y + 'px'; win.style.right = 'auto'; win.style.width = p.w + 'px'; win.style.height = p.h + 'px'; } } catch {}
     renderDbg(); requestAnimationFrame(() => { clampDbg(); shape(); lgApply(clip, win); }); refresh = setInterval(renderDbg, 1000);
+    try { document.getElementById('dbgSoundSel').value = S.sound ? '1' : '0'; document.getElementById('dbgAnimSel').value = store.get('noanim', '0'); document.getElementById('dbgFontSel').value = store.get('fsize', '16'); } catch {}
     try { if (store.get('dbgcat', 'info') === 'share') loadShare(); } catch {}
   }
   document.getElementById('dbgClose').addEventListener('click', closeDbg);
@@ -2685,9 +2749,11 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
   /* カテゴリはこの定義が正本。増やすときはここに1行足して、対応する .dbg-pane をマークアップに置くだけ */
   const DBG_CATS = [
     { id: 'info', name: '情報', icon: 'i-clipboard-list', color: '#8e8e93' },
+    { id: 'conn', name: '接続', icon: 'i-wifi', color: '#34c759' },
     { id: 'display', name: '表示', icon: 'i-palette', color: '#0071e3' },
     { id: 'actions', name: '操作', icon: 'i-wrench', color: '#ff9500' },
     { id: 'share', name: '共有', icon: 'i-globe', color: '#5856d6' },
+    { id: 'help', name: 'ヘルプ', icon: 'i-circle-help', color: '#af52de' },
   ];
   const navEl = document.getElementById('dbgNav');
   const selectCat = (id) => {
@@ -2821,6 +2887,25 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
       btn.textContent = '保存した';
     } catch { btn.textContent = '保存できませんでした'; }
     setTimeout(() => { btn.disabled = false; btn.textContent = '保存'; }, 1600);
+  });
+  /* 表示の好み・接続・各種画面への近道 */
+  const soundSel = document.getElementById('dbgSoundSel'), animSel = document.getElementById('dbgAnimSel'), fontSel = document.getElementById('dbgFontSel');
+  soundSel.addEventListener('change', () => { S.sound = soundSel.value === '1'; try { store.set('sound', soundSel.value); } catch {} applySound(); if (S.sound) sfx.done(); });
+  animSel.addEventListener('change', () => { try { store.set('noanim', animSel.value); } catch {} applyAnimPref(); });
+  fontSel.addEventListener('change', () => { try { store.set('fsize', fontSel.value); } catch {} applyFontPref(); });
+  document.getElementById('dbgOpenTheme').addEventListener('click', () => { closeDbg(); document.getElementById('themeBtn').click(); });
+  document.getElementById('dbgOpenBadges').addEventListener('click', () => { closeDbg(); document.getElementById('railBadges').click(); });
+  document.getElementById('dbgOpenSfx').addEventListener('click', () => { closeDbg(); document.getElementById('sfxTestBtn').click(); });
+  document.getElementById('dbgWall').addEventListener('click', () => { window.open('/wall', '_blank'); });
+  document.getElementById('dbgRefetch').addEventListener('click', (e) => {
+    const b = e.currentTarget, s = b.querySelector('span'), old = s.textContent;
+    if (ws && ws.readyState === 1) ws.send('snapshot'); else fetchSnapshot().then((j) => handle(j, true)).catch(() => {});
+    s.textContent = '取り直した'; setTimeout(() => { s.textContent = old; }, 1500);
+  });
+  document.getElementById('dbgPing').addEventListener('click', () => { const sock = S.view ? viewWs : ws; if (sock && sock.readyState === 1) { S.pingSentAt = Date.now(); try { sock.send('ping'); } catch {} } });
+  document.getElementById('dbgReconnect').addEventListener('click', () => {
+    if (S.view) { try { viewWs && viewWs.close(); } catch {} connectView(); }
+    else { try { ws && ws.close(); } catch {} backoff = 1000; connect(); }
   });
 }
 /* ---- テーマ切り替えダイアログ(サムネイル付き) ---- */
