@@ -182,6 +182,11 @@ button, input { font: inherit; color: inherit; }
 
 /* ---- top bar ---- */
 .bar { position: sticky; top: 0; z-index: var(--z-sticky); height: var(--bar-h); display: flex; align-items: center; gap: var(--space-xs); padding-inline: var(--space-md); background: color-mix(in oklab, var(--color-paper) var(--lg-tint), transparent); -webkit-backdrop-filter: blur(6px) saturate(160%); backdrop-filter: blur(6px) saturate(160%); border-bottom: var(--rule-hair) solid var(--color-rule); box-shadow: inset 0 1px 0 rgb(255 255 255 / .5), inset 0 -1px 0 rgb(255 255 255 / .12); }
+.viewbar { display: flex; align-items: center; justify-content: center; gap: .45rem; padding: .42rem 1rem; font-size: .8rem; font-weight: 600; color: var(--color-ink); background: color-mix(in oklab, var(--color-accent) 13%, var(--color-paper)); border-bottom: var(--rule-hair) solid var(--color-rule); }
+.viewbar .ic { width: 15px; height: 15px; flex: none; }
+body.viewonly #stopbar, body.viewonly #codeBtn, body.viewonly #openPurge, body.viewonly #refreshIcons,
+body.viewonly [data-dact], body.viewonly [data-appr], body.viewonly [data-naddopen], body.viewonly [data-nadd],
+body.viewonly #pn-note form, body.viewonly #pn-req form, body.viewonly .reqbox, body.viewonly .attach { display: none !important; }
 .brand { display: flex; align-items: center; gap: var(--space-xs); font-weight: 700; font-size: var(--text-md); letter-spacing: 0; }
 .brand .ic { width: 20px; height: 20px; color: var(--color-accent); }
 .bar-spacer { flex: 1; }
@@ -313,6 +318,16 @@ html.lg-off .bar, html.lg-off .rail, html.lg-off .wiz, html.lg-off dialog.lb, ht
 .dbg-row input[type="range"] { flex: 1; min-width: 0; accent-color: #0071e3; }
 .dbg-note { flex: 1; font-size: 11px; color: #86868b; line-height: 1.5; }
 .dbg-linkbtn { flex: none; border: none; background: none; color: #0071e3; font: inherit; font-size: 12px; cursor: pointer; padding: 2px 0; }
+.dbg-linkbtn.danger { color: #d70015; }
+.dbg-card input[type="text"], .dbg-card textarea, .dbg-card select { font: inherit; font-size: 12px; color: #1d1d1f; background: rgb(255 255 255 / .9); border: 1px solid rgb(0 0 0 / .12); border-radius: 6px; padding: 4px 8px; box-sizing: border-box; }
+.dbg-card input[type="text"] { flex: 1; min-width: 0; }
+.dbg-card select { flex: none; }
+.dbg-card textarea { width: 100%; resize: vertical; line-height: 1.6; }
+.share-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.share-meta b { font-size: 12px; color: #1d1d1f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.share-meta span { font-size: 11px; color: #86868b; }
+.share-st { flex: none; font-size: 11px; font-weight: 700; color: #248a3d; }
+.share-st.off { color: #86868b; }
 button.dbg-act { width: 100%; background: none; border: none; border-top: 1px solid rgb(0 0 0 / .05); font: inherit; color: #1d1d1f; cursor: pointer; text-align: left; justify-content: space-between; }
 button.dbg-act:hover { background: rgb(0 0 0 / .03); }
 button.dbg-act:disabled { opacity: .55; cursor: default; }
@@ -1014,6 +1029,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
     </div>
   </div>
 </header>
+<div class="viewbar" id="viewBar" hidden><svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg><span id="viewBarT"></span></div>
 
 <div class="shell">
   <aside class="rail" id="rail" aria-label="タスク一覧">
@@ -1182,6 +1198,20 @@ dialog.lb::backdrop { background: var(--color-scrim); }
           <button class="dbg-row dbg-act danger" id="dbgClear" type="button"><span>ローカル設定クリア</span><span class="dbg-chev">›</span></button>
         </div>
       </div>
+      <div class="dbg-pane" data-pane="share" hidden>
+        <div class="dbg-pane-t">共有</div>
+        <div class="dbg-card">
+          <div class="dbg-row"><span class="dbg-k">閲覧リンク</span><span class="dbg-note">リンクを知っている人は、書き込みなしで作業を見られます</span></div>
+          <div class="dbg-row"><input type="text" id="shareLabel" placeholder="ラベル（例：壁掛け用）" maxlength="40"><select id="shareTtl" aria-label="有効期限"><option value="1">1時間</option><option value="24">24時間</option><option value="168" selected>7日間</option><option value="720">30日間</option><option value="0">無期限</option></select><button class="dbg-linkbtn" id="shareCreate" type="button">作成</button></div>
+          <div class="dbg-row"><span class="dbg-note" id="shareMsg">作成するとリンクがコピーされます。期限を過ぎたリンクは自動で無効になります</span></div>
+          <div id="shareList"></div>
+        </div>
+        <div class="dbg-card" style="margin-top:10px">
+          <div class="dbg-row"><span class="dbg-k">禁止ワード</span><span class="dbg-note">閲覧リンクで開いたときだけ、本文中の語が ● に置き換わります（通常の表示には影響しません）。画像は丸ごと非表示になります</span></div>
+          <div class="dbg-row"><textarea id="bannedWords" rows="4" placeholder="1行に1ワード"></textarea></div>
+          <div class="dbg-row"><span class="dbg-note">最大100件・1件50文字まで</span><button class="dbg-linkbtn" id="bannedSave" type="button">保存</button></div>
+        </div>
+      </div>
     </div>
   </div>
   <div class="dbgwin-resize" id="dbgResize"></div>
@@ -1246,7 +1276,7 @@ const FINISH_TEXT = { done: '作業が完了しました', failed: '作業が失
 const S = {
   tasks: new Map(), sel: null, maxId: 0, follow: true, agents: new Map(), filter: '', fsig: '', mode: store.get('mode', 'tree'), scope: store.get('scope', 'self'), fold: new Map(), rsig: '', ssig: '', chips: '',
   newestFirst: store.get('order', 'new') === 'new', sound: store.get('sound', '0') === '1', sfx: store.get('sfx', 'beep') === 'earshot' ? 'earshot' : 'beep', sfxBase: store.get('sfx', 'beep') === 'earshot' ? 'earshot' : 'beep', theme: store.get('theme', 'default'), themes: [],
-  conn: 'connecting', offset: 0, auth: null, token: store.get('token', ''), planOpen: true,
+  conn: 'connecting', offset: 0, auth: null, token: store.get('token', ''), planOpen: true, view: '', viewTimer: 0,
   sig: '', expanded: new Set(), lastNow: '', lastProgress: 0, rows: new Map(), stepEls: new Map(), booted: false,
 };
 const nowMs = () => Date.now() + S.offset;
@@ -1289,7 +1319,10 @@ try {
   const u = new URL(location.href);
   const t = u.searchParams.get('token');
   if (t) { S.token = t; store.set('token', t); u.searchParams.delete('token'); history.replaceState(null, '', u.pathname + u.search + u.hash); }
+  const v = u.searchParams.get('view');
+  if (v) S.view = v; // 閲覧専用リンク。キーはURLに残す(共有・ブックマーク用)
 } catch {}
+if (S.view) document.body.classList.add('viewonly');
 
 const el = {
   conn: $('#conn'), list: $('#taskList'), rail: $('#rail'), scrim: $('#scrim'), menu: $('#menuBtn'),
@@ -1646,6 +1679,13 @@ let ws = null, backoff = 1000, pingTimer = 0, lastPong = 0, pollTimer = 0, retry
 const authHeaders = () => (S.token ? { authorization: 'Bearer ' + S.token } : {});
 
 async function fetchSnapshot() {
+  if (S.view) {
+    const r = await fetch('/api/view?key=' + encodeURIComponent(S.view), { cache: 'no-store' });
+    if (r.status === 410) { const e = new Error('expired'); e.expired = true; throw e; }
+    if (r.status === 404) { const e = new Error('denied'); e.denied = true; throw e; }
+    if (!r.ok) throw new Error('http ' + r.status);
+    return r.json();
+  }
   const r = await fetch('/api/snapshot', { cache: 'no-store', headers: authHeaders() });
   if (r.status === 401) { const e = new Error('denied'); e.denied = true; throw e; }
   if (!r.ok) throw new Error('http ' + r.status);
@@ -1658,9 +1698,20 @@ async function boot() {
   try {
     handle(await fetchSnapshot(), true);
     S.booted = true;
+    if (S.view) {
+      // 閲覧専用リンク: WebSocketは張らず、30秒ごとの取得で追う
+      setConn('live');
+      clearInterval(S.viewTimer);
+      S.viewTimer = setInterval(async () => {
+        try { handle(await fetchSnapshot(), true); }
+        catch (e2) { if (e2.expired || e2.denied) { clearInterval(S.viewTimer); setConn('denied'); showState(e2.expired ? 'expired' : 'locked'); } }
+      }, 30000);
+      return;
+    }
     connect();
     maybeWelcome();
   } catch (e) {
+    if (e.expired) { setConn('denied'); showState('expired'); return; }
     if (e.denied) { setConn('denied'); showState('locked'); return; }
     setConn('retry');
     if (!S.booted) showState('error');
@@ -1670,6 +1721,7 @@ async function boot() {
 }
 
 function connect() {
+  if (S.view) return; // 閲覧専用リンクではWebSocketを張らない(boot側の定期取得で追う)
   clearTimeout(retryTimer);
   try { ws && ws.close(); } catch {}
   const q = S.token ? `?token=${encodeURIComponent(S.token)}` : '';
@@ -1699,7 +1751,9 @@ function connect() {
   ws.onerror = () => {};
 }
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && S.booted && (!ws || ws.readyState > 1)) { backoff = 1000; connect(); }
+  if (document.hidden || !S.booted) return;
+  if (S.view) { fetchSnapshot().then((j) => handle(j, true)).catch(() => {}); return; }
+  if (!ws || ws.readyState > 1) { backoff = 1000; connect(); }
 });
 
 /* ================= data ================= */
@@ -1727,6 +1781,13 @@ function handle(msg, quiet = false) {
   if (msg.t === 'snapshot') {
     S.offset = msg.serverTime - Date.now();
     S.auth = msg.auth;
+    if (msg.view) {
+      const vb = $('#viewBar');
+      if (vb) {
+        vb.hidden = false;
+        $('#viewBarT').textContent = `閲覧専用リンクで表示中（書き込みはできません）${msg.view.label ? '・' + msg.view.label : ''}${msg.view.expiresAt ? '・期限 ' + new Date(msg.view.expiresAt).toLocaleString('ja-JP') : '・無期限'}`;
+      }
+    }
     if (msg.themes) setThemes(msg.themes);
     if (msg.badges) setBadges(msg.badges);
     commsSnap(msg);
@@ -2104,6 +2165,9 @@ function showState(kind) {
       <button class="btn primary" type="submit" style="align-self:flex-start">開く</button></form></section>`;
     if (S.token) $('#tok').setAttribute('aria-invalid', 'true');
     $('#tok').focus({ preventScroll: true });
+  } else if (kind === 'expired') {
+    el.state.innerHTML = `<section class="state">${icon('clock')}<h1>リンクの期限が切れています</h1>
+      <p>この閲覧専用リンクは有効期限を過ぎました。新しいリンクを発行してもらってください。</p></section>`;
   } else if (kind === 'error') {
     el.state.innerHTML = `<section class="state">${icon('wifi-off')}<h1>サーバーに接続できません</h1>
       <p>ネットワークかサーバーの状態を確認してください。自動で再試行しています。</p>
@@ -2527,12 +2591,14 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
   }
   function closeDbg() { win.hidden = true; if (refresh) { clearInterval(refresh); refresh = null; } }
   function openDbg() {
+    if (S.view) return; // 閲覧専用リンクではデバッグウィンドウを開かない(設定変更の入口のため)
     if (!win.hidden) { closeDbg(); return; }
     win.hidden = false;
     let sidePref = ''; try { sidePref = store.get('dbgside', ''); } catch {}
     win.classList.toggle('side-closed', sidePref ? sidePref === 'closed' : innerWidth < 640);
     try { const p = JSON.parse(store.get('dbgwin', '')); if (p && p.w >= 260) { win.style.left = p.x + 'px'; win.style.top = p.y + 'px'; win.style.right = 'auto'; win.style.width = p.w + 'px'; win.style.height = p.h + 'px'; } } catch {}
     renderDbg(); requestAnimationFrame(() => { clampDbg(); shape(); lgApply(clip, win); }); refresh = setInterval(renderDbg, 1000);
+    try { if (store.get('dbgcat', 'info') === 'share') loadShare(); } catch {}
   }
   document.getElementById('dbgClose').addEventListener('click', closeDbg);
   document.getElementById('dbgMini').addEventListener('click', () => {
@@ -2581,12 +2647,14 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     { id: 'info', name: '情報', icon: 'i-clipboard-list', color: '#8e8e93' },
     { id: 'display', name: '表示', icon: 'i-palette', color: '#0071e3' },
     { id: 'actions', name: '操作', icon: 'i-wrench', color: '#ff9500' },
+    { id: 'share', name: '共有', icon: 'i-globe', color: '#5856d6' },
   ];
   const navEl = document.getElementById('dbgNav');
   const selectCat = (id) => {
     navEl.querySelectorAll('.dbg-nav-it').forEach((b) => b.classList.toggle('on', b.dataset.cat === id));
     win.querySelectorAll('.dbg-pane').forEach((p) => { p.hidden = p.dataset.pane !== id; });
     try { store.set('dbgcat', id); } catch {}
+    if (id === 'share') setTimeout(() => { try { loadShare(); } catch {} }, 0); // loadShare はブロック末尾で定義されるため遅延呼び出し
   };
   navEl.innerHTML = DBG_CATS.map((c) => `<button class="dbg-nav-it" type="button" data-cat="${c.id}"><span class="dbg-nav-ic" style="background:${c.color}"><svg class="ic" aria-hidden="true"><use href="#${c.icon}"/></svg></span>${c.name}</button>`).join('');
   navEl.querySelectorAll('.dbg-nav-it').forEach((b) => b.addEventListener('click', () => selectCat(b.dataset.cat)));
@@ -2643,8 +2711,8 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
       win.style.height = Math.min(Math.max(200, ev.clientY - r.top), innerHeight - r.top - 4) + 'px';
     });
   });
-  const dbgPost = async (action) => {
-    const r = await fetch('/api/debug', { method: 'POST', headers: { 'content-type': 'application/json', ...authHeaders() }, body: JSON.stringify({ action }) });
+  const dbgPost = async (action, extra = {}) => {
+    const r = await fetch('/api/debug', { method: 'POST', headers: { 'content-type': 'application/json', ...authHeaders() }, body: JSON.stringify({ action, ...extra }) });
     const j = await r.json(); if (!j.ok) throw new Error(j.error || 'failed'); return j;
   };
   const arm = (btn, label, fn) => {
@@ -2667,6 +2735,53 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     for (const k of Object.keys(localStorage)) if (k.startsWith('workline.')) localStorage.removeItem(k);
     location.reload();
   }));
+  /* 共有ペイン: 閲覧専用リンクの発行・失効と、禁止ワードの保存 */
+  const shareListEl = document.getElementById('shareList'), shareMsg = document.getElementById('shareMsg'), bannedEl = document.getElementById('bannedWords');
+  const fmtDt = (ms) => new Date(ms).toLocaleString('ja-JP', { hour12: false });
+  const renderShareList = (links) => {
+    shareListEl.innerHTML = links.length ? links.map((l) => {
+      const url = `${location.origin}/?view=${l.token}`;
+      const st = l.expired ? '<span class="share-st off">期限切れ</span>' : '<span class="share-st">有効</span>';
+      const exp = l.expiresAt ? `期限 ${fmtDt(l.expiresAt)}` : '無期限';
+      return `<div class="dbg-row"><div class="share-meta"><b>${esc(l.label || '（ラベルなし）')}</b><span>${exp}・作成 ${fmtDt(l.createdAt)}</span></div>${st}<button class="dbg-linkbtn" type="button" data-share-copy="${esc(url)}">コピー</button><button class="dbg-linkbtn danger" type="button" data-share-revoke="${esc(l.token)}"><span>失効</span></button></div>`;
+    }).join('') : '<div class="dbg-row"><span class="dbg-note">まだリンクはありません</span></div>';
+  };
+  const loadShare = async () => {
+    try {
+      const j = await dbgPost('share-list');
+      renderShareList(j.links || []);
+      const b = await dbgPost('banned-get');
+      bannedEl.value = (b.words || []).join('\n');
+    } catch { shareMsg.textContent = '読み込めませんでした'; }
+  };
+  document.getElementById('shareCreate').addEventListener('click', async () => {
+    const btn = document.getElementById('shareCreate');
+    btn.disabled = true; shareMsg.textContent = '';
+    try {
+      const j = await dbgPost('share-create', { label: document.getElementById('shareLabel').value, ttlHours: Number(document.getElementById('shareTtl').value) });
+      renderShareList(j.links || []);
+      if (navigator.clipboard) navigator.clipboard.writeText(`${location.origin}/?view=${j.link.token}`).catch(() => {});
+      shareMsg.textContent = '作成してコピーしました';
+    } catch { shareMsg.textContent = '作成できませんでした'; }
+    btn.disabled = false;
+  });
+  shareListEl.addEventListener('click', (e) => {
+    const cp = e.target.closest('[data-share-copy]');
+    if (cp) { if (navigator.clipboard) navigator.clipboard.writeText(cp.dataset.shareCopy).catch(() => {}); cp.textContent = 'コピーした'; setTimeout(() => { cp.textContent = 'コピー'; }, 1500); return; }
+    const rv = e.target.closest('[data-share-revoke]');
+    if (rv) arm(rv, '失効', async () => { try { const j = await dbgPost('share-revoke', { token: rv.dataset.shareRevoke }); renderShareList(j.links || []); } catch {} });
+  });
+  document.getElementById('bannedSave').addEventListener('click', async () => {
+    const btn = document.getElementById('bannedSave');
+    btn.disabled = true;
+    try {
+      const words = bannedEl.value.split('\n').map((s) => s.trim()).filter(Boolean);
+      const j = await dbgPost('banned-set', { words });
+      bannedEl.value = (j.words || []).join('\n');
+      btn.textContent = '保存した';
+    } catch { btn.textContent = '保存できませんでした'; }
+    setTimeout(() => { btn.disabled = false; btn.textContent = '保存'; }, 1600);
+  });
 }
 /* ---- テーマ切り替えダイアログ(サムネイル付き) ---- */
 const THUMB = {
@@ -2712,6 +2827,7 @@ function renderThemeGrid() {
   inp.addEventListener('input', () => { if (msg.textContent) say(''); });
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (S.view) { say('閲覧専用リンクでは使えません'); return; }
     const code = inp.value.trim(); if (!code) return;
     go.disabled = true; go.querySelector('span').textContent = '確認中…'; say('');
     let r = null, j = {};
@@ -2865,6 +2981,7 @@ el.rail.addEventListener('pointercancel', endDrag);
 const W = { dlg: $('#purge'), body: $('#wizBody'), bar: $('#wizSteps'), step: 0, info: null, ch: null, ans: '', pw: '', ids: [], ni: 0, err: '', busy: false, result: null };
 const ORDER = ['confirm', 'human', 'password', 'names', 'word', 'done'];
 const wpost = async (action, extra = {}) => {
+  if (S.view) throw new Error('閲覧専用リンクでは使えません');
   const r = await fetch('/api/purge', { method: 'POST', headers: { 'content-type': 'application/json', ...authHeaders() }, body: JSON.stringify({ action, ...extra }) });
   if (r.status === 401) throw new Error('unauthorized');
   return r.json();
@@ -3359,6 +3476,7 @@ function scheduleRead(list) { if (!list.some(isUnread)) return; clearTimeout(mar
 
 /* ---- 操作 ---- */
 async function commsPost(body, path = '/api/message') {
+  if (S.view) throw new Error('閲覧専用リンクでは書き込めません');
   const r = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json', ...authHeaders() }, body: JSON.stringify(body) });
   const j = await r.json().catch(() => ({}));
   if (!r.ok || j.error) throw new Error(j.error || 'http ' + r.status);
@@ -3463,7 +3581,7 @@ function inboxRender() {
 $('#refreshIcons').addEventListener('click', async () => {
   const btn = $('#refreshIcons'), stat = $('#iconStat'); if (btn.disabled) return;
   const label = btn.querySelector('span'), orig = label.textContent; btn.disabled = true; stat.hidden = false; stat.textContent = '最新の状態を取得しています…'; label.textContent = '更新中…';
-  const post = async (body) => { const r = await fetch('/api/icons/refresh', { method: 'POST', headers: { 'content-type': 'application/json', ...authHeaders() }, body: JSON.stringify(body) }); if (!r.ok) throw new Error(r.status === 401 ? '権限がありません' : 'http ' + r.status); return r.json(); };
+  const post = async (body) => { if (S.view) throw new Error('閲覧専用リンクでは使えません'); const r = await fetch('/api/icons/refresh', { method: 'POST', headers: { 'content-type': 'application/json', ...authHeaders() }, body: JSON.stringify(body) }); if (!r.ok) throw new Error(r.status === 401 ? '権限がありません' : 'http ' + r.status); return r.json(); };
   let msg = '';
   try {
     handle(await fetchSnapshot(), true);
@@ -3522,6 +3640,7 @@ setInterval(() => { for (const el of qsa('#appr [data-kind="remain"]')) { const 
 $('#appr').addEventListener('click', async (e) => {
   const g = e.target.closest('[data-appr-go]'), b = e.target.closest('[data-appr]');
   if (g) { const id = Number(g.dataset.apprGo); if (id !== latest()) setFollow(false); select(id, { keepFollow: true }); return; }
+  if (S.view) return;
   if (!b || b.disabled) return;
   const card = b.closest('.appr-card'), comment = $('.appr-cm', card).value.trim(); b.disabled = true;
   try {
@@ -3634,6 +3753,7 @@ async function prepImage(file) {
   throw new Error('画像を小さくできませんでした。');
 }
 async function addFiles(k, files) {
+  if (S.view) return;
   for (const f of [...files]) {
     if (!/^image\//.test(f.type)) continue;
     if (S.pend[k].length >= ATTACH_N) { const st = $(k === 'note' ? '#noteStatus' : '#rqStatus'); if (st) { st.textContent = `1回に付けられるのは ${ATTACH_N} 枚までです。`; st.setAttribute('data-err', ''); } break; }

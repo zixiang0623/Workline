@@ -4,7 +4,7 @@ import { DurableObject } from "cloudflare:workers";
 import { SHOT_MAX, findIcon, parseAgent, safeFetch, slugify, sniffShot } from "./agents.js";
 import { publicKey, pushEnabled, sendPush, validEndpoint } from "./push.js";
 
-const VERSION = "2.24.2";
+const VERSION = "2.25.0";
 const ALIASES = { getRequest: "getConfirmation" }; // 旧名(askUser の結果取得)。人間からの「要求」とは別物
 const PROTOCOLS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 
@@ -390,6 +390,23 @@ function safeEqual(a, b) {
   return r === 0;
 }
 
+// 閲覧専用リンク用: オブジェクト中の文字列から禁止ワードを ● に置き換える(キー名・数値・真偽値はそのまま)
+function maskStrings(v, words) {
+  if (!words.length) return v;
+  if (typeof v === "string") {
+    let s = v;
+    for (const w of words) if (w && s.includes(w)) s = s.split(w).join("●".repeat(Math.min([...w].length, 10)));
+    return s;
+  }
+  if (Array.isArray(v)) return v.map((x) => maskStrings(x, words));
+  if (v && typeof v === "object") {
+    const o = {};
+    for (const [k, x] of Object.entries(v)) o[k] = maskStrings(x, words);
+    return o;
+  }
+  return v;
+}
+
 function presentedToken(request, url) {
   const m = /^Bearer\s+(.+)$/i.exec(request.headers.get("authorization") || "");
   return (m && m[1].trim()) || url.searchParams.get("token") || url.searchParams.get("key") || "";
@@ -696,15 +713,29 @@ async function handleTheme(request, env, url) {
   return json({ ok: true, ...(await bd.themeRedeem(theme)) });
 }
 
-// デバッグウィンドウ用: テーマとバッジの全解放/リセット。キーはなし(開き方自体を隠す)
+// デバッグウィンドウ用: テーマとバッジの全解放/リセット、閲覧専用リンクと禁止ワードの管理。キーはなし(開き方自体を隠す)
 async function handleDebug(request, env, url) {
   return userPost(request, env, url, async (bd, b) => {
     switch (b.action) {
       case "unlock-all": return bd.unlockAll();
       case "reset-unlocks": return bd.resetUnlocks();
+      case "share-list": return { ok: true, links: await bd.shareList() };
+      case "share-create": return bd.shareCreate(b);
+      case "share-revoke": return bd.shareRevoke(b);
+      case "banned-get": return { ok: true, words: await bd.bannedList() };
+      case "banned-set": return bd.bannedSet(b);
       default: throw new Error("unknown action");
     }
   });
+}
+
+// 閲覧専用リンク(?view=<キー>)のデータ。キー自体が資格情報なので閲覧トークンは見ない
+async function handleView(request, env, url) {
+  if (request.method !== "GET") return new Response("Method Not Allowed", { status: 405, headers: { allow: "GET" } });
+  const r = await board(env).viewSnapshot(url.searchParams.get("key") || "");
+  if (!r) return json({ error: "リンクが無効です" }, 404);
+  if (r.expired) return json({ error: "リンクの期限が切れています" }, 410);
+  return json(r);
 }
 
 // ビューアーから人間が送るもの(from は常に "user")の共通の入口: POST のみ・同一オリジン・閲覧トークン
@@ -859,6 +890,7 @@ export default {
       if (path === "/mcp") return await handleMcp(request, env, url);
       if (path === "/ws") return await handleWs(request, env, url);
       if (path === "/api/snapshot") return await handleSnapshot(request, env, url);
+      if (path === "/api/view") return await handleView(request, env, url);
       if (path === "/api/icon") return await handleIcon(request, env, url);
       if (path === "/api/shot") return await handleShot(request, env, url);
       if (path === "/api/approval") return await handleApproval(request, env, url);
@@ -967,6 +999,7 @@ export class Board extends DurableObject {
     this.initPushSchema();
     this.initThemeSchema();
     this.initBadgeSchema();
+    this.initShareSchema();
     // クライアントの "ping" に、DOを起こさず "pong" を返す(接続維持と死活確認)
     ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair("ping", "pong"));
   }
@@ -1128,6 +1161,59 @@ export class Board extends DurableObject {
     this.broadcast({ t: "theme", themes });
     this.broadcast({ t: "badge", badges });
     return { ok: true, themes, badges };
+  }
+
+  /* --- 閲覧専用リンクと禁止ワード(どちらもログではなく設定なので、全リセットでも残す) --- */
+  initShareSchema() {
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS share_links (
+      token TEXT PRIMARY KEY, label TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL, expires_at INTEGER
+    )`);
+    this.sql.exec("CREATE TABLE IF NOT EXISTS banned_words (word TEXT PRIMARY KEY)");
+  }
+  shareList() {
+    const now = Date.now();
+    return this.sql
+      .exec("SELECT token, label, created_at, expires_at FROM share_links ORDER BY created_at DESC")
+      .toArray()
+      .map((r) => ({ token: r.token, label: r.label, createdAt: r.created_at, expiresAt: r.expires_at, expired: r.expires_at != null && r.expires_at <= now }));
+  }
+  shareCreate(b) {
+    const label = String(b?.label ?? "").trim().slice(0, 40);
+    let ttl = Number(b?.ttlHours);
+    if (!Number.isFinite(ttl) || ttl < 0) ttl = 0;
+    ttl = Math.min(ttl, 24 * 365);
+    const bytes = new Uint8Array(18);
+    crypto.getRandomValues(bytes);
+    const token = [...bytes].map((x) => x.toString(16).padStart(2, "0")).join("");
+    const now = Date.now();
+    const expiresAt = ttl > 0 ? now + Math.round(ttl * 3600000) : null;
+    this.sql.exec("INSERT INTO share_links (token, label, created_at, expires_at) VALUES (?, ?, ?, ?)", token, label, now, expiresAt);
+    return { ok: true, link: { token, label, createdAt: now, expiresAt, expired: false }, links: this.shareList() };
+  }
+  shareRevoke(b) {
+    this.sql.exec("DELETE FROM share_links WHERE token = ?", String(b?.token ?? ""));
+    return { ok: true, links: this.shareList() };
+  }
+  bannedList() {
+    return this.sql.exec("SELECT word FROM banned_words ORDER BY word").toArray().map((r) => r.word);
+  }
+  bannedSet(b) {
+    const words = [...new Set((Array.isArray(b?.words) ? b.words : []).map((w) => String(w).trim()).filter(Boolean))].slice(0, 100).map((w) => w.slice(0, 50));
+    this.sql.exec("DELETE FROM banned_words");
+    for (const w of words) this.sql.exec("INSERT INTO banned_words (word) VALUES (?)", w);
+    return { ok: true, words: this.bannedList() };
+  }
+  // 閲覧専用リンクのキーで開くスナップショット。キーが資格情報そのもの(閲覧トークンは不要)。
+  // 画像は禁止ワードで伏せられないので丸ごと外し、文字列は禁止ワードをマスクしてから返す
+  viewSnapshot(key) {
+    const k = String(key || "");
+    const hit = this.sql.exec("SELECT token, label, expires_at FROM share_links").toArray().find((r) => safeEqual(r.token, k));
+    if (!hit) return null;
+    if (hit.expires_at != null && hit.expires_at <= Date.now()) return { expired: true };
+    const snap = this.snapshot();
+    snap.shots = [];
+    snap.view = { label: hit.label, expiresAt: hit.expires_at };
+    return maskStrings(snap, this.bannedList());
   }
 
   /* --- WebSocket --- */
