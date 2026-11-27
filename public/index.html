@@ -1286,7 +1286,8 @@ const tintOf = (id) => { let h = 0; for (const c of String(id)) h = (h * 31 + c.
 const agentOf = (id) => S.agents.get(id) || { id, name: id || '不明なAI', model: '', domain: '', hasIcon: false };
 function avatar(id, size = 20) {
   const a = agentOf(id);
-  const src = `/api/icon?agent=${encodeURIComponent(a.id)}${S.iconRev ? '&v=' + S.iconRev : ''}${S.token ? '&token=' + encodeURIComponent(S.token) : ''}`;
+  const auth = S.token ? '&token=' + encodeURIComponent(S.token) : S.view ? '&key=' + encodeURIComponent(S.view) : '';
+  const src = `/api/icon?agent=${encodeURIComponent(a.id)}${S.iconRev ? '&v=' + S.iconRev : ''}${auth}`;
   return `<span class="av" data-t="${tintOf(a.id)}" style="--av:${size}px" aria-hidden="true"><span>${esc([...a.name][0] || '?')}</span>${a.hasIcon ? `<img src="${src}" alt="" loading="lazy" decoding="async">` : ''}</span>`;
 }
 // no icon could be fetched: drop the broken image and let the initial letter show
@@ -1698,16 +1699,7 @@ async function boot() {
   try {
     handle(await fetchSnapshot(), true);
     S.booted = true;
-    if (S.view) {
-      // 閲覧専用リンク: WebSocketは張らず、30秒ごとの取得で追う
-      setConn('live');
-      clearInterval(S.viewTimer);
-      S.viewTimer = setInterval(async () => {
-        try { handle(await fetchSnapshot(), true); }
-        catch (e2) { if (e2.expired || e2.denied) { clearInterval(S.viewTimer); setConn('denied'); showState(e2.expired ? 'expired' : 'locked'); } }
-      }, 30000);
-      return;
-    }
+    if (S.view) { connectView(); return; }
     connect();
     maybeWelcome();
   } catch (e) {
@@ -1721,7 +1713,7 @@ async function boot() {
 }
 
 function connect() {
-  if (S.view) return; // 閲覧専用リンクではWebSocketを張らない(boot側の定期取得で追う)
+  if (S.view) return; // 閲覧専用リンクの接続は connectView が担当する
   clearTimeout(retryTimer);
   try { ws && ws.close(); } catch {}
   const q = S.token ? `?token=${encodeURIComponent(S.token)}` : '';
@@ -1750,9 +1742,56 @@ function connect() {
   };
   ws.onerror = () => {};
 }
+/* 閲覧専用リンク用の接続: WebSocketで即時更新し、切れたら30秒ポーリングに落として再接続を試す */
+let viewWs = null, viewBackoff = 1000, viewPing = 0, viewPong = 0, viewDead = false;
+function startViewPoll() {
+  if (S.viewTimer || viewDead) return;
+  const tick = async () => {
+    try { handle(await fetchSnapshot(), true); }
+    catch (e) { if (e.expired || e.denied) { viewDead = true; stopViewPoll(); setConn('denied'); showState(e.expired ? 'expired' : 'locked'); } }
+  };
+  tick();
+  S.viewTimer = setInterval(tick, 30000);
+}
+function stopViewPoll() { if (S.viewTimer) { clearInterval(S.viewTimer); S.viewTimer = 0; } }
+function connectView() {
+  if (!S.view || viewDead) return;
+  try { viewWs && viewWs.close(); } catch {}
+  const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws?key=${encodeURIComponent(S.view)}`);
+  viewWs = ws;
+  ws.onopen = () => {
+    viewBackoff = 1000; viewPong = Date.now(); setConn('live');
+    stopViewPoll();
+    clearInterval(viewPing);
+    viewPing = setInterval(() => {
+      if (Date.now() - viewPong > 60000) { try { ws.close(); } catch {} return; }
+      try { ws.send('ping'); } catch {}
+    }, 25000);
+    // 期限があるリンクは、期限の時刻に接続を切って再確認させる(切れた先のポーリングが期限切れ画面を出す)
+    if (S.viewExp) { const ms = S.viewExp - Date.now(); if (ms > 0) setTimeout(() => { try { ws.close(); } catch {} }, ms + 500); }
+  };
+  ws.onmessage = (e) => {
+    if (e.data === 'pong') { viewPong = Date.now(); return; }
+    try {
+      const j = JSON.parse(e.data);
+      if (j.t === 'view-expired') { viewDead = true; setConn('denied'); showState('expired'); try { ws.close(); } catch {} return; }
+      handle(j, j.t === 'snapshot');
+    } catch (err) { console.error(err); }
+  };
+  ws.onclose = () => {
+    if (viewWs !== ws) return;
+    clearInterval(viewPing);
+    if (viewDead) return;
+    if (S.conn !== 'denied') setConn('retry');
+    startViewPoll();
+    clearTimeout(retryTimer);
+    retryTimer = setTimeout(connectView, viewBackoff = Math.min(viewBackoff * 2, 15000));
+  };
+  ws.onerror = () => {};
+}
 document.addEventListener('visibilitychange', () => {
   if (document.hidden || !S.booted) return;
-  if (S.view) { fetchSnapshot().then((j) => handle(j, true)).catch(() => {}); return; }
+  if (S.view) { if (!viewWs || viewWs.readyState > 1) connectView(); else fetchSnapshot().then((j) => handle(j, true)).catch(() => {}); return; }
   if (!ws || ws.readyState > 1) { backoff = 1000; connect(); }
 });
 
@@ -1782,6 +1821,7 @@ function handle(msg, quiet = false) {
     S.offset = msg.serverTime - Date.now();
     S.auth = msg.auth;
     if (msg.view) {
+      S.viewExp = msg.view.expiresAt || 0;
       const vb = $('#viewBar');
       if (vb) {
         vb.hidden = false;

@@ -4,7 +4,7 @@ import { DurableObject } from "cloudflare:workers";
 import { SHOT_MAX, findIcon, parseAgent, safeFetch, slugify, sniffShot } from "./agents.js";
 import { publicKey, pushEnabled, sendPush, validEndpoint } from "./push.js";
 
-const VERSION = "2.25.0";
+const VERSION = "2.26.0";
 const ALIASES = { getRequest: "getConfirmation" }; // 旧名(askUser の結果取得)。人間からの「要求」とは別物
 const PROTOCOLS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 
@@ -577,8 +577,11 @@ async function handleMcp(request, env, url) {
 
 async function handleWs(request, env, url) {
   if (request.headers.get("upgrade") !== "websocket") return new Response("Expected WebSocket", { status: 426 });
-  if (!canRead(request, url, env)) return new Response("Unauthorized", { status: 401 });
-  return board(env).fetch(request);
+  if (canRead(request, url, env)) return board(env).fetch(request);
+  // 閲覧専用リンクのキーでも接続できる(DO側で、その接続にはマスク済みの配信だけが流れる)
+  const key = url.searchParams.get("key") || "";
+  if (key && (await board(env).shareValid(key))) return board(env).fetch(request);
+  return new Response("Unauthorized", { status: 401 });
 }
 
 /* ---------- すべてのログを消す(人間だけが、何段階もの確認を通ったときだけ) ---------- */
@@ -785,7 +788,11 @@ const ICON_TTL = 7 * 86400000; // 取得成功したアイコンは7日使い回
 const ICON_RETRY = 10 * 60000; // 取得に失敗したら10分は再取得しない
 
 async function handleIcon(request, env, url) {
-  if (!canRead(request, url, env)) return new Response("Unauthorized", { status: 401 });
+  if (!canRead(request, url, env)) {
+    // 閲覧専用リンクのキーでもアイコンは出せる(アイコンは各AIサービスの公開ファビコン)
+    const key = url.searchParams.get("key") || "";
+    if (!key || !(await board(env).shareValid(key))) return new Response("Unauthorized", { status: 401 });
+  }
   const b = board(env);
   const id = url.searchParams.get("agent") || "";
   const agent = await b.getAgent(id);
@@ -1203,11 +1210,20 @@ export class Board extends DurableObject {
     for (const w of words) this.sql.exec("INSERT INTO banned_words (word) VALUES (?)", w);
     return { ok: true, words: this.bannedList() };
   }
+  findShare(key) {
+    const k = String(key || "");
+    if (!k) return null;
+    return this.sql.exec("SELECT token, label, expires_at FROM share_links").toArray().find((r) => safeEqual(r.token, k)) || null;
+  }
+  // 閲覧キーが実在し、期限内か(アイコン配信とWebSocket接続の認証に使う)
+  shareValid(key) {
+    const hit = this.findShare(key);
+    return !!hit && (hit.expires_at == null || hit.expires_at > Date.now());
+  }
   // 閲覧専用リンクのキーで開くスナップショット。キーが資格情報そのもの(閲覧トークンは不要)。
   // 画像は禁止ワードで伏せられないので丸ごと外し、文字列は禁止ワードをマスクしてから返す
   viewSnapshot(key) {
-    const k = String(key || "");
-    const hit = this.sql.exec("SELECT token, label, expires_at FROM share_links").toArray().find((r) => safeEqual(r.token, k));
+    const hit = this.findShare(key);
     if (!hit) return null;
     if (hit.expires_at != null && hit.expires_at <= Date.now()) return { expired: true };
     const snap = this.snapshot();
@@ -1223,12 +1239,42 @@ export class Board extends DurableObject {
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
     this.ctx.acceptWebSocket(server);
-    server.send(JSON.stringify(this.snapshot()));
+    const key = new URL(request.url).searchParams.get("key") || "";
+    if (key) {
+      // 閲覧専用リンクの接続: 添付データにキーを残し、この接続にはマスク済みの内容だけを流す
+      const v = this.viewSnapshot(key);
+      if (!v || v.expired) {
+        try { server.close(4403, "invalid view link"); } catch {}
+        return new Response(null, { status: 101, webSocket: client });
+      }
+      try { server.serializeAttachment({ view: key }); } catch {}
+      server.send(JSON.stringify(v));
+    } else {
+      server.send(JSON.stringify(this.snapshot()));
+    }
     return new Response(null, { status: 101, webSocket: client });
   }
 
+  // その接続が閲覧専用リンクのものなら、そのキーを返す
+  wsViewKey(ws) {
+    try {
+      const a = ws.deserializeAttachment();
+      return (a && a.view) || "";
+    } catch {
+      return "";
+    }
+  }
+
   webSocketMessage(ws, message) {
-    if (message === "snapshot") ws.send(JSON.stringify(this.snapshot()));
+    if (message === "snapshot") {
+      const key = this.wsViewKey(ws);
+      if (key) {
+        const v = this.viewSnapshot(key);
+        ws.send(JSON.stringify(v && !v.expired ? v : { t: "view-expired" }));
+        return;
+      }
+      ws.send(JSON.stringify(this.snapshot()));
+    }
   }
   webSocketClose(ws) {
     try {
@@ -1243,9 +1289,18 @@ export class Board extends DurableObject {
 
   broadcast(obj) {
     const s = JSON.stringify(obj);
-    for (const ws of this.ctx.getWebSockets()) {
+    const sockets = this.ctx.getWebSockets();
+    // 閲覧専用リンクの接続が1本でもあれば、マスク済みの版も用意する(画像メタデータは閲覧側に流さない)
+    let masked = null;
+    if (obj.t !== "shot" && sockets.some((ws) => this.wsViewKey(ws))) {
+      const words = this.bannedList();
+      masked = words.length ? JSON.stringify(maskStrings(obj, words)) : s;
+    }
+    for (const ws of sockets) {
       try {
-        ws.send(s);
+        if (this.wsViewKey(ws)) {
+          if (obj.t !== "shot") ws.send(masked);
+        } else ws.send(s);
       } catch {}
     }
   }
