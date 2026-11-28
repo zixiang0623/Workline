@@ -399,6 +399,19 @@ html.no-anim *, html.no-anim *::before, html.no-anim *::after { transition-durat
 .ios-menu-it:hover, .ios-menu-it:focus-visible { background: rgb(0 0 0 / .055); outline: none; }
 .ios-menu-it.on { font-weight: 700; }
 .ios-menu-it .ios-check { width: 14px; flex: none; color: #0071e3; font-weight: 700; text-align: center; }
+/* プレゼントが届いたときのお祝い(起動時) */
+.gift-veil { position: fixed; inset: 0; z-index: 800; background: rgb(10 12 20 / .45); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Hiragino Sans", sans-serif; }
+.gift-card { background: rgb(255 255 255 / .94); border-radius: 22px; box-shadow: 0 24px 60px rgb(0 0 0 / .35); padding: 28px 30px 22px; max-width: min(400px, calc(100vw - 40px)); text-align: center; color: #1d1d1f; animation: gift-pop .55s cubic-bezier(.3, 1.5, .4, 1); }
+@keyframes gift-pop { from { transform: scale(.7) translateY(30px); opacity: 0; } }
+.gift-emoji { font-size: 64px; line-height: 1.1; display: inline-block; animation: gift-bounce 1.2s ease-in-out infinite; }
+@keyframes gift-bounce { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-10px) rotate(4deg); } }
+.gift-t { font-size: 19px; font-weight: 800; margin: 8px 0 6px; }
+.gift-body { font-size: 13.5px; line-height: 1.7; color: #3a3a3c; }
+.gift-from { font-weight: 700; color: #1d1d1f; }
+.gift-msg { margin-top: 8px; padding: 8px 12px; background: rgb(0 113 227 / .07); border-radius: 10px; font-size: 13px; }
+.gift-btn { margin-top: 16px; border: none; border-radius: 999px; background: #0071e3; color: #fff; font: inherit; font-size: 14px; font-weight: 700; padding: 10px 26px; cursor: pointer; }
+.gift-btn:hover { filter: brightness(1.08); }
+.gift-confetti { position: fixed; top: -4vh; z-index: 810; pointer-events: none; border-radius: 2px; }
 /* 全体のiOS寄せ(デバッグ兼設定の中だけ): カードの角を大きく、行にゆとりを */
 #dbgWin .dbg-card { border-radius: 14px; }
 #dbgWin .dbg-row { min-height: 38px; }
@@ -1439,6 +1452,15 @@ dialog.lb::backdrop { background: var(--color-scrim); }
         </div>
         <div class="dbg-card" style="margin-top:10px">
           <div class="dbg-row"><span class="dbg-note" id="dbgUpgradeMsg">記録・司令・伝言・通知などの基本機能は、これからも無料のままです。課金は「もっと快適にしたい人」向けの想定です</span></div>
+          <div class="dbg-row" id="dbgPaidStateRow" hidden><span class="dbg-k">このボード</span><span class="dbg-note" id="dbgPaidState"></span></div>
+        </div>
+        <div class="dbg-sec">🎁 プレゼントする</div>
+        <div class="dbg-card">
+          <div class="dbg-row"><span class="dbg-k">相手のボード</span><input type="text" id="dbgGiftTo" placeholder="workline.xxx.workers.dev" maxlength="200"></div>
+          <div class="dbg-row"><span class="dbg-k">プラン</span><select id="dbgGiftPlan" aria-label="贈るプラン"><option value="pro">Workline Pro（買い切り）</option><option value="cloud">Workline Cloud（月額）</option></select></div>
+          <div class="dbg-row"><span class="dbg-k">あなたの名前</span><input type="text" id="dbgGiftFrom" placeholder="zhou" maxlength="40"></div>
+          <div class="dbg-row"><span class="dbg-k">ひとこと</span><input type="text" id="dbgGiftText" placeholder="いつもありがとう" maxlength="200"></div>
+          <div class="dbg-foot"><span class="dbg-note" id="dbgGiftMsg">有料の管理は公式サーバーの台帳で共通管理。相手がボードを開いたときに届きます（ダミー課金なので実際のお金は動きません）</span><button type="button" class="dbg-linkbtn" id="dbgGiftSend">プレゼントを贈る</button></div>
         </div>
       </div>
       <div class="dbg-pane" data-pane="help" hidden>
@@ -2961,7 +2983,7 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     let sidePref = ''; try { sidePref = store.get('dbgside', ''); } catch {}
     win.classList.toggle('side-closed', sidePref ? sidePref === 'closed' : innerWidth < 640);
     try { const p = JSON.parse(store.get('dbgwin', '')); if (p && p.w >= 260) { win.style.left = p.x + 'px'; win.style.top = p.y + 'px'; win.style.right = 'auto'; win.style.width = p.w + 'px'; win.style.height = p.h + 'px'; } } catch {}
-    renderDbg(); requestAnimationFrame(() => { clampDbg(); shape(); lgApply(clip, win); }); refresh = setInterval(renderDbg, 1000);
+    renderDbg(); requestAnimationFrame(() => { clampDbg(); shape(); lgApply(clip, win); }); refresh = setInterval(renderDbg, 1000); refreshPaidState();
     try { document.getElementById('dbgSoundSel').value = S.sound ? '1' : '0'; document.getElementById('dbgAnimSel').value = store.get('noanim', '0'); document.getElementById('dbgFontSel').value = store.get('fsize', '16'); } catch {}
     try { document.getElementById('dbgBetaSel').value = betaOn() ? '1' : '0'; document.getElementById('dbgBetaBadge').hidden = !betaOn(); } catch {}
     try {
@@ -3063,6 +3085,31 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     if (dbgQuery) applyDbgSearch();
   };
   betaSel.addEventListener('change', () => { try { store.set('beta', betaSel.value); } catch {} applyBeta(); });
+  /* 有料レジストリは公式サーバーの台帳で共通管理する(すべてのボードがここを参照する) */
+  const PAID_API = 'https://workline.zixiang0623.workers.dev';
+  const paidPlanName = (p) => p === 'cloud' ? 'Workline Cloud' : 'Workline Pro';
+  const refreshPaidState = async () => {
+    try {
+      const r = await fetch(PAID_API + '/api/paid/check?board=' + encodeURIComponent(location.host));
+      const j = await r.json();
+      const row = document.getElementById('dbgPaidStateRow'), st = document.getElementById('dbgPaidState');
+      if (row && st) { row.hidden = !j.plan; if (j.plan) st.textContent = paidPlanName(j.plan) + ' が適用中です（プレゼントで受け取り済み）'; }
+    } catch {}
+  };
+  const giftSend = document.getElementById('dbgGiftSend');
+  if (giftSend) giftSend.addEventListener('click', async () => {
+    const to = document.getElementById('dbgGiftTo').value.trim();
+    const msg = document.getElementById('dbgGiftMsg');
+    if (!to) { msg.textContent = '相手のボード（ホスト名）を入れてください'; return; }
+    const plan = document.getElementById('dbgGiftPlan').value;
+    giftSend.disabled = true;
+    try {
+      const r = await fetch(PAID_API + '/api/paid/gift', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ to, plan, from: document.getElementById('dbgGiftFrom').value, message: document.getElementById('dbgGiftText').value }) });
+      const j = await r.json();
+      msg.textContent = j.ok ? (to + ' へ ' + paidPlanName(plan) + ' のプレゼントを登録しました。相手がボードを開くと届きます') : '贈れませんでした（' + (j.error || '不明なエラー') + '）';
+    } catch { msg.textContent = '公式サーバーに届きませんでした'; }
+    giftSend.disabled = false;
+  });
   /* アップグレードはダミー。押しても購入画面には行かず、その旨を出すだけ */
   const upgradeMsg = document.getElementById('dbgUpgradeMsg');
   const dummyUpgrade = (btnId, planName) => {
@@ -3285,6 +3332,7 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
   document.getElementById('dbgOpenNotify').addEventListener('click', () => { if (window.WLNotify) WLNotify.open(); });
   /* リリースノートの正本は GitHub の「リリースノート.md」。この配列は取得できないときの予備 */
   const RELEASE_NOTES = [
+    ['2.27.13', '2026-11-28', ['アップグレードで他のボードへプレゼントできるようにした。有料の管理は公式サーバーの台帳（DO）で共通管理し、もらったボードは起動時に特別メッセージと紙吹雪で知らせる。ダミー課金なので実際のお金は動きません']],
     ['2.27.12', '2026-11-28', ['トグルスイッチを細身のスリムデザインに変えた（オンは青、押している間つまみが少し伸びる）']],
     ['2.27.11', '2026-11-28', ['デバッグ兼設定をiOS寄りにした。プルダウンの開いた中身も自作メニュー（すりガラス＋チェックマーク）にし、オン/オフの2択はiOS風スイッチに変えた。スライダーも値の分だけ青く塗るiOS風に']],
     ['2.27.10', '2026-11-28', ['プランカードの枠がズレる問題を直した（バッジのクラス名が別の部品と衝突していた）', 'デバッグ兼設定の中だけ、プルダウン・ボタン・スライダーをオリジナルデザインにした（丸いプルダウンに青い矢印、押すと少し沈むボタン、グラデーションのスライダー）']],
@@ -4431,6 +4479,57 @@ window.addEventListener('DOMContentLoaded', () => {
   syncRanges();
   /* 他のコードがselectの値を直接変えたとき(設定を開いたときの復元など)に、見た目を追いつかせる */
   setInterval(() => { syncs.forEach((f) => f()); syncRanges(); }, 500);
+});
+</script>
+<script>
+/* プレゼントが届いていたら、起動時に特別メッセージ＋紙吹雪で知らせる(受け取りは1回だけ) */
+window.addEventListener('DOMContentLoaded', async () => {
+  if (new URLSearchParams(location.search).has('view')) return; // 閲覧専用リンクでは出さない
+  const API = 'https://workline.zixiang0623.workers.dev';
+  let j;
+  try {
+    const r = await fetch(API + '/api/paid/check?board=' + encodeURIComponent(location.host));
+    j = await r.json();
+  } catch { return; }
+  if (!j || !Array.isArray(j.gifts) || !j.gifts.length) return;
+  const g = j.gifts[0];
+  const planName = g.plan === 'cloud' ? 'Workline Cloud' : 'Workline Pro';
+  const veil = document.createElement('div'); veil.className = 'gift-veil';
+  const card = document.createElement('div'); card.className = 'gift-card';
+  const em = document.createElement('div'); em.className = 'gift-emoji'; em.textContent = '🎁';
+  const t = document.createElement('div'); t.className = 'gift-t'; t.textContent = 'プレゼントが届きました！';
+  const body = document.createElement('div'); body.className = 'gift-body';
+  const from = document.createElement('span'); from.className = 'gift-from'; from.textContent = (g.from || 'だれか') + ' さん';
+  const pl = document.createElement('span'); pl.className = 'gift-from'; pl.textContent = planName;
+  body.append(from, document.createTextNode('から'), document.createElement('br'), pl, document.createTextNode(' のプレゼントです。'));
+  card.append(em, t, body);
+  if (g.message) { const m = document.createElement('div'); m.className = 'gift-msg'; m.textContent = '「' + g.message + '」'; card.appendChild(m); }
+  const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'gift-btn'; btn.textContent = '受け取る';
+  card.appendChild(btn);
+  veil.appendChild(card); document.body.appendChild(veil);
+  const confetti = () => {
+    const colors = ['#0071e3', '#34c759', '#ff9f0a', '#ff453a', '#bf5af2', '#64d2ff'];
+    for (let i = 0; i < 90; i++) {
+      const p = document.createElement('span'); p.className = 'gift-confetti';
+      const sz = 5 + Math.random() * 7;
+      p.style.left = Math.random() * 100 + 'vw';
+      p.style.width = sz + 'px'; p.style.height = sz * (0.4 + Math.random()) + 'px';
+      p.style.background = colors[i % colors.length];
+      document.body.appendChild(p);
+      const anim = p.animate([
+        { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
+        { transform: 'translateY(108vh) translateX(' + (Math.random() - 0.5) * 30 + 'vw) rotate(' + (540 + Math.random() * 720) + 'deg)', opacity: 0.9 }
+      ], { duration: 2600 + Math.random() * 2200, easing: 'cubic-bezier(.2,.6,.4,1)', delay: Math.random() * 500 });
+      anim.onfinish = () => p.remove();
+    }
+  };
+  confetti();
+  btn.addEventListener('click', async () => {
+    btn.disabled = true; btn.textContent = 'ありがとう！';
+    confetti();
+    try { await fetch(API + '/api/paid/claim', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ board: location.host, id: g.id }) }); } catch {}
+    setTimeout(() => veil.remove(), 900);
+  });
 });
 </script>
 <script>

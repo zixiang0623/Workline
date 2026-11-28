@@ -4,7 +4,7 @@ import { DurableObject } from "cloudflare:workers";
 import { SHOT_MAX, findIcon, parseAgent, safeFetch, slugify, sniffShot } from "./agents.js";
 import { publicKey, pushEnabled, sendPush, validEndpoint } from "./push.js";
 
-const VERSION = "2.27.12";
+const VERSION = "2.27.13";
 const ALIASES = { getRequest: "getConfirmation" }; // 旧名(askUser の結果取得)。人間からの「要求」とは別物
 const PROTOCOLS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 
@@ -885,6 +885,38 @@ async function handleShot(request, env, url) {
   });
 }
 
+/* 有料レジストリ(プレゼント): すべてのボードが公式サーバーのこの窓口を参照する。ボードの識別はホスト名。
+   当面は認証なし(贈る側も受け取る側も、いたずらされても実害のないダミー課金)。CORSは全ボードから呼べるよう開ける */
+const PAID_CORS = { "access-control-allow-origin": "*", "access-control-allow-methods": "GET, POST, OPTIONS", "access-control-allow-headers": "content-type" };
+const paidHost = (s) => String(s ?? "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").slice(0, 200);
+async function handlePaid(request, env, url) {
+  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: PAID_CORS });
+  const bd = board(env);
+  const action = url.pathname.replace(/\/+$/, "").split("/").pop();
+  if (request.method === "GET" && action === "check") {
+    const host = paidHost(url.searchParams.get("board"));
+    if (!host) return json({ error: "board required" }, 400, PAID_CORS);
+    return json(await bd.paidCheck(host), 200, PAID_CORS);
+  }
+  if (request.method === "POST") {
+    let b;
+    try { b = await request.json(); } catch { return json({ error: "bad request" }, 400, PAID_CORS); }
+    if (action === "gift") {
+      const to = paidHost(b.to), plan = String(b.plan ?? "");
+      if (!to) return json({ error: "to required" }, 400, PAID_CORS);
+      if (plan !== "pro" && plan !== "cloud") return json({ error: "bad plan" }, 400, PAID_CORS);
+      const from = String(b.from ?? "").trim().slice(0, 40), message = String(b.message ?? "").trim().slice(0, 200);
+      return json(await bd.paidGift({ to, plan, from, message }), 200, PAID_CORS);
+    }
+    if (action === "claim") {
+      const host = paidHost(b.board), id = String(b.id ?? "").slice(0, 64);
+      if (!host || !id) return json({ error: "board and id required" }, 400, PAID_CORS);
+      return json(await bd.paidClaim({ host, id }), 200, PAID_CORS);
+    }
+  }
+  return json({ error: "not found" }, 404, PAID_CORS);
+}
+
 async function handleSnapshot(request, env, url) {
   if (!canRead(request, url, env)) return json({ error: "unauthorized" }, 401);
   return json(await board(env).snapshot());
@@ -910,6 +942,7 @@ export default {
       if (path === "/api/purge") return await handlePurge(request, env, url);
       if (path === "/api/push") return await handlePush(request, env, url);
       if (path === "/api/theme") return await handleTheme(request, env, url);
+      if (path.startsWith("/api/paid/")) return await handlePaid(request, env, url);
       if (path === "/api/debug") return await handleDebug(request, env, url);
       if (path === "/api/health") return json({ ok: true, name: "workline", version: VERSION });
     } catch (e) {
@@ -1134,6 +1167,31 @@ export class Board extends DurableObject {
     const themes = this.themeList();
     if (!had) this.broadcast({ t: "theme", themes }); // 開いている他の端末にも、獲得したことを知らせる
     return { theme: id, already: had, themes };
+  }
+
+  // 有料レジストリ: プレゼントの記録。すべてのボードが公式サーバーのDOを参照して有料ユーザーを管理する(当面はこれで運用)
+  initPaidSchema() {
+    this.sql.exec("CREATE TABLE IF NOT EXISTS paid_gifts (id TEXT PRIMARY KEY, to_host TEXT NOT NULL, plan TEXT NOT NULL, from_name TEXT NOT NULL DEFAULT '', message TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL, claimed_at INTEGER)");
+  }
+  paidGift({ to, plan, from, message }) {
+    this.initPaidSchema();
+    const id = "gift_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    this.sql.exec("INSERT INTO paid_gifts (id, to_host, plan, from_name, message, created_at) VALUES (?, ?, ?, ?, ?, ?)", id, to, plan, from, message, Date.now());
+    return { ok: true, id };
+  }
+  paidCheck(host) {
+    this.initPaidSchema();
+    const gifts = this.sql.exec("SELECT id, plan, from_name, message, created_at FROM paid_gifts WHERE to_host = ? AND claimed_at IS NULL ORDER BY created_at", host).toArray()
+      .map((r) => ({ id: r.id, plan: r.plan, from: r.from_name, message: r.message, at: r.created_at }));
+    const claimed = this.sql.exec("SELECT plan FROM paid_gifts WHERE to_host = ? AND claimed_at IS NOT NULL ORDER BY claimed_at DESC LIMIT 1", host).toArray();
+    return { plan: claimed.length ? claimed[0].plan : null, gifts };
+  }
+  paidClaim({ host, id }) {
+    this.initPaidSchema();
+    const rows = this.sql.exec("SELECT plan FROM paid_gifts WHERE id = ? AND to_host = ? AND claimed_at IS NULL", id, host).toArray();
+    if (!rows.length) return { ok: false };
+    this.sql.exec("UPDATE paid_gifts SET claimed_at = ? WHERE id = ?", Date.now(), id);
+    return { ok: true, plan: rows[0].plan };
   }
 
   // バッジもテーマと同じく「持ち物」なので、全リセットでも残す
