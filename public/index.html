@@ -1460,7 +1460,7 @@ dialog.lb::backdrop { background: var(--color-scrim); }
           <div class="dbg-row"><span class="dbg-k">プラン</span><select id="dbgGiftPlan" aria-label="贈るプラン"><option value="pro">Workline Pro（買い切り）</option><option value="cloud">Workline Cloud（月額）</option></select></div>
           <div class="dbg-row"><span class="dbg-k">あなたの名前</span><input type="text" id="dbgGiftFrom" placeholder="zhou" maxlength="40"></div>
           <div class="dbg-row"><span class="dbg-k">ひとこと</span><input type="text" id="dbgGiftText" placeholder="いつもありがとう" maxlength="200"></div>
-          <div class="dbg-foot"><span class="dbg-note" id="dbgGiftMsg">有料の管理は公式サーバーの台帳で共通管理。贈るには相手の受け取りコードが必要です（コードは相手に直接聞いてください）。大文字小文字・ハイフンの有無は気にしません。文章で貼り付けてもコードを読み取ります。相手がボードを開いたときに届きます</span><button type="button" class="dbg-linkbtn" id="dbgGiftSend">プレゼントを贈る</button></div>
+          <div class="dbg-foot"><span class="dbg-note" id="dbgGiftMsg"></span><button type="button" class="dbg-linkbtn" id="dbgGiftSend">プレゼントを贈る</button></div>
         </div>
       </div>
       <div class="dbg-pane" data-pane="help" hidden>
@@ -3353,6 +3353,7 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
   document.getElementById('dbgOpenNotify').addEventListener('click', () => { if (window.WLNotify) WLNotify.open(); });
   /* リリースノートの正本は GitHub の「リリースノート.md」。この配列は取得できないときの予備 */
   const RELEASE_NOTES = [
+    ['2.27.17', '2026-11-28', ['プレゼント欄の説明文を削除']],
     ['2.27.16', '2026-11-28', ['受け取りコードの表記ゆれを吸収。大文字小文字・ハイフンや空白の有無が違っても一致し、文章に混ざったコードも読み取ります']],
     ['2.27.15', '2026-11-28', ['プレゼントに受け取りコード制を導入。コードを知らない相手や無関係なボードには贈れません', 'プレゼントのお知らせを「Worklineへようこそ」ダイアログで出すようにした', '自分の受け取りコードはアップグレード画面で確認できます']],
     ['2.27.14', '2026-11-28', ['プレゼントの絵文字をLucideアイコンに置き換えた', 'デバッグ兼設定のレイアウト崩れを直した。ラベルの幅をそろえて入力欄の開始位置が全行で一致するようにし、見出しとフッターのスタイル未定義を直した', 'プレゼントのダイアログをLiquid Glass（すりガラス）にした', '情報・Workline情報の「画像」が undefined件 と出る問題を直した']],
