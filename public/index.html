@@ -336,6 +336,8 @@ html.no-anim *, html.no-anim *::before, html.no-anim *::after { transition-durat
 .share-meta span { font-size: 11px; color: #86868b; }
 .share-st { flex: none; font-size: 11px; font-weight: 700; color: #248a3d; }
 .share-st.off { color: #86868b; }
+.dbg-price { font-weight: 700; color: #1d1d1f; white-space: nowrap; }
+.dbg-beta-badge { flex: none; font-size: 10px; font-weight: 700; color: #fff; background: #ff9500; border-radius: 4px; padding: 1px 5px; }
 button.dbg-act { width: 100%; background: none; border: none; border-top: 1px solid rgb(0 0 0 / .05); font: inherit; color: #1d1d1f; cursor: pointer; text-align: left; justify-content: space-between; }
 button.dbg-act:hover { background: rgb(0 0 0 / .03); }
 button.dbg-act:disabled { opacity: .55; cursor: default; }
@@ -1272,6 +1274,34 @@ dialog.lb::backdrop { background: var(--color-scrim); }
           <button class="dbg-row dbg-act" id="dbgDoHealth" type="button"><span>DOの健康診断をする</span><span class="dbg-chev">›</span></button>
           <div id="dbgDoOut"></div>
           <div class="dbg-note" style="padding:2px 10px 8px">サーバー側の保存物（Durable Object）の件数と容量を数えます。読み取りだけです</div>
+        </div>
+      </div>
+      <div class="dbg-pane" data-pane="beta" hidden>
+        <div class="dbg-pane-t">ベータ</div>
+        <div class="dbg-card">
+          <div class="dbg-row"><span class="dbg-k">ベータモード</span><select id="dbgBetaSel" aria-label="ベータモード"><option value="0">オフ</option><option value="1">オン</option></select><span class="dbg-beta-badge" id="dbgBetaBadge" hidden>BETA</span></div>
+          <div class="dbg-row"><span class="dbg-note">オンにすると、試験中の項目がサイドバーに現れます。いまは「アップグレード」カテゴリが追加されます。この端末にだけ保存されます</span></div>
+          <div class="dbg-row"><span class="dbg-note">ベータの項目は見た目や動作が変わることがあります。データが壊れるような変更は入れません</span></div>
+        </div>
+      </div>
+      <div class="dbg-pane" data-pane="upgrade" hidden>
+        <div class="dbg-pane-t">アップグレード</div>
+        <div class="dbg-card">
+          <div class="dbg-row"><span class="dbg-k">現在のプラン</span><span class="dbg-v">無料版</span><span class="dbg-beta-badge">BETA</span></div>
+          <div class="dbg-row"><span class="dbg-note">これはベータモード用のダミー表示です。実際の課金はなく、ボタンを押しても何も購入されません</span></div>
+        </div>
+        <div class="dbg-card" style="margin-top:10px">
+          <div class="dbg-row"><span class="dbg-k">Workline Pro</span><span class="dbg-price">¥9,800 買い切り</span></div>
+          <div class="dbg-row"><span class="dbg-note">タスクの保持が無制限になる／全文検索と統計ダッシュボード／停滞警告のルールを自分で決められる／レポートのPDF・Markdown書き出し／テーマ全部入りと自作テーマ</span></div>
+          <button class="dbg-row dbg-act" id="dbgUpgradePro" type="button"><span>Proにアップグレード（ダミー）</span><span class="dbg-chev">›</span></button>
+        </div>
+        <div class="dbg-card" style="margin-top:10px">
+          <div class="dbg-row"><span class="dbg-k">Workline Cloud</span><span class="dbg-price">¥680 / 月</span></div>
+          <div class="dbg-row"><span class="dbg-note">公式ホスティングと自動バックアップ／スマホへのプッシュ通知とその場で承認／1日の作業をAIが要約／チームの権限分けと監査ログ／GitHub連携</span></div>
+          <button class="dbg-row dbg-act" id="dbgUpgradeCloud" type="button"><span>Cloudを始める（ダミー）</span><span class="dbg-chev">›</span></button>
+        </div>
+        <div class="dbg-card" style="margin-top:10px">
+          <div class="dbg-row"><span class="dbg-note" id="dbgUpgradeMsg">記録・司令・伝言・通知などの基本機能は、これからも無料のままです。課金は「もっと快適にしたい人」向けの想定です</span></div>
         </div>
       </div>
       <div class="dbg-pane" data-pane="help" hidden>
@@ -2699,6 +2729,7 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     ['伝言', () => `${S.notes.size}件`],
     ['確認待ち', () => `${S.approvals.size}件`],
     ['テーマ', () => `${(THEMES[S.theme] || { name: '標準' }).name}（解放済み${S.themes.length}）`],
+    ['ベータモード', () => betaOn() ? 'オン' : 'オフ'],
     ['バッジ', () => `解放済み${S.badges.length}`],
     ['屈折の強さ', () => `${LG_SCALE}（固定）`],
     ['透明度', () => `${lgTransVal}（デフォルト 60）`],
@@ -2773,6 +2804,7 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     try { const p = JSON.parse(store.get('dbgwin', '')); if (p && p.w >= 260) { win.style.left = p.x + 'px'; win.style.top = p.y + 'px'; win.style.right = 'auto'; win.style.width = p.w + 'px'; win.style.height = p.h + 'px'; } } catch {}
     renderDbg(); requestAnimationFrame(() => { clampDbg(); shape(); lgApply(clip, win); }); refresh = setInterval(renderDbg, 1000);
     try { document.getElementById('dbgSoundSel').value = S.sound ? '1' : '0'; document.getElementById('dbgAnimSel').value = store.get('noanim', '0'); document.getElementById('dbgFontSel').value = store.get('fsize', '16'); } catch {}
+    try { document.getElementById('dbgBetaSel').value = betaOn() ? '1' : '0'; document.getElementById('dbgBetaBadge').hidden = !betaOn(); } catch {}
     try {
       document.getElementById('dbgSoundSel2').value = S.sound ? 'on' : 'off';
       document.getElementById('dbgSfxSel').value = S.sfxBase;
@@ -2828,7 +2860,9 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
   tintEl.value = lgTransVal; tintVal.textContent = lgTransVal;
   tintEl.addEventListener('input', () => { lgSetTrans(Number(tintEl.value)); tintVal.textContent = tintEl.value; });
   document.getElementById('dbgTintReset').addEventListener('click', () => { lgSetTrans(60); tintEl.value = 60; tintVal.textContent = '60'; });
-  /* カテゴリはこの定義が正本。増やすときはここに1行足して、対応する .dbg-pane をマークアップに置くだけ */
+  /* ベータモード(この端末にだけ保存)。オンのときだけ、ベータ専用カテゴリがサイドバーに現れる */
+  const betaOn = () => { try { return store.get('beta', '0') === '1'; } catch { return false; } };
+  /* カテゴリはこの定義が正本。増やすときはここに1行足して、対応する .dbg-pane をマークアップに置くだけ。beta: true のカテゴリはベータモードのときだけ出す */
   const DBG_CATS = [
     { id: 'info', name: '情報', icon: 'i-clipboard-list', color: '#8e8e93' },
     { id: 'conn', name: '接続', icon: 'i-wifi', color: '#34c759' },
@@ -2837,18 +2871,55 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     { id: 'notify', name: '通知', icon: 'i-bell', color: '#ff3b30' },
     { id: 'actions', name: '操作', icon: 'i-wrench', color: '#ff9500' },
     { id: 'share', name: '共有', icon: 'i-globe', color: '#5856d6' },
+    { id: 'beta', name: 'ベータ', icon: 'i-flask-conical', color: '#ff9500' },
+    { id: 'upgrade', name: 'アップグレード', icon: 'i-circle-arrow-up', color: '#ffcc00', beta: true },
     { id: 'help', name: 'ヘルプ', icon: 'i-circle-help', color: '#af52de' },
     { id: 'notes', name: 'リリースノート', icon: 'i-book-open', color: '#64d2ff' },
   ];
+  const visibleCats = () => DBG_CATS.filter((c) => !c.beta || betaOn());
   const navEl = document.getElementById('dbgNav');
   const selectCat = (id) => {
+    if (!visibleCats().some((c) => c.id === id)) id = 'beta'; // ベータ専用カテゴリをベータオフで開こうとしたら「ベータ」へ
     navEl.querySelectorAll('.dbg-nav-it').forEach((b) => b.classList.toggle('on', b.dataset.cat === id));
     win.querySelectorAll('.dbg-pane').forEach((p) => { p.hidden = p.dataset.pane !== id; });
     try { store.set('dbgcat', id); } catch {}
     if (id === 'share') setTimeout(() => { try { loadShare(); } catch {} }, 0); // loadShare はブロック末尾で定義されるため遅延呼び出し
   };
-  navEl.innerHTML = DBG_CATS.map((c) => `<button class="dbg-nav-it" type="button" data-cat="${c.id}"><span class="dbg-nav-ic" style="background:${c.color}"><svg class="ic" aria-hidden="true"><use href="#${c.icon}"/></svg></span>${c.name}</button>`).join('');
-  navEl.querySelectorAll('.dbg-nav-it').forEach((b) => b.addEventListener('click', () => selectCat(b.dataset.cat)));
+  const renderDbgNav = () => {
+    navEl.innerHTML = visibleCats().map((c) => `<button class="dbg-nav-it" type="button" data-cat="${c.id}"><span class="dbg-nav-ic" style="background:${c.color}"><svg class="ic" aria-hidden="true"><use href="#${c.icon}"/></svg></span>${c.name}</button>`).join('');
+    navEl.querySelectorAll('.dbg-nav-it').forEach((b) => b.addEventListener('click', () => selectCat(b.dataset.cat)));
+    const curPane = [...win.querySelectorAll('.dbg-pane')].find((p) => !p.hidden);
+    if (curPane) navEl.querySelectorAll('.dbg-nav-it').forEach((b) => b.classList.toggle('on', b.dataset.cat === curPane.dataset.pane));
+  };
+  renderDbgNav();
+  /* ベータのオン・オフ。オフにした瞬間にアップグレードを見ていたら「ベータ」へ戻す */
+  const betaSel = document.getElementById('dbgBetaSel'), betaBadge = document.getElementById('dbgBetaBadge');
+  const applyBeta = () => {
+    const on = betaOn();
+    if (betaSel) betaSel.value = on ? '1' : '0';
+    if (betaBadge) betaBadge.hidden = !on;
+    renderDbgNav();
+    const curPane = [...win.querySelectorAll('.dbg-pane')].find((p) => !p.hidden);
+    if (curPane && !visibleCats().some((c) => c.id === curPane.dataset.pane)) selectCat('beta');
+    if (dbgQuery) applyDbgSearch();
+  };
+  betaSel.addEventListener('change', () => { try { store.set('beta', betaSel.value); } catch {} applyBeta(); });
+  /* アップグレードはダミー。押しても購入画面には行かず、その旨を出すだけ */
+  const upgradeMsg = document.getElementById('dbgUpgradeMsg');
+  const dummyUpgrade = (btnId, planName) => {
+    const btn = document.getElementById(btnId); if (!btn) return;
+    btn.addEventListener('click', () => {
+      const s = btn.querySelector('span'), old = s.textContent;
+      s.textContent = 'ダミーです（購入されません）';
+      if (upgradeMsg) upgradeMsg.textContent = `${planName} はベータモード用のダミーです。実際の販売はしていません`;
+      setTimeout(() => { s.textContent = old; }, 1800);
+    });
+  };
+  dummyUpgrade('dbgUpgradePro', 'Workline Pro');
+  dummyUpgrade('dbgUpgradeCloud', 'Workline Cloud');
+  /* 初期表示は保存済みのベータ状態に合わせる(applyBeta は検索まわり定義後にしか呼べないため、ここでは値だけ同期) */
+  if (betaSel) betaSel.value = betaOn() ? '1' : '0';
+  if (betaBadge) betaBadge.hidden = !betaOn();
   document.getElementById('dbgSideHero').addEventListener('click', () => selectCat('info'));
   let dbgQuery = '';
   const applyDbgSearch = () => {
@@ -3053,6 +3124,7 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
   document.getElementById('dbgOpenNotify').addEventListener('click', () => { if (window.WLNotify) WLNotify.open(); });
   /* リリースノートの正本は GitHub の「リリースノート.md」。この配列は取得できないときの予備 */
   const RELEASE_NOTES = [
+    ['2.27.7', '2026-11-28', ['デバッグ兼設定に「ベータ」カテゴリを追加した。ベータモードをオンにすると「アップグレード」カテゴリが現れる（中身はダミーで、実際の課金はない）']],
     ['2.27.6', '2026-11-27', ['デバッグ兼設定の「接続」に、DO（Durable Object）の健康診断を追加した。タスクや司令の件数、画像やデータベースの容量、放置された実行中タスクの数などが見える']],
     ['2.27.5', '2026-11-27', ['リリースノートを、GitHub の「リリースノート.md」から読み込むようにした（取得できないときは、内蔵の予備を表示する）']],
     ['2.27.4', '2026-11-27', ['司令・要求の未読が、タブを見ているだけで自動で消えてしまう問題を直した。未読は「すべて既読にする」か項目を開くまで残る']],
