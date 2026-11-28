@@ -4,7 +4,7 @@ import { DurableObject } from "cloudflare:workers";
 import { SHOT_MAX, findIcon, parseAgent, safeFetch, slugify, sniffShot } from "./agents.js";
 import { publicKey, pushEnabled, sendPush, validEndpoint } from "./push.js";
 
-const VERSION = "2.27.15";
+const VERSION = "2.27.16";
 const ALIASES = { getRequest: "getConfirmation" }; // 旧名(askUser の結果取得)。人間からの「要求」とは別物
 const PROTOCOLS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 
@@ -889,6 +889,8 @@ async function handleShot(request, env, url) {
    贈るには相手の「受け取りコード」が必要(コードは相手が自分のボードで発行して教えた人だけが知る)。CORSは全ボードから呼べるよう開ける */
 const PAID_CORS = { "access-control-allow-origin": "*", "access-control-allow-methods": "GET, POST, OPTIONS", "access-control-allow-headers": "content-type" };
 const paidHost = (s) => String(s ?? "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").slice(0, 200);
+// 受け取りコードの表記ゆれ吸収: 大文字にそろえ、ハイフンや空白などの英数字以外を全部落として比べる
+const paidNormCode = (s) => String(s ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 32);
 async function handlePaid(request, env, url) {
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: PAID_CORS });
   const bd = board(env);
@@ -902,7 +904,7 @@ async function handlePaid(request, env, url) {
     let b;
     try { b = await request.json(); } catch { return json({ error: "bad request" }, 400, PAID_CORS); }
     if (action === "register") {
-      const host = paidHost(b.board), code = String(b.code ?? "").trim().toUpperCase().slice(0, 32);
+      const host = paidHost(b.board), code = paidNormCode(b.code);
       if (!host || code.length < 6) return json({ error: "board and code required" }, 400, PAID_CORS);
       // 登録はそのボード自身のページからだけ(Originのホストがボードと一致すること)
       const origin = request.headers.get("origin") || "";
@@ -916,7 +918,7 @@ async function handlePaid(request, env, url) {
       if (!to) return json({ error: "to required" }, 400, PAID_CORS);
       if (plan !== "pro" && plan !== "cloud") return json({ error: "bad plan" }, 400, PAID_CORS);
       const from = String(b.from ?? "").trim().slice(0, 40), message = String(b.message ?? "").trim().slice(0, 200);
-      const code = String(b.code ?? "").trim().toUpperCase().slice(0, 32);
+      const code = paidNormCode(b.code);
       const r = await bd.paidGift({ to, plan, from, message, code });
       return json(r, r.ok ? 200 : 403, PAID_CORS);
     }
@@ -1190,14 +1192,14 @@ export class Board extends DurableObject {
   paidRegister({ host, code }) {
     this.initPaidSchema();
     const rows = this.sql.exec("SELECT code FROM paid_boards WHERE host = ?", host).toArray();
-    if (rows.length) return rows[0].code === code ? { ok: true, already: true } : { ok: false, error: "このボードは登録済みです（コードが合いません）" };
+    if (rows.length) return paidNormCode(rows[0].code) === code ? { ok: true, already: true } : { ok: false, error: "このボードは登録済みです（コードが合いません）" };
     this.sql.exec("INSERT INTO paid_boards (host, code, created_at) VALUES (?, ?, ?)", host, code, Date.now());
     return { ok: true };
   }
   paidGift({ to, plan, from, message, code }) {
     this.initPaidSchema();
     const reg = this.sql.exec("SELECT code FROM paid_boards WHERE host = ?", to).toArray();
-    if (!reg.length || reg[0].code !== code) return { ok: false, error: "受け取りコードが違うか、相手のボードが未登録です" };
+    if (!reg.length || paidNormCode(reg[0].code) !== code) return { ok: false, error: "受け取りコードが違うか、相手のボードが未登録です" };
     const pending = this.sql.exec("SELECT COUNT(*) AS n FROM paid_gifts WHERE to_host = ? AND claimed_at IS NULL", to).one().n;
     if (pending >= 5) return { ok: false, error: "相手の未受取プレゼントがいっぱいです" };
     const id = "gift_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
