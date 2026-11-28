@@ -338,6 +338,10 @@ html.no-anim *, html.no-anim *::before, html.no-anim *::after { transition-durat
 .share-st.off { color: #86868b; }
 .dbg-price { font-weight: 700; color: #1d1d1f; white-space: nowrap; }
 .dbg-beta-badge { flex: none; font-size: 10px; font-weight: 700; color: #fff; background: #ff9500; border-radius: 4px; padding: 1px 5px; }
+.dbg-about-hero { text-align: center; padding: 10px 0 14px; }
+.dbg-about-icon { width: 76px; height: 76px; border-radius: 17px; box-shadow: 0 4px 14px rgb(0 0 0 / .18); }
+.dbg-about-name { font-size: 23px; font-weight: 700; color: #1d1d1f; margin-top: 8px; }
+.dbg-about-ver { font-size: 12px; color: #86868b; margin-top: 2px; }
 button.dbg-act { width: 100%; background: none; border: none; border-top: 1px solid rgb(0 0 0 / .05); font: inherit; color: #1d1d1f; cursor: pointer; text-align: left; justify-content: space-between; }
 button.dbg-act:hover { background: rgb(0 0 0 / .03); }
 button.dbg-act:disabled { opacity: .55; cursor: default; }
@@ -1190,6 +1194,24 @@ dialog.lb::backdrop { background: var(--color-scrim); }
       <nav class="dbg-nav" id="dbgNav" aria-label="デバッグのカテゴリ"></nav>
     </aside>
     <div class="dbg-main">
+      <div class="dbg-pane" data-pane="about" hidden>
+        <div class="dbg-about-hero">
+          <img class="dbg-about-icon" src="/favicon.svg" alt="">
+          <div class="dbg-about-name">Workline</div>
+          <div class="dbg-about-ver" id="dbgAboutVer">—</div>
+        </div>
+        <div class="dbg-card" id="dbgAbout"></div>
+        <div class="dbg-card" style="margin-top:10px">
+          <div class="dbg-row"><span class="dbg-k">ストレージ</span></div>
+          <div id="dbgAboutStorage"></div>
+          <button class="dbg-row dbg-act" id="dbgAboutHealth" type="button"><span>サーバーの状態を「接続」で見る</span><span class="dbg-chev">›</span></button>
+        </div>
+        <div class="dbg-card" style="margin-top:10px">
+          <div class="dbg-row"><span class="dbg-note">AIエージェントたちの作業を、人間が眺めるためのボードです。作業・司令・伝言・要求がすべて記録されます。</span></div>
+          <div class="dbg-row"><span class="dbg-k">ソースコード</span><a class="dbg-v" href="https://github.com/zixiang0623/Workline" target="_blank" rel="noopener">github.com/zixiang0623/Workline</a></div>
+          <button class="dbg-row dbg-act" id="dbgAboutNotes" type="button"><span>リリースノートを開く</span><span class="dbg-chev">›</span></button>
+        </div>
+      </div>
       <div class="dbg-pane" data-pane="info">
         <div class="dbg-pane-t">情報</div>
         <div class="dbg-card" id="dbgInfo"></div>
@@ -2778,7 +2800,29 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     ['完了の通知', () => nPref('done')],
     ['失敗の通知', () => nPref('failed')],
   ];
+  /* 「このMacについて」風のWorkline情報ペイン(サイドバー上部のWorklineを押すと開く)。行の作りは情報ペインと同じ */
+  const aboutEl = document.getElementById('dbgAbout'), aboutStorageEl = document.getElementById('dbgAboutStorage'), aboutVerEl = document.getElementById('dbgAboutVer');
+  const DBG_ABOUT = [
+    ['ボード名', () => esc(location.host)],
+    ['バージョン', () => esc(document.getElementById('railVer').textContent || '—')],
+    ['モード', () => `${S.view ? '閲覧専用リンク' : '通常'}${betaOn() ? '（ベータモード）' : ''}`],
+    ['サーバー', () => dbgHealth],
+    ['エージェント', () => { const a = [...S.agents.values()].sort((x, y) => y.lastSeen - x.lastSeen); return a.length ? `${a.length}件（${a.slice(0, 4).map((x) => esc(x.name)).join('、')}${a.length > 4 ? ' ほか' : ''}）` : '—'; }],
+    ['タスク', () => { const t = [...S.tasks.values()]; return `${t.length}件（実行中${t.filter((x) => x.status === 'running').length}・完了${t.filter((x) => x.status === 'done').length}）`; }],
+    ['司令・要求', () => `${S.dirs.size}件`],
+    ['伝言', () => `${S.notes.size}件`],
+    ['テーマ', () => `${(THEMES[S.theme] || { name: '標準' }).name}（解放済み${S.themes.length}）`],
+    ['バッジ', () => `解放済み${S.badges.length}`],
+  ];
+  const DBG_ABOUT_STORAGE = [
+    ['ローカル保存量', () => { let n = 0; try { for (const k of Object.keys(localStorage)) n += (localStorage.getItem(k) || '').length + k.length; } catch {} return `約${(n / 1024).toFixed(1)} KB（この端末）`; }],
+    ['画像', () => `${S.shots.length}件`],
+    ['サーバー側の容量', () => '「接続」のDO健康診断で確認できます'],
+  ];
   function renderDbg() {
+    if (aboutEl) aboutEl.innerHTML = DBG_ABOUT.map(([k, f]) => row(k, f())).join('');
+    if (aboutStorageEl) aboutStorageEl.innerHTML = DBG_ABOUT_STORAGE.map(([k, f]) => row(k, f())).join('');
+    if (aboutVerEl) aboutVerEl.textContent = `バージョン ${document.getElementById('railVer').textContent || '—'}`;
     bodyEl.innerHTML = DBG_ROWS.map(([k, f]) => row(k, f())).join('');
     if (connEl) connEl.innerHTML = DBG_CONN.map(([k, f]) => row(k, f())).join('');
     if (notifyEl) notifyEl.innerHTML = DBG_NOTIFY.map(([k, f]) => row(k, f())).join('');
@@ -2879,7 +2923,7 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
   const visibleCats = () => DBG_CATS.filter((c) => !c.beta || betaOn());
   const navEl = document.getElementById('dbgNav');
   const selectCat = (id) => {
-    if (!visibleCats().some((c) => c.id === id)) id = 'beta'; // ベータ専用カテゴリをベータオフで開こうとしたら「ベータ」へ
+    if (id !== 'about' && !visibleCats().some((c) => c.id === id)) id = 'beta'; // ベータ専用カテゴリをベータオフで開こうとしたら「ベータ」へ(about はサイドバーに無い常時有効ペイン)
     navEl.querySelectorAll('.dbg-nav-it').forEach((b) => b.classList.toggle('on', b.dataset.cat === id));
     win.querySelectorAll('.dbg-pane').forEach((p) => { p.hidden = p.dataset.pane !== id; });
     try { store.set('dbgcat', id); } catch {}
@@ -2900,7 +2944,7 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
     if (betaBadge) betaBadge.hidden = !on;
     renderDbgNav();
     const curPane = [...win.querySelectorAll('.dbg-pane')].find((p) => !p.hidden);
-    if (curPane && !visibleCats().some((c) => c.id === curPane.dataset.pane)) selectCat('beta');
+    if (curPane && curPane.dataset.pane !== 'about' && !visibleCats().some((c) => c.id === curPane.dataset.pane)) selectCat('beta');
     if (dbgQuery) applyDbgSearch();
   };
   betaSel.addEventListener('change', () => { try { store.set('beta', betaSel.value); } catch {} applyBeta(); });
@@ -2920,7 +2964,9 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
   /* 初期表示は保存済みのベータ状態に合わせる(applyBeta は検索まわり定義後にしか呼べないため、ここでは値だけ同期) */
   if (betaSel) betaSel.value = betaOn() ? '1' : '0';
   if (betaBadge) betaBadge.hidden = !betaOn();
-  document.getElementById('dbgSideHero').addEventListener('click', () => selectCat('info'));
+  document.getElementById('dbgSideHero').addEventListener('click', () => selectCat('about'));
+  document.getElementById('dbgAboutHealth').addEventListener('click', () => selectCat('conn'));
+  document.getElementById('dbgAboutNotes').addEventListener('click', () => selectCat('notes'));
   let dbgQuery = '';
   const applyDbgSearch = () => {
     const q = dbgQuery;
@@ -3124,6 +3170,7 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
   document.getElementById('dbgOpenNotify').addEventListener('click', () => { if (window.WLNotify) WLNotify.open(); });
   /* リリースノートの正本は GitHub の「リリースノート.md」。この配列は取得できないときの予備 */
   const RELEASE_NOTES = [
+    ['2.27.8', '2026-11-28', ['サイドバー上部のWorklineを押すと、「このMacについて」風のWorkline情報が開くようにした。ボード名・バージョン・モード・エージェントやタスクの数・ストレージなどがまとめて見える']],
     ['2.27.7', '2026-11-28', ['デバッグ兼設定に「ベータ」カテゴリを追加した。ベータモードをオンにすると「アップグレード」カテゴリが現れる（中身はダミーで、実際の課金はない）']],
     ['2.27.6', '2026-11-27', ['デバッグ兼設定の「接続」に、DO（Durable Object）の健康診断を追加した。タスクや司令の件数、画像やデータベースの容量、放置された実行中タスクの数などが見える']],
     ['2.27.5', '2026-11-27', ['リリースノートを、GitHub の「リリースノート.md」から読み込むようにした（取得できないときは、内蔵の予備を表示する）']],
