@@ -404,20 +404,12 @@ html.no-anim *, html.no-anim *::before, html.no-anim *::after { transition-durat
 .ios-menu-it.on { font-weight: 700; }
 .ios-menu-it .ios-check { width: 14px; flex: none; color: #0071e3; font-weight: 700; text-align: center; }
 /* プレゼントが届いたときのお祝い(起動時) */
-.gift-veil { position: fixed; inset: 0; z-index: 800; background: rgb(10 12 20 / .32); -webkit-backdrop-filter: blur(10px) saturate(160%); backdrop-filter: blur(10px) saturate(160%); display: flex; align-items: center; justify-content: center; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Hiragino Sans", sans-serif; }
-.gift-card { position: relative; overflow: hidden; background: linear-gradient(135deg, rgb(255 255 255 / .58), rgb(255 255 255 / .34) 55%, rgb(255 255 255 / .42)); -webkit-backdrop-filter: blur(26px) saturate(190%); backdrop-filter: blur(26px) saturate(190%); border: 1px solid rgb(255 255 255 / .65); border-radius: 26px; box-shadow: inset 0 1px 0 rgb(255 255 255 / .85), inset 0 -1px 0 rgb(255 255 255 / .25), inset 1px 0 0 rgb(255 255 255 / .35), 0 24px 60px rgb(0 0 0 / .3); padding: 28px 30px 22px; max-width: min(400px, calc(100vw - 40px)); text-align: center; color: #1d1d1f; animation: gift-pop .55s cubic-bezier(.3, 1.5, .4, 1); }
-.gift-card::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(130% 90% at 18% -10%, rgb(255 255 255 / .55), transparent 55%); }
-@keyframes gift-pop { from { transform: scale(.7) translateY(30px); opacity: 0; } }
+/* プレゼントが届いたときのお祝い(「ようこそ」ダイアログの中身として出す) */
+.gift-center { text-align: center; align-items: center; }
 .gift-emoji { line-height: 1.1; display: inline-block; animation: gift-bounce 1.2s ease-in-out infinite; }
-.gift-emoji .ic { width: 64px; height: 64px; color: #ff9500; stroke-width: 1.6; }
-@keyframes gift-bounce { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-10px) rotate(4deg); } }
-.gift-t { font-size: 19px; font-weight: 800; margin: 8px 0 6px; }
-.gift-body { font-size: 13.5px; line-height: 1.7; color: #3a3a3c; }
-.gift-from { font-weight: 700; color: #1d1d1f; }
-.gift-msg { margin-top: 8px; padding: 8px 12px; background: rgb(255 255 255 / .45); border: 1px solid rgb(255 255 255 / .6); box-shadow: inset 0 1px 0 rgb(255 255 255 / .7); border-radius: 12px; font-size: 13px; }
-.gift-btn { position: relative; margin-top: 16px; border: 1px solid rgb(255 255 255 / .35); border-radius: 999px; background: linear-gradient(180deg, rgb(0 132 255 / .92), rgb(0 100 225 / .92)); box-shadow: inset 0 1px 0 rgb(255 255 255 / .45), 0 6px 18px rgb(0 113 227 / .35); color: #fff; font: inherit; font-size: 14px; font-weight: 700; padding: 10px 26px; cursor: pointer; }
-.gift-btn:hover { filter: brightness(1.08); }
-.gift-confetti { position: fixed; top: -4vh; z-index: 810; pointer-events: none; border-radius: 2px; }
+.gift-emoji .ic { width: 56px; height: 56px; color: #ff9500; stroke-width: 1.6; }
+@keyframes gift-bounce { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-8px) rotate(4deg); } }
+.gift-msg { padding: 10px 14px; background: var(--color-paper-2); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-ctl); font-size: 13px; }
 /* 全体のiOS寄せ(デバッグ兼設定の中だけ): カードの角を大きく、行にゆとりを */
 #dbgWin .dbg-card { border-radius: 14px; }
 #dbgWin .dbg-row { min-height: 38px; }
@@ -1462,11 +1454,13 @@ dialog.lb::backdrop { background: var(--color-scrim); }
         </div>
         <div class="dbg-sec"><svg class="ic" aria-hidden="true"><use href="#i-gift"/></svg> プレゼントする</div>
         <div class="dbg-card">
+          <div class="dbg-row"><span class="dbg-k">あなたの受け取りコード</span><span class="dbg-note" id="dbgGiftMyCode">発行中…</span></div>
           <div class="dbg-row"><span class="dbg-k">相手のボード</span><input type="text" id="dbgGiftTo" placeholder="workline.xxx.workers.dev" maxlength="200"></div>
+          <div class="dbg-row"><span class="dbg-k">相手の受け取りコード</span><input type="text" id="dbgGiftCode" placeholder="XXXX-XXXX" maxlength="32"></div>
           <div class="dbg-row"><span class="dbg-k">プラン</span><select id="dbgGiftPlan" aria-label="贈るプラン"><option value="pro">Workline Pro（買い切り）</option><option value="cloud">Workline Cloud（月額）</option></select></div>
           <div class="dbg-row"><span class="dbg-k">あなたの名前</span><input type="text" id="dbgGiftFrom" placeholder="zhou" maxlength="40"></div>
           <div class="dbg-row"><span class="dbg-k">ひとこと</span><input type="text" id="dbgGiftText" placeholder="いつもありがとう" maxlength="200"></div>
-          <div class="dbg-foot"><span class="dbg-note" id="dbgGiftMsg">有料の管理は公式サーバーの台帳で共通管理。相手がボードを開いたときに届きます（ダミー課金なので実際のお金は動きません）</span><button type="button" class="dbg-linkbtn" id="dbgGiftSend">プレゼントを贈る</button></div>
+          <div class="dbg-foot"><span class="dbg-note" id="dbgGiftMsg">有料の管理は公式サーバーの台帳で共通管理。贈るには相手の受け取りコードが必要です（コードは相手に直接聞いてください）。相手がボードを開いたときに届きます</span><button type="button" class="dbg-linkbtn" id="dbgGiftSend">プレゼントを贈る</button></div>
         </div>
       </div>
       <div class="dbg-pane" data-pane="help" hidden>
@@ -2576,7 +2570,7 @@ function closeWelcome(celebrate) {
 $('#guideBtn').addEventListener('click', () => openWelcome());
 $('#welClose').addEventListener('click', () => closeWelcome());
 $('#welBack').addEventListener('click', () => { if (welI > 0) { welI--; renderWelcome('back'); } });
-$('#welNext').addEventListener('click', () => { if (welI >= WEL.length - 1) closeWelcome(true); else { welI++; renderWelcome('fwd'); } });
+$('#welNext').addEventListener('click', () => { if (window.__giftClaim) { const f = window.__giftClaim; window.__giftClaim = null; f(); closeWelcome(true); return; } if (welI >= WEL.length - 1) closeWelcome(true); else { welI++; renderWelcome('fwd'); } });
 $('#welcome').addEventListener('cancel', (e) => { e.preventDefault(); closeWelcome(); });
 $('#welcome').addEventListener('keydown', (e) => {
   if (e.key === 'ArrowRight' && welI < WEL.length - 1) { welI++; renderWelcome('fwd'); }
@@ -3101,16 +3095,35 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
       const row = document.getElementById('dbgPaidStateRow'), st = document.getElementById('dbgPaidState');
       if (row && st) { row.hidden = !j.plan; if (j.plan) st.textContent = paidPlanName(j.plan) + ' が適用中です（プレゼントで受け取り済み）'; }
     } catch {}
+    ensureGiftCode();
+  };
+  const ensureGiftCode = async () => {
+    const el = document.getElementById('dbgGiftMyCode');
+    let code = ''; try { code = store.get('giftcode', ''); } catch {}
+    if (!code) {
+      const abc = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+      const rnd = [...crypto.getRandomValues(new Uint8Array(8))].map((n) => abc[n % abc.length]).join('');
+      code = rnd.slice(0, 4) + '-' + rnd.slice(4);
+      try {
+        const r = await fetch(PAID_API + '/api/paid/register', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ board: location.host, code }) });
+        const j = await r.json();
+        if (j.ok) { try { store.set('giftcode', code); } catch {} }
+        else { if (el) el.textContent = j.error || '登録できませんでした'; return; }
+      } catch { if (el) el.textContent = '公式サーバーに届きませんでした'; return; }
+    }
+    if (el) el.textContent = code + '（贈りたい人に教えてください）';
   };
   const giftSend = document.getElementById('dbgGiftSend');
   if (giftSend) giftSend.addEventListener('click', async () => {
     const to = document.getElementById('dbgGiftTo').value.trim();
     const msg = document.getElementById('dbgGiftMsg');
     if (!to) { msg.textContent = '相手のボード（ホスト名）を入れてください'; return; }
+    const code = document.getElementById('dbgGiftCode').value.trim();
+    if (!code) { msg.textContent = '相手の受け取りコードを入れてください（相手に直接聞いてください）'; return; }
     const plan = document.getElementById('dbgGiftPlan').value;
     giftSend.disabled = true;
     try {
-      const r = await fetch(PAID_API + '/api/paid/gift', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ to, plan, from: document.getElementById('dbgGiftFrom').value, message: document.getElementById('dbgGiftText').value }) });
+      const r = await fetch(PAID_API + '/api/paid/gift', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ to, plan, from: document.getElementById('dbgGiftFrom').value, message: document.getElementById('dbgGiftText').value, code }) });
       const j = await r.json();
       msg.textContent = j.ok ? (to + ' へ ' + paidPlanName(plan) + ' のプレゼントを登録しました。相手がボードを開くと届きます') : '贈れませんでした（' + (j.error || '不明なエラー') + '）';
     } catch { msg.textContent = '公式サーバーに届きませんでした'; }
@@ -3338,6 +3351,7 @@ document.querySelectorAll('dialog.wiz, dialog.lb').forEach((d) => lgWatch(d));
   document.getElementById('dbgOpenNotify').addEventListener('click', () => { if (window.WLNotify) WLNotify.open(); });
   /* リリースノートの正本は GitHub の「リリースノート.md」。この配列は取得できないときの予備 */
   const RELEASE_NOTES = [
+    ['2.27.15', '2026-11-28', ['プレゼントに受け取りコード制を導入。コードを知らない相手や無関係なボードには贈れません', 'プレゼントのお知らせを「Worklineへようこそ」ダイアログで出すようにした', '自分の受け取りコードはアップグレード画面で確認できます']],
     ['2.27.14', '2026-11-28', ['プレゼントの絵文字をLucideアイコンに置き換えた', 'デバッグ兼設定のレイアウト崩れを直した。ラベルの幅をそろえて入力欄の開始位置が全行で一致するようにし、見出しとフッターのスタイル未定義を直した', 'プレゼントのダイアログをLiquid Glass（すりガラス）にした', '情報・Workline情報の「画像」が undefined件 と出る問題を直した']],
     ['2.27.13', '2026-11-28', ['アップグレードで他のボードへプレゼントできるようにした。有料の管理は公式サーバーの台帳（DO）で共通管理し、もらったボードは起動時に特別メッセージと紙吹雪で知らせる。ダミー課金なので実際のお金は動きません']],
     ['2.27.12', '2026-11-28', ['トグルスイッチを細身のスリムデザインに変えた（オンは青、押している間つまみが少し伸びる）']],
@@ -4489,7 +4503,8 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 <script>
-/* プレゼントが届いていたら、起動時に特別メッセージ＋紙吹雪で知らせる(受け取りは1回だけ) */
+/* プレゼントが届いていたら、起動時に「ようこそ」ダイアログを再利用して知らせる(受け取りは1回だけ)。
+   閉じるボタンやEscで閉じた場合は受け取ったことにならず、次に開いたときにもう一度出る */
 window.addEventListener('DOMContentLoaded', async () => {
   if (new URLSearchParams(location.search).has('view')) return; // 閲覧専用リンクでは出さない
   const API = 'https://workline.zixiang0623.workers.dev';
@@ -4499,44 +4514,30 @@ window.addEventListener('DOMContentLoaded', async () => {
     j = await r.json();
   } catch { return; }
   if (!j || !Array.isArray(j.gifts) || !j.gifts.length) return;
+  const d = document.getElementById('welcome');
+  if (!d || d.open) return; // ようこそガイドが出ているときは譲る(未受取のまま次回に出る)
   const g = j.gifts[0];
   const planName = g.plan === 'cloud' ? 'Workline Cloud' : 'Workline Pro';
-  const veil = document.createElement('div'); veil.className = 'gift-veil';
-  const card = document.createElement('div'); card.className = 'gift-card';
+  if (typeof welClear === 'function') welClear(); // ようこそのデモタイマーを止める(あれば)
+  document.getElementById('welTitle').innerHTML = '<span style="color:#ff9500;display:inline-flex"><svg class="ic" aria-hidden="true"><use href="#i-gift"/></svg></span><span>プレゼントが届きました！</span>';
+  document.getElementById('welSteps').innerHTML = '';
+  const body = document.getElementById('welBody');
+  body.className = 'wiz-body fwd gift-center';
+  body.innerHTML = '';
   const em = document.createElement('div'); em.className = 'gift-emoji'; em.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#i-gift"/></svg>';
-  const t = document.createElement('div'); t.className = 'gift-t'; t.textContent = 'プレゼントが届きました！';
-  const body = document.createElement('div'); body.className = 'gift-body';
-  const from = document.createElement('span'); from.className = 'gift-from'; from.textContent = (g.from || 'だれか') + ' さん';
-  const pl = document.createElement('span'); pl.className = 'gift-from'; pl.textContent = planName;
-  body.append(from, document.createTextNode('から'), document.createElement('br'), pl, document.createTextNode(' のプレゼントです。'));
-  card.append(em, t, body);
-  if (g.message) { const m = document.createElement('div'); m.className = 'gift-msg'; m.textContent = '「' + g.message + '」'; card.appendChild(m); }
-  const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'gift-btn'; btn.textContent = '受け取る';
-  card.appendChild(btn);
-  veil.appendChild(card); document.body.appendChild(veil);
-  const confetti = () => {
-    const colors = ['#0071e3', '#34c759', '#ff9f0a', '#ff453a', '#bf5af2', '#64d2ff'];
-    for (let i = 0; i < 90; i++) {
-      const p = document.createElement('span'); p.className = 'gift-confetti';
-      const sz = 5 + Math.random() * 7;
-      p.style.left = Math.random() * 100 + 'vw';
-      p.style.width = sz + 'px'; p.style.height = sz * (0.4 + Math.random()) + 'px';
-      p.style.background = colors[i % colors.length];
-      document.body.appendChild(p);
-      const anim = p.animate([
-        { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
-        { transform: 'translateY(108vh) translateX(' + (Math.random() - 0.5) * 30 + 'vw) rotate(' + (540 + Math.random() * 720) + 'deg)', opacity: 0.9 }
-      ], { duration: 2600 + Math.random() * 2200, easing: 'cubic-bezier(.2,.6,.4,1)', delay: Math.random() * 500 });
-      anim.onfinish = () => p.remove();
-    }
-  };
-  confetti();
-  btn.addEventListener('click', async () => {
-    btn.disabled = true; btn.textContent = 'ありがとう！';
-    confetti();
+  const p = document.createElement('p');
+  const b1 = document.createElement('b'); b1.textContent = (g.from || 'だれか') + ' さん';
+  const b2 = document.createElement('b'); b2.textContent = planName;
+  p.append(b1, document.createTextNode('から'), document.createElement('br'), b2, document.createTextNode(' のプレゼントです。'));
+  body.append(em, p);
+  if (g.message) { const m = document.createElement('div'); m.className = 'gift-msg'; m.textContent = '「' + g.message + '」'; body.appendChild(m); }
+  document.getElementById('welBack').hidden = true;
+  document.getElementById('welNext').innerHTML = '<span>受け取る</span><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>';
+  window.__giftClaim = async () => {
     try { await fetch(API + '/api/paid/claim', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ board: location.host, id: g.id }) }); } catch {}
-    setTimeout(() => veil.remove(), 900);
-  });
+  };
+  d.classList.remove('out');
+  d.showModal();
 });
 </script>
 <script>

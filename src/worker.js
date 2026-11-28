@@ -4,7 +4,7 @@ import { DurableObject } from "cloudflare:workers";
 import { SHOT_MAX, findIcon, parseAgent, safeFetch, slugify, sniffShot } from "./agents.js";
 import { publicKey, pushEnabled, sendPush, validEndpoint } from "./push.js";
 
-const VERSION = "2.27.14";
+const VERSION = "2.27.15";
 const ALIASES = { getRequest: "getConfirmation" }; // 旧名(askUser の結果取得)。人間からの「要求」とは別物
 const PROTOCOLS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 
@@ -886,7 +886,7 @@ async function handleShot(request, env, url) {
 }
 
 /* 有料レジストリ(プレゼント): すべてのボードが公式サーバーのこの窓口を参照する。ボードの識別はホスト名。
-   当面は認証なし(贈る側も受け取る側も、いたずらされても実害のないダミー課金)。CORSは全ボードから呼べるよう開ける */
+   贈るには相手の「受け取りコード」が必要(コードは相手が自分のボードで発行して教えた人だけが知る)。CORSは全ボードから呼べるよう開ける */
 const PAID_CORS = { "access-control-allow-origin": "*", "access-control-allow-methods": "GET, POST, OPTIONS", "access-control-allow-headers": "content-type" };
 const paidHost = (s) => String(s ?? "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "").slice(0, 200);
 async function handlePaid(request, env, url) {
@@ -901,12 +901,24 @@ async function handlePaid(request, env, url) {
   if (request.method === "POST") {
     let b;
     try { b = await request.json(); } catch { return json({ error: "bad request" }, 400, PAID_CORS); }
+    if (action === "register") {
+      const host = paidHost(b.board), code = String(b.code ?? "").trim().toUpperCase().slice(0, 32);
+      if (!host || code.length < 6) return json({ error: "board and code required" }, 400, PAID_CORS);
+      // 登録はそのボード自身のページからだけ(Originのホストがボードと一致すること)
+      const origin = request.headers.get("origin") || "";
+      let originHost = "";
+      try { originHost = new URL(origin).host; } catch {}
+      if (originHost !== host) return json({ error: "origin mismatch" }, 403, PAID_CORS);
+      return json(await bd.paidRegister({ host, code }), 200, PAID_CORS);
+    }
     if (action === "gift") {
       const to = paidHost(b.to), plan = String(b.plan ?? "");
       if (!to) return json({ error: "to required" }, 400, PAID_CORS);
       if (plan !== "pro" && plan !== "cloud") return json({ error: "bad plan" }, 400, PAID_CORS);
       const from = String(b.from ?? "").trim().slice(0, 40), message = String(b.message ?? "").trim().slice(0, 200);
-      return json(await bd.paidGift({ to, plan, from, message }), 200, PAID_CORS);
+      const code = String(b.code ?? "").trim().toUpperCase().slice(0, 32);
+      const r = await bd.paidGift({ to, plan, from, message, code });
+      return json(r, r.ok ? 200 : 403, PAID_CORS);
     }
     if (action === "claim") {
       const host = paidHost(b.board), id = String(b.id ?? "").slice(0, 64);
@@ -1172,9 +1184,22 @@ export class Board extends DurableObject {
   // 有料レジストリ: プレゼントの記録。すべてのボードが公式サーバーのDOを参照して有料ユーザーを管理する(当面はこれで運用)
   initPaidSchema() {
     this.sql.exec("CREATE TABLE IF NOT EXISTS paid_gifts (id TEXT PRIMARY KEY, to_host TEXT NOT NULL, plan TEXT NOT NULL, from_name TEXT NOT NULL DEFAULT '', message TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL, claimed_at INTEGER)");
+    this.sql.exec("CREATE TABLE IF NOT EXISTS paid_boards (host TEXT PRIMARY KEY, code TEXT NOT NULL, created_at INTEGER NOT NULL)");
   }
-  paidGift({ to, plan, from, message }) {
+  // 受け取りコードの登録。コードを知っている相手からしか贈れないようにして、無関係なボードへのいたずらを防ぐ
+  paidRegister({ host, code }) {
     this.initPaidSchema();
+    const rows = this.sql.exec("SELECT code FROM paid_boards WHERE host = ?", host).toArray();
+    if (rows.length) return rows[0].code === code ? { ok: true, already: true } : { ok: false, error: "このボードは登録済みです（コードが合いません）" };
+    this.sql.exec("INSERT INTO paid_boards (host, code, created_at) VALUES (?, ?, ?)", host, code, Date.now());
+    return { ok: true };
+  }
+  paidGift({ to, plan, from, message, code }) {
+    this.initPaidSchema();
+    const reg = this.sql.exec("SELECT code FROM paid_boards WHERE host = ?", to).toArray();
+    if (!reg.length || reg[0].code !== code) return { ok: false, error: "受け取りコードが違うか、相手のボードが未登録です" };
+    const pending = this.sql.exec("SELECT COUNT(*) AS n FROM paid_gifts WHERE to_host = ? AND claimed_at IS NULL", to).one().n;
+    if (pending >= 5) return { ok: false, error: "相手の未受取プレゼントがいっぱいです" };
     const id = "gift_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
     this.sql.exec("INSERT INTO paid_gifts (id, to_host, plan, from_name, message, created_at) VALUES (?, ?, ?, ?, ?, ?)", id, to, plan, from, message, Date.now());
     return { ok: true, id };
